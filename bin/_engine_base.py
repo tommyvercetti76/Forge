@@ -212,6 +212,11 @@ class Engine(ABC):
     palette_60_30_10: ClassVar[dict[str, dict[str, str]]]
     default_runtime: ClassVar[dict[str, Any]]
     engine_negatives: ClassVar[tuple[str, ...]] = ()
+    # Per-engine curated LoRA stack — see brand/loras/README.md. Each entry is
+    # (path-relative-to-brand/loras, scale). The CLI auto-applies these when
+    # the corresponding file exists on disk, unless --no-default-loras is set.
+    # Engines without curated picks (mandala-art, generic) declare empty.
+    default_lora_stack: ClassVar[tuple[tuple[str, float], ...]] = ()
 
     @classmethod
     @abstractmethod
@@ -230,6 +235,7 @@ class Engine(ABC):
             "engine_negatives": list(cls.engine_negatives),
             "palette_60_30_10": cls.palette_60_30_10,
             "default_runtime": cls.default_runtime,
+            "default_lora_stack": [{"path": p, "scale": s} for p, s in cls.default_lora_stack],
         }
 
     @classmethod

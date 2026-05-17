@@ -2343,9 +2343,21 @@ def _engine_img2img(src_path: Path, prompt: str, dst_path: Path, *,
     This is for the "turn my photo into the engine's style" use-case:
     high-strength restyle preferring FLUX-Kontext (true instruction-following),
     falling back to FLUX-dev img2img.
+
+    Kontext is sensitive to prompt length — engine directives are ~2500 chars
+    which overflows the model's effective attention. Truncate to ~1400 chars
+    for the Kontext path; the source image carries the visual anchor anyway.
     """
     strength = max(0.05, min(0.95, float(strength)))
     tmp = _register_tmp(_tmp_sibling(dst_path))
+
+    # Kontext-friendly prompt cap. Keep the first ~1400 chars (subject +
+    # primary rules) which is where engines put the load-bearing content.
+    kontext_prompt = prompt if len(prompt) <= 1400 else prompt[:1400].rsplit(". ", 1)[0] + "."
+
+    # Kontext converges faster than dev — clamp steps to ≤30 to avoid the
+    # over-iteration that produces noise on dense prompts.
+    kontext_steps = min(int(steps), 30)
 
     kontext_ready, _ = _flux_model_ready("kontext-dev")
     dev_ready, dev_reason = _flux_model_ready("dev")
@@ -2354,26 +2366,26 @@ def _engine_img2img(src_path: Path, prompt: str, dst_path: Path, *,
         cmd = [
             "mflux-generate-kontext",
             "--base-model", "dev",
-            "--prompt", prompt,
+            "--prompt", kontext_prompt,
             "--image-path", str(src_path),
             "--guidance", "2.5",
-            "--steps", str(steps),
+            "--steps", str(kontext_steps),
             "--seed", str(seed),
             "--output", str(tmp),
         ]
-        mode_label = "Kontext"
+        mode_label = f"Kontext (prompt {len(kontext_prompt)}/{len(prompt)} chars, steps={kontext_steps})"
     elif kontext_ready:
         cmd = [
             "mflux-generate",
             "--model", "dev-kontext",
-            "--prompt", prompt,
+            "--prompt", kontext_prompt,
             "--init-image-path", str(src_path),
-            "--steps", str(steps),
+            "--steps", str(kontext_steps),
             "--guidance", "3.5",
             "--seed", str(seed),
             "--output", str(tmp),
         ]
-        mode_label = "Kontext (legacy mflux)"
+        mode_label = f"Kontext legacy (prompt {len(kontext_prompt)}/{len(prompt)} chars, steps={kontext_steps})"
     elif dev_ready:
         cmd = [
             "mflux-generate",
@@ -2731,6 +2743,32 @@ def cmd_engine_render(args) -> int:
     out_path.parent.mkdir(parents=True, exist_ok=True)
 
     synth = directive.to_synthetic_preset()
+
+    # ── Auto-LoRA stack ─────────────────────────────────────────────────
+    # Each engine declares a curated `default_lora_stack` (see brand/loras/
+    # README.md). We auto-apply files that exist on disk, unless
+    # --no-default-loras was passed, or the user supplied explicit LoRAs
+    # via the preset/series path (in which case we don't override).
+    if not getattr(args, "no_default_loras", False):
+        engine_loras: list[str] = []
+        engine_lora_scales: list[float] = []
+        missing_loras: list[str] = []
+        for rel_path, scale in getattr(eng_cls, "default_lora_stack", ()) or ():
+            abs_path = LORAS_DIR / rel_path
+            if abs_path.exists():
+                engine_loras.append(str(abs_path.resolve()))
+                engine_lora_scales.append(float(scale))
+            else:
+                missing_loras.append(rel_path)
+        if engine_loras:
+            synth["flux"]["lora_paths"] = engine_loras
+            synth["flux"]["lora_scales"] = engine_lora_scales
+            print(dim(f"  · LoRA stack: {len(engine_loras)} auto-applied — " +
+                      ", ".join(f"{Path(p).parent.name}@{s}" for p, s in zip(engine_loras, engine_lora_scales))))
+        elif missing_loras:
+            print(dim(f"  · LoRA stack: 0 applied (curated picks not on disk — " +
+                      ", ".join(missing_loras) +
+                      "). See brand/loras/README.md for download commands."))
 
     label = f"recipe={recipe_id} " if recipe_id else ""
     print(cyan(f"▶ engine={engine_name} {label}subject={subject[:60]!r}"))
@@ -4762,6 +4800,8 @@ def main() -> int:
                             help="source image to restyle with the engine's directive (img2img via FLUX-Kontext / dev). Turns your photo into the engine's style — e.g. a bald-eagle photo into a mandala.")
     eng_render.add_argument("--from-image-strength", type=float, default=0.85, dest="from_image_strength",
                             help="strength of the restyle when --from-image is set (0.3=minor edit, 0.85=major restyle, 0.95=near-replace). Default 0.85.")
+    eng_render.add_argument("--no-default-loras", action="store_true", dest="no_default_loras",
+                            help="disable the engine's curated default LoRA stack (see brand/loras/README.md). Useful for A/B comparison or when iterating on a new prompt without LoRA bias.")
     eng_render.add_argument("--draft", action="store_true", help="schnell @ 4 steps (cool/fast)")
     eng_render.add_argument("--profile", choices=list(PROFILES), default=None)
     eng_render.set_defaults(func=cmd_engine_render)

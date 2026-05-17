@@ -324,6 +324,7 @@ def build_command(action: str, payload: dict[str, Any]) -> tuple[list[str], list
         _add(cmd, "--from-image-strength", payload.get("from_image_strength"))
         _add_bool(cmd, "--draft", payload.get("draft"))
         _add(cmd, "--profile", payload.get("profile"))
+        _add_bool(cmd, "--no-default-loras", payload.get("no_default_loras"))
         _add(cmd, "--out", payload.get("out"))
         engine_name = str(payload.get("name") or "").strip()
         if engine_name:
@@ -353,6 +354,7 @@ def build_command(action: str, payload: dict[str, Any]) -> tuple[list[str], list
         _add_bool(cmd, "--refine", payload.get("refine"))
         _add_bool(cmd, "--hi-res", payload.get("hi_res"))
         _add_bool(cmd, "--ultra-res", payload.get("ultra_res"))
+        _add_bool(cmd, "--no-default-loras", payload.get("no_default_loras"))
         _add(cmd, "--out", payload.get("out"))
     elif action == "indian-folk-page":
         cmd.extend(["engine", "render", "indian-classical"])
@@ -371,6 +373,7 @@ def build_command(action: str, payload: dict[str, Any]) -> tuple[list[str], list
         _add_bool(cmd, "--refine", payload.get("refine"))
         _add_bool(cmd, "--hi-res", payload.get("hi_res"))
         _add_bool(cmd, "--ultra-res", payload.get("ultra_res"))
+        _add_bool(cmd, "--no-default-loras", payload.get("no_default_loras"))
         _add(cmd, "--out", payload.get("out"))
     elif action == "mandala-art-page":
         cmd.extend(["engine", "render", "mandala-art"])
@@ -390,6 +393,7 @@ def build_command(action: str, payload: dict[str, Any]) -> tuple[list[str], list
         _add_bool(cmd, "--refine", payload.get("refine"))
         _add_bool(cmd, "--hi-res", payload.get("hi_res"))
         _add_bool(cmd, "--ultra-res", payload.get("ultra_res"))
+        _add_bool(cmd, "--no-default-loras", payload.get("no_default_loras"))
         _add(cmd, "--out", payload.get("out"))
     elif action == "edit":
         cmd.append("edit")
@@ -2061,6 +2065,7 @@ const specs = {
       {name:"refine_strength", label:"Refine strength", type:"number", value:"0.25"},
       {name:"hi_res", label:"Hi-res", type:"checkbox"},
       {name:"ultra_res", label:"Ultra-res", type:"checkbox"},
+      {name:"no_default_loras", label:"Skip engine's default LoRA stack", type:"checkbox"},
       {name:"out", label:"Output path", type:"path"}
     ]
   },
@@ -2085,6 +2090,7 @@ const specs = {
       {name:"refine", label:"Refine", type:"checkbox"},
       {name:"hi_res", label:"Hi-res", type:"checkbox"},
       {name:"ultra_res", label:"Ultra-res", type:"checkbox"},
+      {name:"no_default_loras", label:"Skip engine's default LoRA stack", type:"checkbox"},
       {name:"out", label:"Output path", type:"path"}
     ]
   },
@@ -2111,6 +2117,7 @@ const specs = {
       {name:"refine", label:"Refine", type:"checkbox"},
       {name:"hi_res", label:"Hi-res", type:"checkbox"},
       {name:"ultra_res", label:"Ultra-res", type:"checkbox"},
+      {name:"no_default_loras", label:"Skip engine's default LoRA stack", type:"checkbox"},
       {name:"out", label:"Output path", type:"path"}
     ]
   },
@@ -2131,6 +2138,7 @@ const specs = {
       {name:"refine", label:"Refine", type:"checkbox"},
       {name:"hi_res", label:"Hi-res", type:"checkbox"},
       {name:"ultra_res", label:"Ultra-res", type:"checkbox"},
+      {name:"no_default_loras", label:"Skip engine's default LoRA stack", type:"checkbox"},
       {name:"out", label:"Output path", type:"path"}
     ]
   },
@@ -2499,6 +2507,7 @@ const FIELD_HELP = {
   ic_mudra: "Hand gesture / body pose. abhaya = right hand raised, palm out (fearlessness). varada = palm down (giving). dhyana = both palms in lap (meditation). vitarka = thumb + index touching (teaching). anjali = palms together at chest (greeting). tribhanga-flute = three-bend Krishna stance with flute.",
   ic_ground: "Where the scene takes place. madhubani-paper = cream paper with floral border bands (use with madhubani tradition). warli-mud-wall = brown earth wall, white pigment only (use with warli). warli-tarpa-circle = brown ground with central chauk + circular tarpa dance (use with warli). temple-interior / forest-grove / river-bank-yamuna / cosmic-water / celestial-sky / village-pastoral = classical settings for tanjore / pahari / ravi-varma.",
   ic_composition: "Figure arrangement. hieratic-centered = one large deity at center, attendants small around. narrative-multi-figure = scene unfolding across the canvas (e.g. tarpa dance, Krishna's leelas). lyric-intimate = two-figure close composition. cosmic-cosmic = vast multi-scale cosmological tableau.",
+  no_default_loras: "By default, each engine auto-applies its curated LoRA stack (see brand/loras/README.md) — RealismLora + add-details for wildlife, film-noir + add-details for noir-cinema, Coloring-Book LoRA for childrens-coloring-book, Van Gogh for impressionist, Indo-Realism for indian-classical. Check this box to render WITHOUT them (vanilla FLUX) — useful for A/B comparison or when iterating on a new prompt without LoRA bias. Engines without curated picks (mandala-art) ignore this flag.",
 };
 
 function optionsFor(field) {

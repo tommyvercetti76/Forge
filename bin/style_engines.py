@@ -338,6 +338,11 @@ class NoirCinematographyEngine(Engine):
         "smooth digital cartoon shading", "pastel color grading",
         "anime stylization", "Disney proportions",
     )
+    # Curated LoRAs per brand/loras/README.md.
+    default_lora_stack: ClassVar[tuple[tuple[str, float], ...]] = (
+        ("film-noir/flux-lora-film-noir.safetensors", 0.85),
+        ("add-details/add-details.safetensors", 0.50),
+    )
     SUBGENRE = _NOIR_SUBGENRE
     KEY_LIGHT = _NOIR_KEY_LIGHT
     ATMOSPHERIC_MEDIUM = _NOIR_ATMOSPHERIC_MEDIUM
@@ -647,6 +652,12 @@ class WildlifePhotorealismEngine(Engine):
         "studio strobe-flat lighting", "photoshopped HDR halos",
         "bird beak open with no purpose", "watermark", "stock photo logo",
     )
+    # Curated LoRAs per brand/loras/README.md — the verified-best stack for
+    # photo-realism. flux-RealismLora is the most-downloaded FLUX LoRA (15k+).
+    default_lora_stack: ClassVar[tuple[tuple[str, float], ...]] = (
+        ("realism-xlabs/lora.safetensors", 0.80),
+        ("add-details/add-details.safetensors", 0.50),
+    )
     LENS = _WILD_LENS
     LIGHT = _WILD_LIGHT
     BEHAVIOR = _WILD_BEHAVIOR
@@ -905,6 +916,11 @@ class ImpressionistPaintingEngine(Engine):
         "watercolor wash (different medium)", "uniform brushwork direction",
         "single-color flat fill", "3D rendered look",
     )
+    # Only Van Gogh has a curated FLUX LoRA — the engine's own master citations
+    # plus this LoRA push toward authentic post-impressionist register.
+    default_lora_stack: ClassVar[tuple[tuple[str, float], ...]] = (
+        ("van-gogh/lora.safetensors", 0.85),
+    )
     MASTER = _IMP_MASTER
     VG_PERIOD = _IMP_VAN_GOGH_PERIOD
     BRUSH = _IMP_BRUSH
@@ -1161,6 +1177,12 @@ class IndianClassicalEngine(Engine):
         "modern brand poster style", "studio strobe lighting", "neon glow",
         "smooth digital airbrush", "rainbow chromatic aberration",
         "incorrect iconography", "non-period costume",
+    )
+    # Closest curated match — no Pahari/Tanjore-specific FLUX LoRA exists yet.
+    # Indo-Realism pulls toward Indian visual idiom even though it's not
+    # tradition-specific. See BRAND-LORA.md for training a per-tradition LoRA.
+    default_lora_stack: ClassVar[tuple[tuple[str, float], ...]] = (
+        ("indo-realism/lora.safetensors", 0.70),
     )
     TRADITION = _IC_TRADITION
     MUDRA = _IC_MUDRA
@@ -1729,6 +1751,12 @@ class ChildrensColoringBookEngine(Engine):
         "accent":    {"hex": "#000000", "role": "no chromatic accent (line art); accent only via colorist's hand"},
     }
     default_runtime = {"model": "dev", "steps": 32, "guidance": 5.5}
+    # Two strong Coloring-Book LoRAs in our curation — picking prithivMLmods
+    # (the more-downloaded, conservative one). The engine's prompt already
+    # contains "coloring book page" so the trigger phrase is honoured.
+    default_lora_stack: ClassVar[tuple[tuple[str, float], ...]] = (
+        ("coloring-book-prithiv/lora.safetensors", 0.80),
+    )
     engine_negatives: ClassVar[tuple[str, ...]] = (
         "photorealism", "photographic detail", "complex shading", "gradient fill",
         "shaded interior", "crosshatched interior fill", "rendered shadow",
