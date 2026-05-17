@@ -1,0 +1,67 @@
+{
+  "id": "thumbnail-bold",
+  "name": "Thumbnail Bold",
+  "description": "High-impact text-over-video-frame thumbnail — big bold display type, white-on-black outline, dim band for legibility against any background.",
+  "use_for": "YouTube/Shorts thumbnails that overlay a video still: bold readable headline guaranteed against any frame content.",
+  "typography": {
+    "display_family": "Impact",
+    "body_family": "Helvetica",
+    "weights": ["bold"],
+    "scale": {
+      "title_max_chars": 30,
+      "title_px": 96,
+      "sub_px": 34,
+      "caption_px": 20
+    }
+  },
+  "palette_60_30_10": {
+    "dominant": {
+      "hex": "#0A0A0A",
+      "role": "dim-band overlay color (deep black) and headline outline"
+    },
+    "secondary": {
+      "hex": "#FFFFFF",
+      "role": "headline + subtitle text fill"
+    },
+    "accent": {
+      "hex": "#FFB300",
+      "role": "accent bar separating headline from subtitle"
+    }
+  },
+  "composition": {
+    "thumbnail": {
+      "headline_anchor": "bottom-center",
+      "headline_color": "#FFFFFF",
+      "headline_outline": "#000000",
+      "headline_outline_px": 5,
+      "accent_bar_role": "accent",
+      "accent_bar_width_px": 300,
+      "accent_bar_height_px": 6,
+      "dim_band": {
+        "opacity": 0.68,
+        "vertical_start": 0.67
+      }
+    },
+    "video_overlay": {
+      "hook_anchor": "center",
+      "moment_anchor": "bottom-left",
+      "moment_accent_left_bar_px": 10,
+      "cta_anchor": "bottom-right"
+    }
+  },
+  "flux": {
+    "positive_prefix": "Cinematic 16:9 still, single subject, strong rim light, neutral background, room for headline text overlay in lower third.",
+    "positive_suffix": "Bold composition, leave lower third uncluttered for typography.",
+    "negatives": ["busy lower third", "text in image", "watermark", "logo"],
+    "guidance": 4.0,
+    "steps": 22,
+    "model": "dev"
+  },
+  "prompt_rules": {
+    "always_add": [
+      "lower third clear for headline overlay",
+      "single dominant subject upper two-thirds",
+      "strong tonal contrast so white text reads"
+    ]
+  }
+}

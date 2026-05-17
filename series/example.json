@@ -1,0 +1,23 @@
+{
+  "id": "example",
+  "preset": "tartakovsky",
+  "base_seed": 7349281,
+  "_about": "Fully-worked reference series. Copy this file to <your-series>.json and edit. Reference characters in concepts with [name] placeholders, e.g. 'wide shot of [keeper] climbing the spiral staircase'.",
+  "style_anchor": "Coastal Maine documentary series in the Tartakovsky cel-animation tradition. Hand-painted backgrounds, thick black ink outlines, flat color fills with NO gradients. Warm dawn key light from camera-left, cool teal shadow side, salt-air haze in midground. Consistent character design across every frame.",
+  "world_sheet": "Setting: small fishing village on the rocky coast of Maine, late autumn. Time: early dawn, ~30 minutes before sunrise. Atmosphere: salt fog rolling off the harbor, gulls in distance, weathered wooden docks slick with dew, low tide exposing barnacled pilings. Mood: contemplative, quiet, mythic.",
+  "character_sheet": {
+    "keeper": "Man in his late 50s, weathered tanned face with crow's-feet, full salt-and-pepper beard, dark blue knit watch cap, faded yellow oilskin jacket with brass buttons, leathery hands. Always shown in 3/4 profile facing the harbor unless the scene specifies otherwise. Body language: deliberate, steady, never rushed.",
+    "boat": "Small wooden Friendship sloop, sage-green hull with cream waterline stripe, single mast with furled tan-canvas sail, hand-painted name 'Mary K.' in faded white block letters on the transom. Tied to the dock by a thick manila line."
+  },
+  "lora_paths": [],
+  "lora_scales": [],
+  "locked_negatives": [
+    "different character per frame",
+    "style drift",
+    "off-model character design",
+    "smooth gradient shading",
+    "photorealistic textures",
+    "modern fishing equipment",
+    "bright midday light"
+  ]
+}

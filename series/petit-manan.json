@@ -1,0 +1,24 @@
+{
+  "id": "petit-manan",
+  "preset": "tartakovsky",
+  "base_seed": 4827193,
+  "_about": "Test series — lighthouse keeper Walter, Petit Manan Light, coastal Maine.",
+  "style_anchor": "Coastal Maine documentary in the Tartakovsky cel-animation tradition. Hand-painted backgrounds, thick black ink outlines, flat color fills with NO gradients. Cool dawn key light from the east, warm interior lamp light from the lighthouse window, salt-fog haze in the midground. Consistent character design across every frame.",
+  "world_sheet": "Setting: Petit Manan Light on a granite islet, six miles off the rocky coast of Maine, late autumn 1962. Time: pre-dawn, just before sunrise. Atmosphere: thick salt fog rolling in from the open Atlantic, the foghorn pulsing every 30 seconds in the distance, gulls wheeling overhead, weathered cedar shingles slick with cold mist. Mood: solitary, mythic, weight of unbroken routine.",
+  "character_sheet": {
+    "walter": "Man in his early 60s, weathered tanned face with deep crow's-feet, full salt-and-pepper beard trimmed close, watery blue eyes, dark navy wool watch cap pulled low, oiled canvas coat in faded mustard yellow with brass buttons, thick leather gloves clutching a battered tin coffee mug with steam rising. Body language: deliberate, steady, never rushed. Always shown in 3/4 profile facing the sea unless specified.",
+    "lighthouse": "White-painted granite tower, 119 feet tall, narrow vertical fresnel window at the top with warm amber light visible through the fog, black iron lantern-room cap, attached one-story keeper's quarters in weathered cedar shingles with green-painted shutters."
+  },
+  "lora_paths": [],
+  "lora_scales": [],
+  "locked_negatives": [
+    "different character per frame",
+    "style drift",
+    "off-model character design",
+    "smooth gradient shading",
+    "photorealistic textures",
+    "modern equipment",
+    "bright midday light",
+    "young man"
+  ]
+}

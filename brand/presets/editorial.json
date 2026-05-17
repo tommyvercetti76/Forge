@@ -1,0 +1,80 @@
+{
+  "id": "editorial",
+  "name": "Editorial",
+  "description": "Magazine-cover feel \u2014 refined serif, generous whitespace, restrained palette",
+  "use_for": "long-form essays, op-eds, thoughtful explainers, founder-letter content",
+  "typography": {
+    "display_family": "Cormorant Garamond",
+    "body_family": "Inter",
+    "weights": [
+      "regular",
+      "semibold"
+    ],
+    "scale": {
+      "title_max_chars": 36,
+      "title_px": 112,
+      "sub_px": 36,
+      "caption_px": 20
+    }
+  },
+  "palette_60_30_10": {
+    "dominant": {
+      "hex": "#F4EFE6",
+      "role": "paper-cream backdrop, large negative space"
+    },
+    "secondary": {
+      "hex": "#202020",
+      "role": "type, photographic subject, deep neutrals"
+    },
+    "accent": {
+      "hex": "#B43A2A",
+      "role": "drop caps, pull-quotes, single emphasis line"
+    }
+  },
+  "composition": {
+    "thumbnail": {
+      "headline_anchor": "top-left",
+      "headline_color": "#202020",
+      "headline_outline": null,
+      "headline_outline_px": 0,
+      "accent_bar_role": "accent",
+      "accent_bar_width_px": 80,
+      "accent_bar_height_px": 4,
+      "dim_band": {
+        "opacity": 0.0,
+        "vertical_start": 0.0
+      }
+    },
+    "video_overlay": {
+      "hook_anchor": "top-left",
+      "moment_anchor": "bottom-left",
+      "moment_accent_left_bar_px": 4,
+      "cta_anchor": "bottom-right"
+    }
+  },
+  "flux": {
+    "positive_prefix": "Editorial magazine cover photograph, shot on medium format, single subject in shallow depth of field, natural window light, warm cream backdrop, restrained composition with generous negative space.",
+    "positive_suffix": "Print magazine aesthetic, refined, NOT busy, NOT cluttered, single focal subject.",
+    "negatives": [
+      "3D",
+      "cartoon",
+      "anime",
+      "neon",
+      "saturated colors",
+      "busy composition",
+      "cluttered",
+      "text artifacts"
+    ],
+    "guidance": 4.0,
+    "steps": 25,
+    "model": "dev"
+  },
+  "prompt_rules": {
+    "always_add": [
+      "single focal subject (no crowds, no group shots)",
+      "shallow depth of field with subject sharp and background soft",
+      "natural lighting (window or overcast), no studio flash",
+      "warm neutral backdrop matching paper-cream palette"
+    ]
+  }
+}

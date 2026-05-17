@@ -1,0 +1,310 @@
+{
+  "_about": "Curated starter recipes for forge engine render. Invoke with: forge engine render --recipe <id>. Each recipe is a tested combination of engine + subject + config + seed that produces a coherent on-genre output. You can override --subject, --config, or --seed on the CLI to remix any recipe.",
+  "_format": "Each entry: {engine, description, subject, config (dot.notation knob=value pairs), seed}",
+
+  "noir-detective-alley": {
+    "engine": "noir-cinema",
+    "description": "Classic 1940s detective lighting a cigarette under a streetlamp in a rainy alley. Sin City + Alton fingerprint.",
+    "subject": "lone detective in fedora and trench coat lighting a cigarette in a rain-soaked alley at midnight",
+    "config": {
+      "cinematography.subgenre": "classic-1940s",
+      "cinematography.key_light": "streetlamp-cone",
+      "cinematography.atmospheric_medium": "rain",
+      "cinematography.camera": "low-angle",
+      "cinematography.grain": "heavy",
+      "subject.pose": "lighting-cigarette",
+      "subject.wear_level": "weathered",
+      "accent.accent_color": "blood-red",
+      "accent.time_of_day": "midnight"
+    },
+    "seed": 7
+  },
+  "noir-tech-tokyo-rooftop": {
+    "engine": "noir-cinema",
+    "description": "Blade-Runner tech-noir: android assassin on a Tokyo rooftop, neon practicals + volumetric rain.",
+    "subject": "android assassin in a long coat standing on a Tokyo high-rise rooftop, neon signs below",
+    "config": {
+      "cinematography.subgenre": "tech-noir",
+      "cinematography.key_light": "neon-practical",
+      "cinematography.atmospheric_medium": "rain",
+      "cinematography.camera": "low-angle",
+      "subject.pose": "weight-on-one-foot",
+      "subject.wear_level": "weathered",
+      "accent.accent_color": "ice-blue",
+      "accent.time_of_day": "midnight"
+    },
+    "seed": 11
+  },
+  "noir-nordic-investigation": {
+    "engine": "noir-cinema",
+    "description": "Scandinavian noir: detective at a snow-covered crime scene, cold overcast light, breath visible.",
+    "subject": "detective in dark wool coat standing over a covered body at a snowy Stockholm bridge",
+    "config": {
+      "cinematography.subgenre": "nordic-modern",
+      "cinematography.key_light": "no-fill",
+      "cinematography.atmospheric_medium": "dry-cold",
+      "cinematography.camera": "overhead",
+      "subject.pose": "weight-on-one-foot",
+      "subject.wear_level": "clean-but-tired",
+      "accent.accent_color": "bone-white",
+      "accent.time_of_day": "overcast-noon"
+    },
+    "seed": 13
+  },
+  "noir-pulp-vigilante": {
+    "engine": "noir-cinema",
+    "description": "Pure pulp ink-and-paper comic noir: vigilante in silhouette, blood-red accent, Mignola fingerprint.",
+    "subject": "hooded vigilante crouched on a gargoyle ledge overlooking a city street",
+    "config": {
+      "cinematography.subgenre": "pulp-comic",
+      "cinematography.key_light": "bare-bulb",
+      "cinematography.atmospheric_medium": "smog-industrial",
+      "cinematography.camera": "low-angle",
+      "cinematography.grain": "clean",
+      "subject.pose": "crouched",
+      "subject.wear_level": "scarred",
+      "accent.accent_color": "blood-red",
+      "accent.time_of_day": "midnight"
+    },
+    "seed": 17
+  },
+
+  "wildlife-snow-leopard-cliff": {
+    "engine": "wildlife-photo",
+    "description": "Snow leopard perched on a Himalayan cliff at sunrise. Vincent Munier register.",
+    "subject": "snow leopard perched on a Himalayan cliff ledge at sunrise",
+    "config": {
+      "subject.species_class": "mammal-feline",
+      "subject.behavior": "alert-watching",
+      "optics.lens": "500mm-long",
+      "optics.light": "golden-hour-low",
+      "optics.habitat": "mountain-cliff"
+    },
+    "seed": 7
+  },
+  "wildlife-red-fox-snow": {
+    "engine": "wildlife-photo",
+    "description": "Red fox pausing in a snowy meadow, overcast documentary light. Lanting register.",
+    "subject": "red fox pausing in a snowy meadow at dawn, breath visible in the cold",
+    "config": {
+      "subject.species_class": "mammal-canine",
+      "subject.behavior": "alert-watching",
+      "optics.lens": "200-400mm-medium",
+      "optics.light": "overcast-soft",
+      "optics.habitat": "tundra-arctic"
+    },
+    "seed": 11
+  },
+  "wildlife-blue-jay-perch": {
+    "engine": "wildlife-photo",
+    "description": "Blue jay on a hawthorn branch, dappled forest light. Tim-Flach intimate framing.",
+    "subject": "blue jay perched on a hawthorn branch with white flowers, springtime",
+    "config": {
+      "subject.species_class": "bird",
+      "subject.behavior": "alert-watching",
+      "optics.lens": "200-400mm-medium",
+      "optics.light": "dappled-forest",
+      "optics.habitat": "branch-perch"
+    },
+    "seed": 13
+  },
+  "wildlife-eagle-flight": {
+    "engine": "wildlife-photo",
+    "description": "Bald eagle mid-flight against a clear sky, super-telephoto reach.",
+    "subject": "bald eagle in mid-flight wings fully extended, talons tucked",
+    "config": {
+      "subject.species_class": "bird",
+      "subject.behavior": "in-flight",
+      "optics.lens": "800mm-extreme",
+      "optics.light": "harsh-noon",
+      "optics.habitat": "savanna"
+    },
+    "seed": 17
+  },
+
+  "impressionist-starry-cypresses": {
+    "engine": "impressionist",
+    "description": "Van Gogh Saint-Rémy: cypress flames against a swirling starry sky over a wheatfield.",
+    "subject": "two flame-shaped cypress trees against a swirling starry night sky, wheatfield below, distant village",
+    "config": {
+      "technique.master": "van-gogh",
+      "technique.vg_period": "saint-remy-swirl",
+      "technique.brush": "directional-stroke",
+      "technique.palette_mode": "chromatic-complementary",
+      "subject.treatment": "starry-swirl"
+    },
+    "seed": 7
+  },
+  "impressionist-sunflowers-arles": {
+    "engine": "impressionist",
+    "description": "Van Gogh Arles period: vase of sunflowers, impasto-thick paint, chromatic complementary.",
+    "subject": "a vase of sunflowers on a wooden table by a window, late summer afternoon",
+    "config": {
+      "technique.master": "van-gogh",
+      "technique.vg_period": "arles-vibrant",
+      "technique.brush": "impasto-thick",
+      "technique.palette_mode": "chromatic-complementary",
+      "subject.treatment": "sunflower-heavy"
+    },
+    "seed": 11
+  },
+  "impressionist-monet-haystacks": {
+    "engine": "impressionist",
+    "description": "Monet broken-color haystacks at dusk, high-key palette, optical color mixing.",
+    "subject": "two haystacks in a wheat field at dusk, long pink shadows on golden stubble",
+    "config": {
+      "technique.master": "monet",
+      "technique.brush": "broken-color",
+      "technique.palette_mode": "high-key-bright",
+      "subject.treatment": "wheatfield-impasto"
+    },
+    "seed": 13
+  },
+  "impressionist-cafe-night": {
+    "engine": "impressionist",
+    "description": "Van Gogh Night Café — yellow gaslight against deep green walls, isolated patrons.",
+    "subject": "interior of a 1888 french café at night, gas lamp warm yellow glow, isolated patrons at tables",
+    "config": {
+      "technique.master": "van-gogh",
+      "technique.vg_period": "arles-vibrant",
+      "technique.brush": "directional-stroke",
+      "technique.palette_mode": "chromatic-complementary",
+      "subject.treatment": "café-interior-night"
+    },
+    "seed": 17
+  },
+
+  "indian-krishna-yamuna-dawn": {
+    "engine": "indian-classical",
+    "description": "Krishna playing flute by the Yamuna at dawn, Ravi-Varma oleograph naturalism with attending gopis.",
+    "subject": "Lord Krishna playing flute beside a lotus pond at dawn, gopis at the riverbank watching",
+    "config": {
+      "style.tradition": "ravi-varma-oleograph",
+      "style.ground": "river-bank-yamuna",
+      "subject.mudra": "tribhanga-flute",
+      "subject.composition": "lyric-intimate"
+    },
+    "seed": 7
+  },
+  "indian-vishnu-cosmic": {
+    "engine": "indian-classical",
+    "description": "Vishnu reclining on Shesha in the cosmic ocean, Tanjore gold-leaf devotional panel.",
+    "subject": "Lord Vishnu reclining on the serpent Shesha in the cosmic ocean, lotus rising from his navel",
+    "config": {
+      "style.tradition": "tanjore",
+      "style.ground": "cosmic-water",
+      "subject.mudra": "dhyana",
+      "subject.composition": "cosmic-cosmic"
+    },
+    "seed": 11
+  },
+  "indian-ganesha-temple": {
+    "engine": "indian-classical",
+    "description": "Ganesha seated in a stone temple interior, hieratic Tanjore composition with gold leaf.",
+    "subject": "Lord Ganesha seated on a lotus pedestal inside a stone temple, oil lamps glowing",
+    "config": {
+      "style.tradition": "tanjore",
+      "style.ground": "temple-interior",
+      "subject.mudra": "abhaya",
+      "subject.composition": "hieratic-centered"
+    },
+    "seed": 13
+  },
+  "indian-shiva-meditation": {
+    "engine": "indian-classical",
+    "description": "Shiva in dhyana meditation on Mount Kailash, Pahari miniature delicacy.",
+    "subject": "Lord Shiva seated in meditation on Mount Kailash with snow-capped peaks behind",
+    "config": {
+      "style.tradition": "pahari-miniature",
+      "style.ground": "mountain-cliff",
+      "subject.mudra": "dhyana",
+      "subject.composition": "hieratic-centered"
+    },
+    "seed": 17
+  },
+
+  "coloring-toddler-bear-and-balloon": {
+    "engine": "childrens-coloring-book",
+    "description": "Toddler-age Mo Willems minimal — curious bear cub holding a balloon, big eyes, big white space.",
+    "subject": "a small curious bear cub standing in a sunny meadow holding a round balloon by its string",
+    "config": {
+      "style.tradition": "mo-willems-minimal",
+      "style.age_range": "toddler-3-5",
+      "subject.character_archetype": "curious-bear-cub",
+      "subject.emotion": "joyful",
+      "subject.props": "balloon",
+      "scene.setting": "magical-meadow",
+      "scene.time_of_day": "midday",
+      "scene.environmental_density": "sparse",
+      "narrative.moment": "quiet-rest",
+      "narrative.story_beat": "The cub has just received the balloon and is showing it off to the sunshine.",
+      "composition.layout": "centered-portrait",
+      "composition.framing": "wide",
+      "composition.character_count": 1
+    },
+    "seed": 7
+  },
+  "coloring-kids-dragon-meadow": {
+    "engine": "childrens-coloring-book",
+    "description": "Kids-age Eric Carle bold outlines — a friendly dragon in a meadow with butterflies, generous fillable regions.",
+    "subject": "a friendly rounded dragon sitting in a meadow surrounded by three large butterflies",
+    "config": {
+      "style.tradition": "eric-carle-bold",
+      "style.age_range": "kids-6-9",
+      "subject.character_archetype": "friendly-dragon",
+      "subject.emotion": "gentle",
+      "subject.props": "flower-bouquet",
+      "scene.setting": "magical-meadow",
+      "scene.time_of_day": "golden-hour",
+      "scene.environmental_density": "balanced",
+      "narrative.moment": "quiet-rest",
+      "narrative.story_beat": "The dragon has gathered a bouquet for a friend who is on the way.",
+      "composition.layout": "environmental-wide",
+      "composition.framing": "wide",
+      "composition.character_count": 1
+    },
+    "seed": 11
+  },
+  "coloring-kids-rabbit-tea-party": {
+    "engine": "childrens-coloring-book",
+    "description": "Kids-age Beatrix Potter naturalistic — two rabbits in waistcoats sharing tea in a cottage garden.",
+    "subject": "two rabbits in waistcoats seated at a small wooden table sharing tea in a cottage garden",
+    "config": {
+      "style.tradition": "beatrix-potter-naturalistic",
+      "style.age_range": "kids-6-9",
+      "subject.character_archetype": "brave-rabbit",
+      "subject.emotion": "gentle",
+      "subject.props": "teacup-and-saucer",
+      "scene.setting": "cozy-cottage-interior",
+      "scene.time_of_day": "morning",
+      "scene.environmental_density": "balanced",
+      "narrative.moment": "shared-secret",
+      "narrative.story_beat": "The older rabbit is telling the younger one a story about the hedgerow.",
+      "composition.layout": "two-figure-balance",
+      "composition.framing": "medium",
+      "composition.character_count": 2
+    },
+    "seed": 13
+  },
+  "coloring-preteen-totoro-forest": {
+    "engine": "childrens-coloring-book",
+    "description": "Pre-teen Miyazaki storyboard — a child meeting a gentle giant in an enchanted forest at dusk.",
+    "subject": "a small child looking up in wonder at a tall gentle forest spirit beside a moss-covered stump",
+    "config": {
+      "style.tradition": "miyazaki-storyboard",
+      "style.age_range": "pre-teen-10-12",
+      "subject.character_archetype": "gentle-giant",
+      "subject.emotion": "surprised-delighted",
+      "subject.props": "lantern-glowing",
+      "scene.setting": "enchanted-forest",
+      "scene.time_of_day": "dusk",
+      "scene.environmental_density": "rich",
+      "narrative.moment": "first-meeting",
+      "narrative.story_beat": "The child has just stepped into a clearing and seen the gentle giant for the first time.",
+      "composition.layout": "two-figure-balance",
+      "composition.framing": "wide",
+      "composition.character_count": 2
+    },
+    "seed": 17
+  }
+}

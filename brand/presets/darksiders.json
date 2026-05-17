@@ -1,0 +1,62 @@
+{
+  "id": "darksiders",
+  "name": "Darksiders",
+  "description": "Weathered gothic color — comic-book detail, post-apocalyptic grit, dramatic chiaroscuro with copper/bronze/charcoal palette and burnt-orange focal accents.",
+  "use_for": "epic narrative covers, mythology and lore videos, character intros that need 'this matters' weight without the b&w of pure noir.",
+  "typography": {
+    "display_family": "Impact",
+    "body_family": "Helvetica",
+    "weights": ["bold"],
+    "scale": {
+      "title_max_chars": 24,
+      "title_px": 138,
+      "sub_px": 40,
+      "caption_px": 22
+    }
+  },
+  "palette_60_30_10": {
+    "dominant":  { "hex": "#1A1614", "role": "charcoal-brown shadow regions, 60% of frame" },
+    "secondary": { "hex": "#8C7A66", "role": "bronze / weathered-copper midtones on subject + environment" },
+    "accent":    { "hex": "#D75A1F", "role": "burnt-orange single focal accent — molten metal, embers, eye glow" }
+  },
+  "composition": {
+    "thumbnail": {
+      "headline_anchor": "bottom-center",
+      "headline_color": "#F0E6D2",
+      "headline_outline": "#0D0907",
+      "headline_outline_px": 6,
+      "accent_bar_role": "accent",
+      "accent_bar_width_px": 320,
+      "accent_bar_height_px": 6,
+      "dim_band": { "opacity": 0.65, "vertical_start": 0.66 }
+    },
+    "video_overlay": {
+      "hook_anchor": "center",
+      "moment_anchor": "bottom-left",
+      "moment_accent_left_bar_px": 12,
+      "cta_anchor": "bottom-right"
+    }
+  },
+  "flux": {
+    "positive_prefix": "Painterly comic-book illustration in the spirit of weathered gothic fantasy concept art, dramatic chiaroscuro lighting with rim light from one side, charcoal-and-bronze color grading with a single burnt-orange focal accent (molten metal, embers, or rim glow), heavy surface texture: cracked stone, weathered leather, oxidized bronze, scarred skin. Hand-painted brush feel, not rendered. Post-apocalyptic atmosphere with airborne particulate.",
+    "positive_suffix": "Carbon shadows holding the dominant 60% of the frame. Avoid clean polished surfaces, prefer worn and scarred. Single subject in heroic asymmetric pose, weight planted, no static front-facing symmetry.",
+    "negatives": [
+      "clean polished surfaces", "perfect symmetry", "studio portrait lighting",
+      "pastel palette", "anime style", "Disney style", "chibi proportions",
+      "smiling cheerful expression", "stock photo style", "smooth gradient sky",
+      "uniform diffuse light"
+    ],
+    "guidance": 4.5,
+    "steps": 28,
+    "model": "dev"
+  },
+  "prompt_rules": {
+    "always_add": [
+      "single dominant subject in asymmetric heroic pose, weight on one foot or planted weapon",
+      "single dramatic key light (warm) from one side, opposite side deep shadow",
+      "surface micro-detail: scars, weathered metal patina, cracked stone, leather wear, soot",
+      "atmospheric particulate (smoke, embers, dust) catching the rim light",
+      "single burnt-orange focal accent — limit color to charcoal/bronze/orange triad"
+    ]
+  }
+}

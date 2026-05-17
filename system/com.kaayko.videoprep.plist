@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+LaunchAgent for the video pipeline watcher.
+
+Install once:
+    mkdir -p ~/Library/LaunchAgents
+    cp outputs/com.kaayko.videoprep.plist ~/Library/LaunchAgents/
+    # Customize the paths below to your actual videos-in / videos-out dirs!
+    launchctl bootstrap gui/$UID ~/Library/LaunchAgents/com.kaayko.videoprep.plist
+    launchctl kickstart gui/$UID/com.kaayko.videoprep
+
+Stop:
+    launchctl bootout gui/$UID/com.kaayko.videoprep
+
+Tail logs:
+    tail -f ~/Library/Logs/kaayko-videoprep.log
+-->
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>com.kaayko.videoprep</string>
+
+  <key>ProgramArguments</key>
+  <array>
+    <string>/bin/bash</string>
+    <string>/Users/Rohan/Desktop/Forge/bin/watch-folder.sh</string>
+    <string>/Users/Rohan/Videos/videos-in</string>
+    <string>/Users/Rohan/Videos/videos-out</string>
+  </array>
+
+  <key>EnvironmentVariables</key>
+  <dict>
+    <key>PATH</key>
+    <string>/Users/Rohan/.local/bin:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin</string>
+    <key>MODELS_HOME</key>
+    <string>/Users/Rohan/Models</string>
+    <key>HF_HOME</key>
+    <string>/Users/Rohan/Models/huggingface</string>
+    <key>HF_HUB_CACHE</key>
+    <string>/Users/Rohan/Models/huggingface/hub</string>
+    <key>FORGE_STATE_HOME</key>
+    <string>/Users/Rohan/.forge</string>
+    <key>QUALITY</key>
+    <string>good</string>
+    <key>STABLE_SECS</key>
+    <string>8</string>
+    <key>POLL_SECS</key>
+    <string>5</string>
+    <key>NOISY</key>
+    <string>0</string>
+  </dict>
+
+  <key>RunAtLoad</key>
+  <true/>
+  <key>KeepAlive</key>
+  <true/>
+  <key>ThrottleInterval</key>
+  <integer>10</integer>
+  <key>ProcessType</key>
+  <string>Background</string>
+
+  <key>StandardOutPath</key>
+  <string>/Users/Rohan/Library/Logs/kaayko-videoprep.log</string>
+  <key>StandardErrorPath</key>
+  <string>/Users/Rohan/Library/Logs/kaayko-videoprep.err</string>
+
+  <key>WorkingDirectory</key>
+  <string>/Users/Rohan</string>
+</dict>
+</plist>

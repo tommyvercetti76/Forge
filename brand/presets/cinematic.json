@@ -1,0 +1,78 @@
+{
+  "id": "cinematic",
+  "name": "Cinematic",
+  "description": "Movie-poster \u2014 dramatic light, bold display type, high-contrast palette, mystery",
+  "use_for": "dramatic narrative, mystery, big-reveal videos, behind-the-scenes",
+  "typography": {
+    "display_family": "Impact",
+    "body_family": "Helvetica",
+    "weights": [
+      "bold"
+    ],
+    "scale": {
+      "title_max_chars": 22,
+      "title_px": 148,
+      "sub_px": 40,
+      "caption_px": 22
+    }
+  },
+  "palette_60_30_10": {
+    "dominant": {
+      "hex": "#0B0F14",
+      "role": "deep blue-black background, shadow regions"
+    },
+    "secondary": {
+      "hex": "#E6E2D8",
+      "role": "off-white subject highlights, primary text"
+    },
+    "accent": {
+      "hex": "#C8401D",
+      "role": "blood-orange focal accent, rim light, single key element"
+    }
+  },
+  "composition": {
+    "thumbnail": {
+      "headline_anchor": "bottom-center",
+      "headline_color": "#E6E2D8",
+      "headline_outline": "#0B0F14",
+      "headline_outline_px": 5,
+      "accent_bar_role": "accent",
+      "accent_bar_width_px": 320,
+      "accent_bar_height_px": 6,
+      "dim_band": {
+        "opacity": 0.65,
+        "vertical_start": 0.6
+      }
+    },
+    "video_overlay": {
+      "hook_anchor": "center",
+      "moment_anchor": "center",
+      "moment_accent_left_bar_px": 0,
+      "cta_anchor": "bottom-right"
+    }
+  },
+  "flux": {
+    "positive_prefix": "Cinematic 16:9 still frame, anamorphic lens character, high-contrast chiaroscuro lighting, deep shadows with single key light, color-graded teal-and-orange but desaturated, single dramatic subject, sense of mystery and weight.",
+    "positive_suffix": "Movie poster composition, single focal subject, depth and atmosphere, NOT busy.",
+    "negatives": [
+      "bright",
+      "cheerful",
+      "flat lighting",
+      "stock photo",
+      "smiling",
+      "vibrant",
+      "saturated"
+    ],
+    "guidance": 4.5,
+    "steps": 30,
+    "model": "dev"
+  },
+  "prompt_rules": {
+    "always_add": [
+      "single dramatic subject, no crowds",
+      "deep shadows occupying ~60% of frame",
+      "single warm key light creating rim or silhouette",
+      "atmospheric haze or particulate for depth"
+    ]
+  }
+}

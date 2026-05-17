@@ -1,0 +1,87 @@
+# ── Forge .gitignore ─────────────────────────────────────────────────
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon?
+._*
+
+# Python bytecode / caches
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*$py.class
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Virtual environments
+.venv/
+venv/
+env/
+.python-version
+
+# Build / package artifacts
+*.egg-info/
+*.egg
+build/
+dist/
+pip-wheel-metadata/
+
+# Editor / IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Local secrets & credentials  ────────────────────────────────────────
+# Never commit API keys. Forge reads Sarvam/HF tokens from env vars or
+# ~/.config/forge/ — both are outside this tree.
+.env
+.env.*
+secrets.json
+sarvam_key.txt
+hf_token
+*.pem
+*.key
+
+# Claude Code local config (may contain user-specific permission rules
+# with embedded one-shot tokens — never commit).
+.claude/
+
+# Forge runtime artifacts  ─────────────────────────────────────────────
+# Render outputs / large generated media — these live in ~/Desktop/forge-test/
+# by default and should not be tracked. Anything generated locally inside
+# the repo tree is ignored here too.
+output/
+outputs/
+generated/
+forge-out/
+*.mp4
+*.mov
+*.m4v
+*.webm
+*.wav
+*.mp3
+*.m4a
+*.aiff
+
+# Models & weights — never commit (lives in ~/Models/)
+*.safetensors
+*.gguf
+*.bin
+*.onnx
+*.ckpt
+*.pt
+models/
+weights/
+
+# Logs / temp
+*.log
+*.tmp
+*.bak
+tmp/
+.cache/

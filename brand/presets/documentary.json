@@ -1,0 +1,79 @@
+{
+  "id": "documentary",
+  "name": "Documentary",
+  "description": "News / documentary \u2014 restrained, factual, sans-serif, single accent",
+  "use_for": "explainers, factual reporting, data stories, journalistic content",
+  "typography": {
+    "display_family": "Helvetica",
+    "body_family": "Helvetica",
+    "weights": [
+      "regular",
+      "bold"
+    ],
+    "scale": {
+      "title_max_chars": 28,
+      "title_px": 96,
+      "sub_px": 32,
+      "caption_px": 20
+    }
+  },
+  "palette_60_30_10": {
+    "dominant": {
+      "hex": "#FFFFFF",
+      "role": "clean white backdrop, large negative space"
+    },
+    "secondary": {
+      "hex": "#222222",
+      "role": "type, lower-thirds, primary subject"
+    },
+    "accent": {
+      "hex": "#D7263D",
+      "role": "single emphasis tag, breaking-news bar, stat callout"
+    }
+  },
+  "composition": {
+    "thumbnail": {
+      "headline_anchor": "bottom-left",
+      "headline_color": "#222222",
+      "headline_outline": null,
+      "headline_outline_px": 0,
+      "accent_bar_role": "accent",
+      "accent_bar_width_px": 60,
+      "accent_bar_height_px": 8,
+      "dim_band": {
+        "opacity": 0.0,
+        "vertical_start": 0.0
+      }
+    },
+    "video_overlay": {
+      "hook_anchor": "bottom-left",
+      "moment_anchor": "bottom-left",
+      "moment_accent_left_bar_px": 8,
+      "cta_anchor": "bottom-right"
+    }
+  },
+  "flux": {
+    "positive_prefix": "Documentary-style photograph, neutral lighting, single subject in clean composition, journalistic, observational, restrained color palette, looks like a still from a New York Times feature.",
+    "positive_suffix": "Photojournalistic, NOT staged, NOT overproduced, observational distance.",
+    "negatives": [
+      "staged",
+      "overproduced",
+      "cinematic color grading",
+      "fantasy",
+      "cartoon",
+      "neon",
+      "saturated"
+    ],
+    "guidance": 4.0,
+    "steps": 22,
+    "model": "dev"
+  },
+  "prompt_rules": {
+    "always_add": [
+      "single observed subject, photojournalistic distance",
+      "natural diffused light",
+      "neutral background, no obvious set design",
+      "subject not looking at camera"
+    ]
+  }
+}

@@ -1,0 +1,79 @@
+{
+  "id": "tartakovsky",
+  "name": "Tartakovsky",
+  "description": "Genndy Tartakovsky / Samurai Jack \u2014 hand-drawn cel, thick outlines, flat fills",
+  "use_for": "narrative storytelling, character-driven content, mythic/timeless feel",
+  "typography": {
+    "display_family": "Impact",
+    "body_family": "Inter",
+    "weights": [
+      "regular",
+      "bold"
+    ],
+    "scale": {
+      "title_max_chars": 18,
+      "title_px": 132,
+      "sub_px": 38,
+      "caption_px": 22
+    }
+  },
+  "palette_60_30_10": {
+    "dominant": {
+      "hex": "#1A4A52",
+      "role": "background, large surfaces, sky"
+    },
+    "secondary": {
+      "hex": "#E8D9B8",
+      "role": "midground, character highlights, desk surfaces"
+    },
+    "accent": {
+      "hex": "#D4751A",
+      "role": "ON-AIR signs, mic windscreens, focal-point rim lights"
+    }
+  },
+  "composition": {
+    "thumbnail": {
+      "headline_anchor": "bottom-left",
+      "headline_color": "#FFFFFF",
+      "headline_outline": "#000000",
+      "headline_outline_px": 4,
+      "accent_bar_role": "accent",
+      "accent_bar_width_px": 240,
+      "accent_bar_height_px": 8,
+      "dim_band": {
+        "opacity": 0.55,
+        "vertical_start": 0.55
+      }
+    },
+    "video_overlay": {
+      "hook_anchor": "center",
+      "moment_anchor": "left",
+      "moment_accent_left_bar_px": 14,
+      "cta_anchor": "bottom-right"
+    }
+  },
+  "flux": {
+    "positive_prefix": "Hand-drawn 2D animation cel in the style of Samurai Jack by Genndy Tartakovsky: thick black ink outlines, flat color fills with NO gradients, minimal cel-shaded shadows (max two shadow tones), geometric simplicity, hand-painted backgrounds.",
+    "positive_suffix": "Flat color fills only, no smooth gradients, no photorealism, no 3D rendering.",
+    "negatives": [
+      "photorealistic",
+      "3D",
+      "smooth gradients",
+      "oversized heads",
+      "chibi",
+      "Disney style",
+      "anime sparkle eyes"
+    ],
+    "guidance": 3.5,
+    "steps": 25,
+    "model": "dev"
+  },
+  "prompt_rules": {
+    "always_add": [
+      "ANATOMICALLY PROPORTIONAL \u2014 not chibi, not oversized heads, not cute-cartoon",
+      "subjects facing each other with eye contact when conversing",
+      "named real-world products specified by silhouette / model (e.g. 'RODE PodMic')",
+      "lighting suggested via flat highlight SHAPES only, no gradients"
+    ]
+  }
+}

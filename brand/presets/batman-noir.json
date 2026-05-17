@@ -1,0 +1,60 @@
+{
+  "id": "batman-noir",
+  "name": "Batman Noir",
+  "description": "B&W high-contrast comic-noir — ink-and-shadow, deep blacks, hard rim light from one side, weathered surfaces, no plastic gloss.",
+  "use_for": "dramatic narrative covers, vigilante/crime scenes, brooding character portraits, anything that wants pure ink-and-paper craft.",
+  "typography": {
+    "display_family": "Impact",
+    "body_family": "Helvetica",
+    "weights": ["bold"],
+    "scale": {
+      "title_max_chars": 22,
+      "title_px": 132,
+      "sub_px": 38,
+      "caption_px": 22
+    }
+  },
+  "palette_60_30_10": {
+    "dominant":  { "hex": "#080808", "role": "deep black shadows occupying 60% of frame" },
+    "secondary": { "hex": "#E8E4DA", "role": "off-white highlight on subject, rim-light" },
+    "accent":    { "hex": "#9A2222", "role": "single blood-red focal element (optional)" }
+  },
+  "composition": {
+    "thumbnail": {
+      "headline_anchor": "bottom-center",
+      "headline_color": "#E8E4DA",
+      "headline_outline": "#000000",
+      "headline_outline_px": 5,
+      "accent_bar_role": "accent",
+      "accent_bar_width_px": 280,
+      "accent_bar_height_px": 6,
+      "dim_band": { "opacity": 0.72, "vertical_start": 0.62 }
+    },
+    "video_overlay": {
+      "hook_anchor": "center",
+      "moment_anchor": "bottom-left",
+      "moment_accent_left_bar_px": 10,
+      "cta_anchor": "bottom-right"
+    }
+  },
+  "flux": {
+    "positive_prefix": "Monochrome black-and-white comic-noir illustration, ink-and-paint craft, deep chiaroscuro lighting with a single hard rim light from one side, heavy black ink shadows occupying ~60% of frame, weathered surface micro-texture, gritty hand-drawn linework, comic-book panel feel, brooding atmosphere with particulate in the air.",
+    "positive_suffix": "Heavy black ink shadows, NO color saturation except optional single blood-red accent, NO plastic gloss, NO smooth cartoon shading. The image should look painted with ink on rough paper, not rendered.",
+    "negatives": [
+      "color photography", "vibrant saturated palette", "cheerful daylight",
+      "soft gradient shading", "plastic sheen", "anime style",
+      "Disney style", "stock photography lighting", "even flat illumination"
+    ],
+    "guidance": 4.5,
+    "steps": 28,
+    "model": "dev"
+  },
+  "prompt_rules": {
+    "always_add": [
+      "single dominant subject, no crowds, asymmetric pose with weight on one foot",
+      "single hard key light from one side leaving the opposite half in deep shadow",
+      "particulate haze, dust motes, or rain catching the rim light",
+      "subject surface shows wear: scratches, weathered fabric, calloused skin"
+    ]
+  }
+}

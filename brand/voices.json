@@ -1,0 +1,46 @@
+{
+  "_about": "Voice presets backed by macOS `say` (works zero-install) with Kokoro-TTS as the optional quality upgrade. Both engines expose the same preset API; the script picks whichever is installed.",
+  "_upgrade_path": "Once you want better quality, run: forge.py setup-voices --kokoro. This pulls the Kokoro ONNX model (~80 MB) and remaps each preset to its kokoro_voice_id.",
+  "presets": [
+    {
+      "id": "male_warm",
+      "display": "Male — warm narrator",
+      "use_for": "storytelling, founder voice, reflective opens",
+      "say_voice": "Alex",
+      "say_rate": 175,
+      "kokoro_voice_id": "am_michael",
+      "kokoro_speed": 0.95,
+      "tone_hint": "warm, mid-tempo, slight smile in the voice"
+    },
+    {
+      "id": "male_anchor",
+      "display": "Male — anchor / authoritative",
+      "use_for": "news-style hooks, explainers, decisive CTAs",
+      "say_voice": "Daniel",
+      "say_rate": 185,
+      "kokoro_voice_id": "am_adam",
+      "kokoro_speed": 1.0,
+      "tone_hint": "crisp British anchor, even tempo, low warmth"
+    },
+    {
+      "id": "female_warm",
+      "display": "Female — warm storyteller",
+      "use_for": "narrative voiceover, intimate reflection, audiobook-style",
+      "say_voice": "Samantha",
+      "say_rate": 175,
+      "kokoro_voice_id": "af_bella",
+      "kokoro_speed": 0.95,
+      "tone_hint": "warm, conversational American, smiling delivery"
+    },
+    {
+      "id": "female_anchor",
+      "display": "Female — anchor / journalistic",
+      "use_for": "factual delivery, lower-thirds, data narration",
+      "say_voice": "Victoria",
+      "say_rate": 185,
+      "kokoro_voice_id": "af_sarah",
+      "kokoro_speed": 1.0,
+      "tone_hint": "clear, energetic American, even cadence"
+    }
+  ]
+}
