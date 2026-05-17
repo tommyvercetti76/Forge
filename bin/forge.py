@@ -74,6 +74,26 @@ AUDIO_TRANSLATE_ENV = "FORGE_AUDIO_LANGS"
 
 THUMB_W, THUMB_H = 1280, 720
 
+# RealESRGAN upscaler — ncnn-vulkan binary + bundled models. Lets us render
+# FLUX at a safe size (1024², 1280×720) and reach 4K/8K resolution at near-
+# zero memory cost on M5 Max. See bin/forge.py::_upscale_image.
+REALESRGAN_HOME = MODELS_HOME / "realesrgan"
+REALESRGAN_BIN = REALESRGAN_HOME / "realesrgan-ncnn-vulkan"
+REALESRGAN_MODELS_DIR = REALESRGAN_HOME / "models"
+# Model choice depends on subject register: anime model preserves clean
+# line work better (mandala / coloring-book), plus model is better at photo
+# detail (wildlife / cinematic / indian-classical).
+REALESRGAN_MODEL_FOR_ENGINE = {
+    "mandala-art":              "realesrgan-x4plus-anime",
+    "childrens-coloring-book":  "realesrgan-x4plus-anime",
+    "indian-classical":         "realesrgan-x4plus",
+    "noir-cinema":              "realesrgan-x4plus",
+    "wildlife-photo":           "realesrgan-x4plus",
+    "impressionist":            "realesrgan-x4plus",
+    "stylized-cinematic":       "realesrgan-x4plus-anime",
+}
+REALESRGAN_DEFAULT_MODEL = "realesrgan-x4plus"
+
 DEFAULT_SUBPROCESS_TIMEOUT_SEC = float(os.environ.get("FORGE_SUBPROCESS_TIMEOUT_SEC", "1800"))
 MFLUX_TIMEOUT_SEC = float(os.environ.get("FORGE_MFLUX_TIMEOUT_SEC", str(DEFAULT_SUBPROCESS_TIMEOUT_SEC)))
 MFLUX_HEARTBEAT_SEC = float(os.environ.get("FORGE_MFLUX_HEARTBEAT_SEC", "30"))
@@ -83,6 +103,78 @@ MFLUX_HEARTBEAT_SEC = float(os.environ.get("FORGE_MFLUX_HEARTBEAT_SEC", "30"))
 # ~25-50 % slower than int8 / int4 with near-zero quality loss for FLUX-dev. We default to int8
 # (FORGE_FLUX_QUANTIZE=8) — indistinguishable from fp16, ~25 % faster, ~12 GB. Set 4 for fast
 # iteration (~50 % faster, mild faces softening), 0 / "none" to force fp16.
+def _realesrgan_ready() -> tuple[bool, str]:
+    """Return (ready, note) for the bundled RealESRGAN binary + at least one model."""
+    if not REALESRGAN_BIN.exists():
+        return False, f"binary not found at {REALESRGAN_BIN} (run: forge upscale --install)"
+    if not os.access(REALESRGAN_BIN, os.X_OK):
+        return False, f"binary not executable at {REALESRGAN_BIN} (run: chmod +x {REALESRGAN_BIN})"
+    if not REALESRGAN_MODELS_DIR.exists() or not list(REALESRGAN_MODELS_DIR.glob("*.bin")):
+        return False, f"no models in {REALESRGAN_MODELS_DIR} (run: forge upscale --install)"
+    return True, ""
+
+
+def _upscale_image(src: Path, dst: Path, *, scale: int, model: str | None = None) -> None:
+    """Upscale src → dst by the given factor via realesrgan-ncnn-vulkan.
+
+    scale must be 2, 3, or 4 (binary's --scale flag). For 8× we chain a 4× then
+    a 2× pass via the caller — this helper only does one pass.
+    """
+    ready, note = _realesrgan_ready()
+    if not ready:
+        sys.exit(red(f"RealESRGAN unavailable: {note}"))
+    if scale not in (2, 3, 4):
+        sys.exit(red(f"upscale scale must be 2/3/4 (got {scale})"))
+    model_name = model or REALESRGAN_DEFAULT_MODEL
+    # The bundled binary's `realesrgan-x4plus` model produces 4× output regardless
+    # of -s; the -s flag is for the alternate animevideov3 models. So if scale!=4
+    # with an x4 model, we'd over-shoot. Pick the matching model per scale.
+    if scale != 4 and "x4plus" in model_name:
+        # Fallback to anime-video models for non-4x scales.
+        kind = "realesr-animevideov3"
+        model_name = f"{kind}-x{scale}"
+    cmd = [
+        str(REALESRGAN_BIN),
+        "-i", str(src),
+        "-o", str(dst),
+        "-s", str(scale),
+        "-n", model_name,
+        "-m", str(REALESRGAN_MODELS_DIR),
+    ]
+    dst.parent.mkdir(parents=True, exist_ok=True)
+    tmp = _register_tmp(_tmp_sibling(dst))
+    cmd[cmd.index("-o") + 1] = str(tmp)
+    print(dim(f"  · upscale {scale}× via {model_name}: {src.name} → {dst.name}"))
+    run_subprocess(cmd, check=True, timeout=300)
+    if not tmp.exists() or tmp.stat().st_size < 4096:
+        sys.exit(red(f"RealESRGAN produced no usable output at {tmp}"))
+    os.replace(tmp, dst)
+    _discard_tmp(tmp)
+
+
+def _upscale_to_factor(src: Path, dst: Path, *, factor: int, model: str | None = None) -> None:
+    """Upscale by 2/3/4/6/8/12/16× — chains multiple passes for non-native factors.
+
+    Native binary supports 2/3/4. For 8×, we do 4× then 2× (faster + cleaner than 2×2×2).
+    For 12×, 4× then 3×. For 16×, 4× then 4×.
+    """
+    if factor in (2, 3, 4):
+        _upscale_image(src, dst, scale=factor, model=model)
+        return
+    # Multi-pass chain
+    chain = {6: (3, 2), 8: (4, 2), 12: (4, 3), 16: (4, 4)}.get(factor)
+    if not chain:
+        sys.exit(red(f"unsupported upscale factor {factor}× — valid: 2, 3, 4, 6, 8, 12, 16"))
+    first, second = chain
+    intermediate = dst.with_name(dst.stem + f".pass1-x{first}.png")
+    _upscale_image(src, intermediate, scale=first, model=model)
+    try:
+        _upscale_image(intermediate, dst, scale=second, model=model)
+    finally:
+        with contextlib.suppress(Exception):
+            intermediate.unlink()
+
+
 _MFLUX_MIN_FREE_GB = float(os.environ.get("FORGE_MFLUX_MIN_FREE_GB", "20"))
 
 def _preflight_memory(label: str = "mflux") -> None:
