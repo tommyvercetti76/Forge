@@ -2733,6 +2733,12 @@ def cmd_engine_render(args) -> int:
     guidance_override = getattr(args, "guidance", None)
     if args.out:
         out_path = Path(args.out).expanduser().resolve()
+        # mflux auto-appends .png when the output path has no image extension,
+        # which mismatches with our temp-file naming + validation. Normalize
+        # to always carry .png so _tmp_sibling and validate_png see the same
+        # path mflux actually writes to.
+        if out_path.suffix.lower() not in {".png", ".jpg", ".jpeg"}:
+            out_path = out_path.with_suffix(out_path.suffix + ".png") if out_path.suffix else out_path.with_suffix(".png")
     else:
         slug = recipe_id or _slugify(subject)
         if seeds_n == 1:
@@ -3744,9 +3750,38 @@ def _du(path: Path) -> str:
 
 def cmd_models(args) -> int:
     sub = args.action
-    if sub in ("scan", "list"):
+    if sub in ("scan", "list", "locations"):
         print()
-        print(bold(f"~/Models  ({_du(MODELS_HOME)} total)"))
+        # Canonical model homes — top-level summary first so user sees the layout
+        # before any per-model detail. The point: one place to look for ANY model.
+        print(bold("MODEL HOMES"))
+        print(f"  {gold('~/Models/'):<24s}  canonical roof for every model (FLUX / Kokoro / LLMs / etc)")
+        print(f"  {gold('brand/loras/'):<24s}  project-local LoRA stacks per engine (Forge-specific, version-controlled)")
+        print(f"  {gold('~/.sarvam/key'):<24s}  Sarvam Bulbul API key (cloud TTS for Indic narration)")
+        print(f"  {gold('~/.ollama/'):<24s}  Ollama LLM models (qwen3, sarvam-translate, etc — Ollama-managed)")
+        print()
+
+        # HF env var state — critical for `hf download` from the user's shell
+        shell_hf = os.environ.get("HF_HOME", "")
+        forge_hf = str(HF_HOME)
+        print(bold("HF_HOME env var"))
+        if shell_hf == forge_hf:
+            print(f"  {green('✓')} HF_HOME={shell_hf} (matches Forge canonical)")
+        elif shell_hf:
+            print(f"  {yellow('⚠')} HF_HOME={shell_hf}")
+            print(f"  {dim('  Forge expects:')} {forge_hf}")
+            print(f"  {dim('  hf download → may land in the wrong place. Update your shell or use --local-dir.')}")
+        else:
+            print(f"  {red('✗')} HF_HOME is NOT exported in your shell")
+            print(f"  {dim('  Forge child processes (mflux, etc) still find models — Forge sets HF_HOME itself.')}")
+            print(f"  {dim('  But `hf download` from your shell goes to ~/.cache/huggingface instead of ~/Models.')}")
+            print(f"  {dim('  Fix: add to ~/.zshrc:')}")
+            print(f"  {gold(f'    export HF_HOME={forge_hf}')}")
+            print(f"  {gold(f'    export HF_HUB_CACHE={forge_hf}/hub')}")
+
+        # Per-bucket disk usage
+        print()
+        print(bold(f"~/Models/  ({_du(MODELS_HOME)} total)"))
         layout = [
             ("ollama",       "GGUF for Ollama"),
             ("huggingface",  "mflux / Whisper / MLX"),
@@ -3757,6 +3792,21 @@ def cmd_models(args) -> int:
             p = MODELS_HOME / sub_name
             mark = green("✓") if p.exists() and any(p.iterdir()) else dim("·")
             print(f"  {mark} {sub_name:14s} {_du(p):>8s}  {dim(label)}")
+
+        # Project-local LoRAs (in brand/loras/)
+        loras_dir = LORAS_DIR
+        if loras_dir.exists():
+            print()
+            print(bold(f"brand/loras/  ({_du(loras_dir)} total)"))
+            for sub_dir in sorted(loras_dir.iterdir()):
+                if not sub_dir.is_dir():
+                    continue
+                safetensors = sorted(sub_dir.glob("*.safetensors"), key=lambda p: p.stat().st_size, reverse=True)
+                if safetensors:
+                    main = safetensors[0]
+                    print(f"  {green('✓')} {sub_dir.name:24s} {_du(main):>8s}  {dim(main.name)}")
+                else:
+                    print(f"  {dim('·')} {sub_dir.name:24s} {dim('empty')}")
 
         # Stragglers
         stragglers = []
