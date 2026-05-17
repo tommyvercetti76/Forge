@@ -2359,10 +2359,10 @@ const specs = {
       {name:"_s2", label:"TRADITION", type:"section", hint:"Each tradition has its own visual language. Madhubani = double-line borders + huge eyes + flat saturated colors. Warli = monochrome white-on-brown stick figures. Tanjore = gold-leaf hieratic deity panels. Pahari = delicate jewel-tone miniature. Ravi Varma = European-realist oleograph naturalism."},
       {name:"ic_tradition", label:"Tradition", type:"select", options:"icTraditions", value:"madhubani"},
 
-      {name:"_s3", label:"COMPOSITION", type:"section", hint:"How the figures are arranged. Hieratic-centered = one deity at center, attendants smaller around. Narrative-multi-figure = scene unfolds across the canvas. Lyric-intimate = two-figure close composition. Cosmic-cosmic = vast cosmological multi-scale."},
-      {name:"ic_composition", label:"Composition", type:"select", options:"icCompositions", value:"hieratic-centered"},
-      {name:"ic_mudra", label:"Mudra / pose", type:"select", options:"icMudras", value:"abhaya"},
-      {name:"ic_ground", label:"Ground / setting", type:"select", options:"icGrounds", value:"madhubani-paper"},
+      {name:"_s3", label:"COMPOSITION (from-prompt = let prompt decide)", type:"section", hint:"Leave any of these as 'from-prompt' and the engine won't override your text. Pick an explicit value only when you want to anchor that aspect — e.g. force a specific mudra regardless of prompt."},
+      {name:"ic_composition", label:"Composition", type:"select", options:"icCompositions", value:"from-prompt"},
+      {name:"ic_mudra", label:"Mudra / pose", type:"select", options:"icMudras", value:"from-prompt"},
+      {name:"ic_ground", label:"Ground / setting", type:"select", options:"icGrounds", value:"from-prompt"},
 
       {name:"_s4", label:"RENDER", type:"section", hint:"Defaults render at 1280×720. Use --seeds 4 to get a best-of-4 contact sheet. Refine adds a low-denoise micro-detail pass."},
       {name:"seeds", label:"Variants", type:"number", value:"1"},
@@ -2382,10 +2382,10 @@ const specs = {
       {name:"subject", label:"Prompt — what to mandalize", type:"textarea", required:true, value:"a humpback whale"},
       {name:"recipe", label:"Recipe (optional shortcut)", type:"select", options:"recipesMandala"},
       {name:"ma_tradition", label:"Tradition", type:"select", options:"maTraditions", value:"zentangle-organic"},
-      {name:"ma_treatment", label:"Treatment", type:"select", options:"maTreatments", value:"subject-silhouette-filled"},
-      {name:"ma_symmetry", label:"Symmetry", type:"select", options:"maSymmetries", value:"bilateral"},
-      {name:"ma_complexity", label:"Complexity", type:"select", options:"maComplexity", value:"medium-adult"},
-      {name:"ma_border", label:"Border", type:"select", options:"maBorders", value:"freeform-bleed"},
+      {name:"ma_treatment", label:"Treatment (from-prompt = let prompt decide)", type:"select", options:"maTreatments", value:"from-prompt"},
+      {name:"ma_symmetry", label:"Symmetry (from-prompt = let prompt decide)", type:"select", options:"maSymmetries", value:"from-prompt"},
+      {name:"ma_complexity", label:"Complexity (from-prompt = let prompt decide)", type:"select", options:"maComplexity", value:"from-prompt"},
+      {name:"ma_border", label:"Border (from-prompt = let prompt decide)", type:"select", options:"maBorders", value:"from-prompt"},
       {name:"seeds", label:"Variants", type:"number", value:"1"},
       {name:"seed", label:"Seed", type:"number", value:"1"},
       {name:"guidance", label:"Guidance", type:"number", value:"7.5"},
@@ -2786,16 +2786,16 @@ function optionsFor(field) {
   if (field.options === "cbProps") return ["no-prop", "balloon", "teacup-and-saucer", "picnic-basket", "storybook-open", "paper-boat", "flower-bouquet", "lantern-glowing", "kite-and-string", "steel-thali-of-seed", "bird-feeder-tube", "chai-cup-and-saucer", "rocking-chair-side"].map(v => ({value:v, label:v}));
   // Mandala-art enums (mirror bin/style_engines.py)
   if (field.options === "maTraditions") return ["zentangle-organic", "sacred-geometry", "henna-mehndi", "madhubani-mandala", "floral-art-nouveau"].map(v => ({value:v, label:v}));
-  if (field.options === "maTreatments") return ["subject-silhouette-filled", "subject-at-center-rings", "subject-radial-composed", "subject-emerging-mandala"].map(v => ({value:v, label:v}));
-  if (field.options === "maSymmetries") return ["bilateral", "4-fold-rotational", "6-fold-rotational", "8-fold-rotational", "12-fold-rotational", "16-fold-rotational", "kaleidoscope"].map(v => ({value:v, label:v}));
-  if (field.options === "maComplexity") return ["medium-adult", "high-meditation", "extreme-zentangle"].map(v => ({value:v, label:v}));
-  if (field.options === "maBorders") return ["concentric-rings", "outer-frame-square", "freeform-bleed", "hexagonal-frame"].map(v => ({value:v, label:v}));
+  if (field.options === "maTreatments") return [{value:"from-prompt", label:"(from prompt — let your text decide)"}, ...["subject-silhouette-filled", "subject-at-center-rings", "subject-radial-composed", "subject-emerging-mandala"].map(v => ({value:v, label:v}))];
+  if (field.options === "maSymmetries") return [{value:"from-prompt", label:"(from prompt — let your text decide)"}, ...["bilateral", "4-fold-rotational", "6-fold-rotational", "8-fold-rotational", "12-fold-rotational", "16-fold-rotational", "kaleidoscope"].map(v => ({value:v, label:v}))];
+  if (field.options === "maComplexity") return [{value:"from-prompt", label:"(from prompt — let your text decide)"}, ...["medium-adult", "high-meditation", "extreme-zentangle"].map(v => ({value:v, label:v}))];
+  if (field.options === "maBorders") return [{value:"from-prompt", label:"(from prompt — let your text decide)"}, ...["concentric-rings", "outer-frame-square", "freeform-bleed", "hexagonal-frame"].map(v => ({value:v, label:v}))];
   // Indian-classical (folk) enums (mirror bin/style_engines.py)
   if (field.options === "recipesIndian") return [{value:"", label:"(write your own prompt)"}, ...((cfg.recipes || []).filter(r => r.engine === "indian-classical").map(r => ({value:r.id, label:r.id})))];
   if (field.options === "icTraditions") return ["madhubani", "warli", "tanjore", "pahari-miniature", "ravi-varma-oleograph"].map(v => ({value:v, label:v}));
-  if (field.options === "icMudras") return ["abhaya", "varada", "dhyana", "vitarka", "anjali", "tribhanga-flute"].map(v => ({value:v, label:v}));
-  if (field.options === "icGrounds") return ["madhubani-paper", "warli-mud-wall", "warli-tarpa-circle", "temple-interior", "forest-grove", "river-bank-yamuna", "cosmic-water", "celestial-sky", "village-pastoral"].map(v => ({value:v, label:v}));
-  if (field.options === "icCompositions") return ["hieratic-centered", "narrative-multi-figure", "lyric-intimate", "cosmic-cosmic"].map(v => ({value:v, label:v}));
+  if (field.options === "icMudras") return [{value:"from-prompt", label:"(from prompt — let your text decide)"}, ...["abhaya", "varada", "dhyana", "vitarka", "anjali", "tribhanga-flute"].map(v => ({value:v, label:v}))];
+  if (field.options === "icGrounds") return [{value:"from-prompt", label:"(from prompt — let your text decide)"}, ...["madhubani-paper", "warli-mud-wall", "warli-tarpa-circle", "temple-interior", "forest-grove", "river-bank-yamuna", "cosmic-water", "celestial-sky", "village-pastoral"].map(v => ({value:v, label:v}))];
+  if (field.options === "icCompositions") return [{value:"from-prompt", label:"(from prompt — let your text decide)"}, ...["hieratic-centered", "narrative-multi-figure", "lyric-intimate", "cosmic-cosmic"].map(v => ({value:v, label:v}))];
   return (cfg[field.options] || []).map(v => ({value:v, label:v}));
 }
 

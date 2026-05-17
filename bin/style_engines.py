@@ -1065,6 +1065,10 @@ _IC_TRADITION = EnumBank("tradition", [
 
 _IC_MUDRA = EnumBank("mudra", [
     EnumValue(
+        "from-prompt",
+        "(no mudra template — the user's free-form prompt sets the pose)",
+    ),
+    EnumValue(
         "abhaya",
         "Abhaya mudra (gesture of fearlessness/protection): right hand raised, palm "
         "facing outward at shoulder height, fingers extended upward. Conveys divine "
@@ -1100,6 +1104,10 @@ _IC_MUDRA = EnumBank("mudra", [
 ])
 
 _IC_GROUND = EnumBank("ground", [
+    EnumValue(
+        "from-prompt",
+        "(no ground template — the user's free-form prompt describes the setting)",
+    ),
     EnumValue("temple-interior",     "Temple interior with stone columns, oil-lamp glow, garlanded shrine in background."),
     EnumValue("forest-grove",        "Sacred forest grove with kadamba/peepal trees, dappled sunlight, occasional peacock or cow at edge."),
     EnumValue("river-bank-yamuna",   "Yamuna river bank at dawn or dusk, lotus pond foreground, blue water meeting saffron sky."),
@@ -1112,6 +1120,10 @@ _IC_GROUND = EnumBank("ground", [
 ])
 
 _IC_COMPOSITION = EnumBank("composition", [
+    EnumValue(
+        "from-prompt",
+        "(no composition template — the user's free-form prompt drives layout)",
+    ),
     EnumValue(
         "hieratic-centered",
         "Subject deity centered, large in frame (occupies 60%+ of vertical axis), "
@@ -1142,13 +1154,16 @@ _IC_COMPOSITION = EnumBank("composition", [
 @dataclass(frozen=True)
 class ICSubjectConfig:
     subject: str                            # e.g. "Krishna playing flute by the Yamuna at dawn"
-    mudra: str = "tribhanga-flute"
-    composition: str = "lyric-intimate"
+    # Defaults are 'from-prompt' — the engine skips the mudra/composition
+    # blocks unless the user picks a real value. Pick explicit values only
+    # when you want to ANCHOR that aspect.
+    mudra: str = "from-prompt"
+    composition: str = "from-prompt"
 
 @dataclass(frozen=True)
 class ICStyleConfig:
     tradition: str = "ravi-varma-oleograph"
-    ground: str = "river-bank-yamuna"
+    ground: str = "from-prompt"
 
 @dataclass(frozen=True)
 class IndianClassicalConfig:
@@ -1201,12 +1216,12 @@ class IndianClassicalEngine(Engine):
         comp = cls.COMPOSITION.validate(sub.composition)
 
         # Invariant: Warli tradition uses simple geometric figures — no detailed mudra
-        if st.tradition == "warli" and sub.mudra != "anjali":
-            # Warli stylistically incompatible with detailed mudras
+        # 'from-prompt' is OK because no mudra block gets injected; 'anjali' is OK too.
+        if st.tradition == "warli" and sub.mudra not in ("anjali", "from-prompt"):
             raise ValueError(
                 "invariant: Warli tradition uses geometric stick-figure forms — "
-                "detailed mudras (other than the simplest anjali) cannot be rendered "
-                "in this style. Either pick a different tradition or use mudra=anjali."
+                "detailed mudras cannot be rendered in this style. Either pick a "
+                "different tradition, set mudra=anjali, or leave mudra=from-prompt."
             )
 
         clean_subject = normalize_subject(sub.subject)
@@ -1218,18 +1233,23 @@ class IndianClassicalEngine(Engine):
             "composition": comp.description,
         }
 
-        prompt = "\n\n".join([
+        # Conditionally inject mudra / ground / composition only when the user
+        # picked an explicit value. 'from-prompt' means "let the user's text decide".
+        prompt_parts = [
             f"GENRE: classical Indian devotional illustration in the {tradition.key} "
             f"tradition. {tradition.description}",
 
             assemble_masters_line(cls.masters),
 
             f"SUBJECT: {clean_subject}.",
-
-            f"ICONOGRAPHY — MUDRA / POSE: {mudra.description}",
-            f"GROUND / SETTING: {ground.description}",
-            f"COMPOSITION: {comp.description}",
-
+        ]
+        if mudra.key != "from-prompt":
+            prompt_parts.append(f"ICONOGRAPHY — MUDRA / POSE: {mudra.description}")
+        if ground.key != "from-prompt":
+            prompt_parts.append(f"GROUND / SETTING: {ground.description}")
+        if comp.key != "from-prompt":
+            prompt_parts.append(f"COMPOSITION: {comp.description}")
+        prompt_parts.extend([
             "PALETTE: 60% deep-blue Krishna/Vishnu/temple blue (#1E5A7E), 30% "
             "saffron-gold marigold complement (#D4A04C), 10% deep-red sindoor/lotus "
             "accent (#9C2A2A). Traditional triad — DO NOT add Western pastels, neon, "
@@ -1243,6 +1263,7 @@ class IndianClassicalEngine(Engine):
             "Western cartoon cute eyes, NO 3D-render look. The image should feel "
             "like it could hang in a household puja room — sacred, not novelty.",
         ])
+        prompt = "\n\n".join(prompt_parts)
 
         return Directive(
             engine=cls.name,
@@ -2022,6 +2043,10 @@ _MA_TRADITION = EnumBank("tradition", [
 
 _MA_TREATMENT = EnumBank("treatment", [
     EnumValue(
+        "from-prompt",
+        "(no treatment template — the user's free-form prompt decides how subject relates to the mandala)",
+    ),
+    EnumValue(
         "subject-silhouette-filled",
         "The subject is a clear silhouette / outline, and the INTERIOR of that "
         "outline is filled with intricate mandala patterns. Outside the subject's "
@@ -2052,6 +2077,10 @@ _MA_TREATMENT = EnumBank("treatment", [
 ])
 
 _MA_SYMMETRY = EnumBank("symmetry", [
+    EnumValue(
+        "from-prompt",
+        "(no symmetry template — the user's free-form prompt sets the symmetry)",
+    ),
     EnumValue(
         "bilateral",
         "Bilateral (left-right mirror) symmetry only. Best when the subject is "
@@ -2092,6 +2121,10 @@ _MA_SYMMETRY = EnumBank("symmetry", [
 
 _MA_COMPLEXITY = EnumBank("complexity", [
     EnumValue(
+        "from-prompt",
+        "(no complexity template — the user's free-form prompt sets the density)",
+    ),
+    EnumValue(
         "medium-adult",
         "Medium complexity: ~30-60 distinct closed regions. Balance between "
         "detail and colorability. Pleasant for an adult coloring session of "
@@ -2112,6 +2145,10 @@ _MA_COMPLEXITY = EnumBank("complexity", [
 ])
 
 _MA_BORDER = EnumBank("border", [
+    EnumValue(
+        "from-prompt",
+        "(no border template — the user's free-form prompt sets the frame)",
+    ),
     EnumValue(
         "concentric-rings",
         "Multiple concentric circular borders around the central mandala, each "
@@ -2140,17 +2177,17 @@ _MA_BORDER = EnumBank("border", [
 @dataclass(frozen=True)
 class MASubjectConfig:
     subject: str                              # e.g. "whale", "lion head", "lotus", "tree of life"
-    treatment: str = "subject-silhouette-filled"
+    treatment: str = "from-prompt"
 
 @dataclass(frozen=True)
 class MAStyleConfig:
-    tradition: str = "zentangle-organic"
-    complexity: str = "high-meditation"
-    symmetry: str = "bilateral"
+    tradition: str = "zentangle-organic"      # genuinely affects visual register; keep explicit default
+    complexity: str = "from-prompt"
+    symmetry: str = "from-prompt"
 
 @dataclass(frozen=True)
 class MACompositionConfig:
-    border: str = "concentric-rings"
+    border: str = "from-prompt"
 
 @dataclass(frozen=True)
 class MandalaArtConfig:
@@ -2223,7 +2260,7 @@ class MandalaArtEngine(Engine):
         complexity = cls.COMPLEXITY.validate(st.complexity)
         border = cls.BORDER.validate(cmp.border)
 
-        # Invariant: subject-radial-composed needs rotational symmetry, not bilateral.
+        # Invariants only fire when both knobs are explicitly chosen (not 'from-prompt').
         if sub.treatment == "subject-radial-composed" and st.symmetry == "bilateral":
             raise ValueError(
                 "invariant: treatment=subject-radial-composed needs rotational symmetry "
@@ -2232,7 +2269,6 @@ class MandalaArtEngine(Engine):
                 "Pick a rotational symmetry, OR change treatment to "
                 "subject-silhouette-filled / subject-at-center-rings."
             )
-        # Invariant: sacred-geometry tradition reads best with rotational symmetry, not bilateral.
         if st.tradition == "sacred-geometry" and st.symmetry == "bilateral":
             raise ValueError(
                 "invariant: sacred-geometry tradition is rotational by construction "
@@ -2269,7 +2305,7 @@ class MandalaArtEngine(Engine):
             "are SACRED — patterns SUPPORT them, never overwhelm. At 150px "
             f"thumbnail the image must still read instantly as {clean_subject}.",
 
-            f"TREATMENT: {treatment.description}",
+            *(["TREATMENT: " + treatment.description] if treatment.key != "from-prompt" else []),
 
             "DENSITY — BE SPATIAL: leave AT LEAST 60% of the canvas as PURE "
             "WHITE PAPER. Specifically: the subject's BELLY / LOWER UNDERSIDE "
@@ -2318,15 +2354,13 @@ class MandalaArtEngine(Engine):
             "patterns — never a pattern sheet shaped like a subject. NOT "
             "chaotic, NOT anxious, NOT over-rendered.",
 
-            f"SYMMETRY: {symmetry.description} Overall balance is mandatory; "
-            "organic asymmetric variation within the symmetry is welcomed — "
-            "natural forms are never robotic-mirror-perfect.",
+            *(["SYMMETRY: " + symmetry.description + " Overall balance is mandatory; organic asymmetric variation within the symmetry is welcomed — natural forms are never robotic-mirror-perfect."] if symmetry.key != "from-prompt" else []),
 
-            f"COMPLEXITY TIER: {complexity.description}",
+            *(["COMPLEXITY TIER: " + complexity.description] if complexity.key != "from-prompt" else []),
 
             f"DECORATIVE TRADITION: {tradition.key} — {tradition_short}",
 
-            f"OUTER BORDER / FRAME: {border.description}",
+            *(["OUTER BORDER / FRAME: " + border.description] if border.key != "from-prompt" else []),
 
             "LINE DISCIPLINE: VARIED line weights (thickest at silhouette, "
             "finest at micro-detail). Technical-pen ink feel, clean closed "
