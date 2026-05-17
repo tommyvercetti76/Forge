@@ -338,10 +338,12 @@ class NoirCinematographyEngine(Engine):
         "smooth digital cartoon shading", "pastel color grading",
         "anime stylization", "Disney proportions",
     )
-    # Curated LoRAs per brand/loras/README.md.
+    # Curated LoRAs per brand/loras/README.md. Paths are directory names —
+    # the resolver auto-picks the largest .safetensors inside each dir, so
+    # HF's actual filenames (which we don't control) don't matter.
     default_lora_stack: ClassVar[tuple[tuple[str, float], ...]] = (
-        ("film-noir/flux-lora-film-noir.safetensors", 0.85),
-        ("add-details/add-details.safetensors", 0.50),
+        ("film-noir", 0.85),
+        ("add-details", 0.50),
     )
     SUBGENRE = _NOIR_SUBGENRE
     KEY_LIGHT = _NOIR_KEY_LIGHT
@@ -655,8 +657,8 @@ class WildlifePhotorealismEngine(Engine):
     # Curated LoRAs per brand/loras/README.md — the verified-best stack for
     # photo-realism. flux-RealismLora is the most-downloaded FLUX LoRA (15k+).
     default_lora_stack: ClassVar[tuple[tuple[str, float], ...]] = (
-        ("realism-xlabs/lora.safetensors", 0.80),
-        ("add-details/add-details.safetensors", 0.50),
+        ("realism-xlabs", 0.80),
+        ("add-details", 0.50),
     )
     LENS = _WILD_LENS
     LIGHT = _WILD_LIGHT
@@ -919,7 +921,7 @@ class ImpressionistPaintingEngine(Engine):
     # Only Van Gogh has a curated FLUX LoRA — the engine's own master citations
     # plus this LoRA push toward authentic post-impressionist register.
     default_lora_stack: ClassVar[tuple[tuple[str, float], ...]] = (
-        ("van-gogh/lora.safetensors", 0.85),
+        ("van-gogh", 0.85),
     )
     MASTER = _IMP_MASTER
     VG_PERIOD = _IMP_VAN_GOGH_PERIOD
@@ -1182,7 +1184,7 @@ class IndianClassicalEngine(Engine):
     # Indo-Realism pulls toward Indian visual idiom even though it's not
     # tradition-specific. See BRAND-LORA.md for training a per-tradition LoRA.
     default_lora_stack: ClassVar[tuple[tuple[str, float], ...]] = (
-        ("indo-realism/lora.safetensors", 0.70),
+        ("indo-realism", 0.70),
     )
     TRADITION = _IC_TRADITION
     MUDRA = _IC_MUDRA
@@ -1755,7 +1757,7 @@ class ChildrensColoringBookEngine(Engine):
     # (the more-downloaded, conservative one). The engine's prompt already
     # contains "coloring book page" so the trigger phrase is honoured.
     default_lora_stack: ClassVar[tuple[tuple[str, float], ...]] = (
-        ("coloring-book-prithiv/lora.safetensors", 0.80),
+        ("coloring-book-prithiv", 0.80),
     )
     engine_negatives: ClassVar[tuple[str, ...]] = (
         "photorealism", "photographic detail", "complex shading", "gradient fill",

@@ -2755,7 +2755,20 @@ def cmd_engine_render(args) -> int:
         missing_loras: list[str] = []
         for rel_path, scale in getattr(eng_cls, "default_lora_stack", ()) or ():
             abs_path = LORAS_DIR / rel_path
-            if abs_path.exists():
+            # If the declared entry is a directory (the HF download target),
+            # auto-pick the largest .safetensors inside. HF preserves upstream
+            # filenames so we can't hardcode the actual filename — but we can
+            # rely on each LoRA repo having one main weights file in the dir
+            # the user downloaded into.
+            if abs_path.is_dir():
+                candidates = sorted(
+                    abs_path.glob("*.safetensors"),
+                    key=lambda p: p.stat().st_size,
+                    reverse=True,
+                )
+                if candidates:
+                    abs_path = candidates[0]
+            if abs_path.exists() and abs_path.is_file():
                 engine_loras.append(str(abs_path.resolve()))
                 engine_lora_scales.append(float(scale))
             else:
