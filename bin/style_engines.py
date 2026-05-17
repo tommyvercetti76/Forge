@@ -1815,6 +1815,15 @@ class ChildrensColoringBookEngine(Engine):
         "anatomically wrong limbs", "extra fingers", "fused fingers", "extra toes",
         "AI glow", "halation glow", "soft focus haze", "milky highlight glow",
         "watercolor smudge", "ink wash", "ink bleed",
+        # Line-quality killers (same set that fixed mandala-art)
+        "pencil sketch", "pencil grain", "graphite shading",
+        "sketchy line", "uncertain line", "wavering stroke", "wandering stroke",
+        "double-stroke", "parallel hatching", "cross-hatching", "scribbled fill",
+        "halftone dots", "stipple shading", "dotted noise", "speckled noise",
+        "paper texture noise", "grain texture", "AI grain", "film grain",
+        "JPEG artifact", "moire pattern", "compression artifact",
+        "off-white paper", "yellowed paper", "aged paper", "vignette",
+        "soft fuzzy edges", "blurred contour", "anti-aliased fuzz",
         "watermark", "signature", "artist tag", "text overlay", "page number",
         "rough sketch", "scribble", "messy broken lines", "discontinuous outlines",
         "thin spider-web lines", "wavering uncertain line",
@@ -1957,15 +1966,36 @@ class ChildrensColoringBookEngine(Engine):
 
             f"DRAWING STYLE: {tradition.key} — {tradition_short}",
 
-            "LINE-ART RULES: closed continuous outlines; uniform line weight "
-            f"({age.key}-appropriate); PURE WHITE backgrounds (no grey/black fill); "
-            "texture only as sparse edge marks (NEVER interior hatching); "
-            "simple eyes — NEVER manga giant-eye sparkle, NEVER realistic irises; "
-            "no fangs, no snarls, no predatory expression. NO photorealism, "
-            "NO 3D-render, NO AI-glow halo, NO watercolor wash. ABSOLUTELY MONOCHROME.",
+            "LINE-ART RULES: every contour is a SINGLE confident technical-pen "
+            "ink stroke — NOT a pencil sketch, NOT multiple parallel try-lines, "
+            "NOT cross-hatched shading. Uniform line weight "
+            f"({age.key}-appropriate). Each individual stroke is crisp, "
+            "unbroken, closed. The line is vector-grade — a printer could lay "
+            "this down as solid black ink at any resolution. No grain, no "
+            "jitter, no fuzz, no halation around the line. PURE WHITE "
+            "backgrounds (no grey/black fill, no off-white, no paper texture, "
+            "no halftone dots). Texture only as sparse edge marks (NEVER "
+            "interior hatching). Simple eyes — NEVER manga giant-eye sparkle, "
+            "NEVER realistic irises; no fangs, no snarls, no predatory "
+            "expression. NO photorealism, NO 3D-render, NO AI-glow halo, NO "
+            "watercolor wash, NO pencil shading. ABSOLUTELY MONOCHROME.",
+
+            "PAPER QUALITY: the white background is RGB pure-white (#FFFFFF) "
+            "edge-to-edge — NOT off-white, NOT cream, NOT yellowed, NOT "
+            "textured paper, NOT noisy/grainy, NOT halftone-dotted. Print-"
+            "ready vector feel: as if scanned at 600dpi from a clean inked "
+            "original.",
 
             "PAGE FORMAT: white background edge-to-edge, ~10% margin, NO frame, "
             "NO border, NO watermark, NO text overlay, NO page number.",
+
+            "REFERENCE STANDARD: match the production quality of professional "
+            "children's coloring books — Mo Willems 'Don't Let the Pigeon...' "
+            "(2003+), Sandra Boynton 'Moo Baa La La La' (1982), Eric Carle "
+            "'Hungry Caterpillar' (1969), and the Dover Creative Haven kids' "
+            "series: every stroke deliberate, every region closed, age-"
+            "appropriate density honoured, character anatomy preserved + "
+            "recognizable at thumbnail size, ALWAYS gentle / never scary.",
         ])
         prompt = "\n\n".join(p for p in prompt_parts if p)
 

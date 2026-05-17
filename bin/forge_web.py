@@ -325,6 +325,7 @@ def build_command(action: str, payload: dict[str, Any]) -> tuple[list[str], list
         _add(cmd, "--from-image-strength", payload.get("from_image_strength"))
         _add_bool(cmd, "--draft", payload.get("draft"))
         _add(cmd, "--profile", payload.get("profile"))
+        _add(cmd, "--quantize", payload.get("quantize"))
         _add_bool(cmd, "--no-default-loras", payload.get("no_default_loras"))
         _add(cmd, "--out", payload.get("out"))
         engine_name = str(payload.get("name") or "").strip()
@@ -363,6 +364,7 @@ def build_command(action: str, payload: dict[str, Any]) -> tuple[list[str], list
         _add(cmd, "--from-image-strength", payload.get("from_image_strength"))
         _add_bool(cmd, "--draft", payload.get("draft"))
         _add(cmd, "--profile", payload.get("profile"))
+        _add(cmd, "--quantize", payload.get("quantize"))
         _add_bool(cmd, "--no-default-loras", payload.get("no_default_loras"))
         _add(cmd, "--out", payload.get("out"))
     elif action == "indian-folk-page":
@@ -390,6 +392,7 @@ def build_command(action: str, payload: dict[str, Any]) -> tuple[list[str], list
         _add(cmd, "--from-image-strength", payload.get("from_image_strength"))
         _add_bool(cmd, "--draft", payload.get("draft"))
         _add(cmd, "--profile", payload.get("profile"))
+        _add(cmd, "--quantize", payload.get("quantize"))
         _add_bool(cmd, "--no-default-loras", payload.get("no_default_loras"))
         _add(cmd, "--out", payload.get("out"))
     elif action == "mandala-art-page":
@@ -418,6 +421,7 @@ def build_command(action: str, payload: dict[str, Any]) -> tuple[list[str], list
         _add(cmd, "--from-image-strength", payload.get("from_image_strength"))
         _add_bool(cmd, "--draft", payload.get("draft"))
         _add(cmd, "--profile", payload.get("profile"))
+        _add(cmd, "--quantize", payload.get("quantize"))
         _add_bool(cmd, "--no-default-loras", payload.get("no_default_loras"))
         _add(cmd, "--out", payload.get("out"))
     elif action == "stylized-cinematic-page":
@@ -446,6 +450,7 @@ def build_command(action: str, payload: dict[str, Any]) -> tuple[list[str], list
         _add(cmd, "--from-image-strength", payload.get("from_image_strength"))
         _add_bool(cmd, "--draft", payload.get("draft"))
         _add(cmd, "--profile", payload.get("profile"))
+        _add(cmd, "--quantize", payload.get("quantize"))
         _add_bool(cmd, "--no-default-loras", payload.get("no_default_loras"))
         _add(cmd, "--out", payload.get("out"))
     elif action == "edit":
@@ -2512,6 +2517,7 @@ const specs = {
       {name:"width", label:"Width override (px)", type:"number"},
       {name:"height", label:"Height override (px)", type:"number"},
       {name:"refine_strength", label:"Refine strength (only if Refine is on)", type:"number", value:"0.25"},
+      {name:"quantize", label:"Quantize (FLUX weight precision — speed vs quality)", type:"select", options:"quantizeOptions"},
       {name:"negative", label:"Extra negative terms (comma-sep)", type:"text"},
 
       {name:"out", label:"Output path", type:"path"}
@@ -2550,6 +2556,7 @@ const specs = {
       {name:"width", label:"Width override (px)", type:"number"},
       {name:"height", label:"Height override (px)", type:"number"},
       {name:"refine_strength", label:"Refine strength (only if Refine is on)", type:"number", value:"0.25"},
+      {name:"quantize", label:"Quantize (FLUX weight precision — speed vs quality)", type:"select", options:"quantizeOptions"},
       {name:"negative", label:"Extra negative terms (comma-sep)", type:"text"},
 
       {name:"out", label:"Output path", type:"path"}
@@ -2582,6 +2589,7 @@ const specs = {
       {name:"width", label:"Width override (px)", type:"number"},
       {name:"height", label:"Height override (px)", type:"number"},
       {name:"refine_strength", label:"Refine strength (only if Refine is on)", type:"number", value:"0.25"},
+      {name:"quantize", label:"Quantize (FLUX weight precision — speed vs quality)", type:"select", options:"quantizeOptions"},
       {name:"negative", label:"Extra negative terms (comma-sep)", type:"text"},
 
       {name:"out", label:"Output path", type:"path"}
@@ -2620,6 +2628,7 @@ const specs = {
       {name:"width", label:"Width override (px)", type:"number"},
       {name:"height", label:"Height override (px)", type:"number"},
       {name:"refine_strength", label:"Refine strength (only if Refine is on)", type:"number", value:"0.25"},
+      {name:"quantize", label:"Quantize (FLUX weight precision — speed vs quality)", type:"select", options:"quantizeOptions"},
       {name:"negative", label:"Extra negative terms (comma-sep)", type:"text"},
 
       {name:"out", label:"Output path", type:"path"}
@@ -2996,6 +3005,7 @@ const FIELD_HELP = {
   sc_sky_state: "Sky as a character. clear-blue = smooth gradient. partly-cumulus = friendly cotton-puff sky. dramatic-cumulus = vertical stacks with crepuscular rays. cirrus-streak = high wispy ice clouds. overcast-blanket = featureless soft-shadow sky. sunset-pastel = magenta + amber gradient. starfield-rural / milky-way-band = deep-sky astronomy. aurora-curtain = green/magenta high-latitude. stormy-cloud-anvil = anvil-headed cumulonimbus.",
   sc_twinkles: "Small light sources. none = subject + major light only. scattered-fireflies = 8-20 warm-yellow specks. distant-city-lights = pin-prick window-lights at horizon. candle-cluster = warm 1850K candle flames. fairy-lights-string = even-spaced warm-white dots. lantern-cluster = paper lanterns (Diwali / Mid-Autumn register). sparse-stars = 30-80 visible stars (early evening). dense-star-field = 200+ stars (rural deep sky). bioluminescent-water = blue-green plankton glow.",
   sc_atmosphere: "Air medium. clear-dry = sharp colors + distance visibility. fog-low = ground-level dense fog, mystery+isolation register. mist-mid = waist-to-head-height mist, painterly depth (Ghibli classic). rain-streak = diagonal rain lines + wet surfaces. smoke-haze = warm-tinted hanging smoke (urban / fire / cigar register). dust-mote = floating particles caught in light shafts. snow-fall = active snowflakes + breath-puffs. volumetric-shaft = visible god-rays through windows / canopy / barn doors.",
+  quantize: "mflux model weight quantization (Apple Silicon). Lower bits = lower RAM + slightly faster. Default q8 is indistinguishable from fp16. q4 is ~10 % faster on M5 Max with mild face softening. q0 forces full fp16 (max quality, slowest, ~24 GB). Set FORGE_FLUX_QUANTIZE env var to change the default for all renders. NOTE: weight quantization is NOT the big speed lever on Apple Silicon — the activations stay fp16. The big levers are step count + resolution + schnell vs dev.",
   no_default_loras: "By default, each engine auto-applies its curated LoRA stack (see brand/loras/README.md) — RealismLora + add-details for wildlife, film-noir + add-details for noir-cinema, Coloring-Book LoRA for childrens-coloring-book, Van Gogh for impressionist, Indo-Realism for indian-classical. Check this box to render WITHOUT them (vanilla FLUX) — useful for A/B comparison or when iterating on a new prompt without LoRA bias. Engines without curated picks (mandala-art) ignore this flag.",
 };
 
@@ -3037,6 +3047,16 @@ function optionsFor(field) {
   if (field.options === "scSkyStates") return [{value:"from-prompt", label:"(from prompt — let your text decide)"}, ...["clear-blue", "partly-cumulus", "dramatic-cumulus", "cirrus-streak", "overcast-blanket", "sunset-pastel", "starfield-rural", "milky-way-band", "aurora-curtain", "stormy-cloud-anvil"].map(v => ({value:v, label:v}))];
   if (field.options === "scTwinkles") return [{value:"from-prompt", label:"(from prompt — let your text decide)"}, ...["none", "scattered-fireflies", "distant-city-lights", "candle-cluster", "fairy-lights-string", "lantern-cluster", "sparse-stars", "dense-star-field", "bioluminescent-water"].map(v => ({value:v, label:v}))];
   if (field.options === "scAtmospheres") return [{value:"from-prompt", label:"(from prompt — let your text decide)"}, ...["clear-dry", "fog-low", "mist-mid", "rain-streak", "smoke-haze", "dust-mote", "snow-fall", "volumetric-shaft"].map(v => ({value:v, label:v}))];
+  // mflux --quantize selector (env default = q8 if not set)
+  if (field.options === "quantizeOptions") return [
+    {value:"",  label:"default (q8 — balanced, indistinguishable from fp16)"},
+    {value:"0", label:"q0 — fp16 (max quality, slowest, ~24 GB)"},
+    {value:"8", label:"q8 — 8-bit (default, ~12 GB, no quality loss)"},
+    {value:"6", label:"q6 — 6-bit (~9 GB, very mild quality dip)"},
+    {value:"5", label:"q5 — 5-bit (~8 GB, mild dip)"},
+    {value:"4", label:"q4 — 4-bit (~6 GB, ~10% faster, faces softer)"},
+    {value:"3", label:"q3 — 3-bit (~5 GB, visible quality drop)"},
+  ];
   return (cfg[field.options] || []).map(v => ({value:v, label:v}));
 }
 
