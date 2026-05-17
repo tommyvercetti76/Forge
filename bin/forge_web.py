@@ -326,6 +326,7 @@ def build_command(action: str, payload: dict[str, Any]) -> tuple[list[str], list
         _add_bool(cmd, "--draft", payload.get("draft"))
         _add(cmd, "--profile", payload.get("profile"))
         _add(cmd, "--quantize", payload.get("quantize"))
+        _add(cmd, "--upscale", payload.get("upscale"))
         _add_bool(cmd, "--no-default-loras", payload.get("no_default_loras"))
         _add(cmd, "--out", payload.get("out"))
         engine_name = str(payload.get("name") or "").strip()
@@ -365,6 +366,7 @@ def build_command(action: str, payload: dict[str, Any]) -> tuple[list[str], list
         _add_bool(cmd, "--draft", payload.get("draft"))
         _add(cmd, "--profile", payload.get("profile"))
         _add(cmd, "--quantize", payload.get("quantize"))
+        _add(cmd, "--upscale", payload.get("upscale"))
         _add_bool(cmd, "--no-default-loras", payload.get("no_default_loras"))
         _add(cmd, "--out", payload.get("out"))
     elif action == "indian-folk-page":
@@ -393,6 +395,7 @@ def build_command(action: str, payload: dict[str, Any]) -> tuple[list[str], list
         _add_bool(cmd, "--draft", payload.get("draft"))
         _add(cmd, "--profile", payload.get("profile"))
         _add(cmd, "--quantize", payload.get("quantize"))
+        _add(cmd, "--upscale", payload.get("upscale"))
         _add_bool(cmd, "--no-default-loras", payload.get("no_default_loras"))
         _add(cmd, "--out", payload.get("out"))
     elif action == "mandala-art-page":
@@ -422,6 +425,7 @@ def build_command(action: str, payload: dict[str, Any]) -> tuple[list[str], list
         _add_bool(cmd, "--draft", payload.get("draft"))
         _add(cmd, "--profile", payload.get("profile"))
         _add(cmd, "--quantize", payload.get("quantize"))
+        _add(cmd, "--upscale", payload.get("upscale"))
         _add_bool(cmd, "--no-default-loras", payload.get("no_default_loras"))
         _add(cmd, "--out", payload.get("out"))
     elif action == "stylized-cinematic-page":
@@ -451,6 +455,7 @@ def build_command(action: str, payload: dict[str, Any]) -> tuple[list[str], list
         _add_bool(cmd, "--draft", payload.get("draft"))
         _add(cmd, "--profile", payload.get("profile"))
         _add(cmd, "--quantize", payload.get("quantize"))
+        _add(cmd, "--upscale", payload.get("upscale"))
         _add_bool(cmd, "--no-default-loras", payload.get("no_default_loras"))
         _add(cmd, "--out", payload.get("out"))
     elif action == "edit":
@@ -2513,8 +2518,9 @@ const specs = {
       {name:"guidance", label:"Guidance", type:"number"},
       {name:"refine", label:"Refine", type:"checkbox"},
       {name:"refine_strength", label:"Refine strength", type:"number", value:"0.25"},
-      {name:"hi_res", label:"Hi-res", type:"checkbox"},
-      {name:"ultra_res", label:"Ultra-res", type:"checkbox"},
+      {name:"upscale", label:"Final resolution (RealESRGAN upscale)", type:"select", options:"upscaleOptions"},
+      {name:"hi_res", label:"Native Hi-res 1920×1080 (txt2img only)", type:"checkbox"},
+      {name:"ultra_res", label:"Native Ultra-res 2048×1152 (RISKY)", type:"checkbox"},
       {name:"no_default_loras", label:"Skip engine's default LoRA stack", type:"checkbox"},
       {name:"out", label:"Output path", type:"path"}
     ]
@@ -2539,8 +2545,9 @@ const specs = {
       {name:"guidance", label:"Guidance", type:"number", value:"6.5"},
       {name:"draft", label:"Draft (schnell @ 4 steps — ~25 s fast preview)", type:"checkbox"},
       {name:"refine", label:"Refine (extra ~30 s, micro-detail pass)", type:"checkbox"},
-      {name:"hi_res", label:"Hi-res (1920×1080)", type:"checkbox"},
-      {name:"ultra_res", label:"Ultra-res (2048×1152, ~6 min)", type:"checkbox"},
+      {name:"upscale", label:"Final resolution (RealESRGAN upscale — safe + fast)", type:"select", options:"upscaleOptions"},
+      {name:"hi_res", label:"Native Hi-res 1920×1080 (txt2img only — auto-clamped for --from-image)", type:"checkbox"},
+      {name:"ultra_res", label:"Native Ultra-res 2048×1152 (txt2img only — RISKY, may crash Metal)", type:"checkbox"},
       {name:"no_default_loras", label:"Skip engine's default LoRA stack", type:"checkbox"},
 
       {name:"_adv", label:"Use your photo (optional)", type:"section", hint:"Pick a source image to restyle it into this engine's look (img2img via FLUX-Kontext). Leave blank to render fresh from the prompt above."},
@@ -2572,8 +2579,9 @@ const specs = {
       {name:"guidance", label:"Guidance", type:"number", value:"5.0"},
       {name:"draft", label:"Draft (schnell @ 4 steps — ~25 s fast preview)", type:"checkbox"},
       {name:"refine", label:"Refine (extra ~30 s, micro-detail pass)", type:"checkbox"},
-      {name:"hi_res", label:"Hi-res (1920×1080)", type:"checkbox"},
-      {name:"ultra_res", label:"Ultra-res (2048×1152, ~6 min)", type:"checkbox"},
+      {name:"upscale", label:"Final resolution (RealESRGAN upscale — safe + fast)", type:"select", options:"upscaleOptions"},
+      {name:"hi_res", label:"Native Hi-res 1920×1080 (txt2img only — auto-clamped for --from-image)", type:"checkbox"},
+      {name:"ultra_res", label:"Native Ultra-res 2048×1152 (txt2img only — RISKY, may crash Metal)", type:"checkbox"},
       {name:"no_default_loras", label:"Skip engine's default LoRA stack", type:"checkbox"},
 
       {name:"_adv", label:"Use your photo (optional)", type:"section", hint:"Pick a source image to restyle it into this tradition (Madhubani / Warli / Tanjore / Pahari / Ravi-Varma) via FLUX-Kontext. Leave blank to render fresh from the prompt above."},
@@ -2599,8 +2607,9 @@ const specs = {
       {name:"guidance", label:"Guidance", type:"number", value:"7.5"},
       {name:"draft", label:"Draft (schnell @ 4 steps — ~25 s fast preview)", type:"checkbox"},
       {name:"refine", label:"Refine (extra ~30 s, micro-detail pass)", type:"checkbox"},
-      {name:"hi_res", label:"Hi-res (1920×1080)", type:"checkbox"},
-      {name:"ultra_res", label:"Ultra-res (2048×1152, ~6 min)", type:"checkbox"},
+      {name:"upscale", label:"Final resolution (RealESRGAN upscale — safe + fast)", type:"select", options:"upscaleOptions"},
+      {name:"hi_res", label:"Native Hi-res 1920×1080 (txt2img only — auto-clamped for --from-image)", type:"checkbox"},
+      {name:"ultra_res", label:"Native Ultra-res 2048×1152 (txt2img only — RISKY, may crash Metal)", type:"checkbox"},
       {name:"no_default_loras", label:"Skip engine's default LoRA stack", type:"checkbox"},
 
       {name:"_adv", label:"Use your photo (optional)", type:"section", hint:"Pick a source image to mandalize — your subject's outline gets re-rendered as ornamental mandala line art via FLUX-Kontext."},
@@ -2632,8 +2641,9 @@ const specs = {
       {name:"guidance", label:"Guidance", type:"number", value:"4.5"},
       {name:"draft", label:"Draft (schnell @ 4 steps — ~25 s fast preview)", type:"checkbox"},
       {name:"refine", label:"Refine (extra ~30 s, micro-detail pass)", type:"checkbox"},
-      {name:"hi_res", label:"Hi-res (1920×1080)", type:"checkbox"},
-      {name:"ultra_res", label:"Ultra-res (2048×1152, ~6 min)", type:"checkbox"},
+      {name:"upscale", label:"Final resolution (RealESRGAN upscale — safe + fast)", type:"select", options:"upscaleOptions"},
+      {name:"hi_res", label:"Native Hi-res 1920×1080 (txt2img only — auto-clamped for --from-image)", type:"checkbox"},
+      {name:"ultra_res", label:"Native Ultra-res 2048×1152 (txt2img only — RISKY, may crash Metal)", type:"checkbox"},
       {name:"no_default_loras", label:"Skip engine's default LoRA stack", type:"checkbox"},
 
       {name:"_adv", label:"Use your photo (optional)", type:"section", hint:"Pick a source image to restyle it in the chosen tradition (Tartakovsky / Mignola / McQuarrie / Ghibli...) via FLUX-Kontext."},
@@ -3014,6 +3024,7 @@ const FIELD_HELP = {
   sc_sky_state: "Sky as a character. clear-blue = smooth gradient. partly-cumulus = friendly cotton-puff sky. dramatic-cumulus = vertical stacks with crepuscular rays. cirrus-streak = high wispy ice clouds. overcast-blanket = featureless soft-shadow sky. sunset-pastel = magenta + amber gradient. starfield-rural / milky-way-band = deep-sky astronomy. aurora-curtain = green/magenta high-latitude. stormy-cloud-anvil = anvil-headed cumulonimbus.",
   sc_twinkles: "Small light sources. none = subject + major light only. scattered-fireflies = 8-20 warm-yellow specks. distant-city-lights = pin-prick window-lights at horizon. candle-cluster = warm 1850K candle flames. fairy-lights-string = even-spaced warm-white dots. lantern-cluster = paper lanterns (Diwali / Mid-Autumn register). sparse-stars = 30-80 visible stars (early evening). dense-star-field = 200+ stars (rural deep sky). bioluminescent-water = blue-green plankton glow.",
   sc_atmosphere: "Air medium. clear-dry = sharp colors + distance visibility. fog-low = ground-level dense fog, mystery+isolation register. mist-mid = waist-to-head-height mist, painterly depth (Ghibli classic). rain-streak = diagonal rain lines + wet surfaces. smoke-haze = warm-tinted hanging smoke (urban / fire / cigar register). dust-mote = floating particles caught in light shafts. snow-fall = active snowflakes + breath-puffs. volumetric-shaft = visible god-rays through windows / canopy / barn doors.",
+  upscale: "Post-render upscale via RealESRGAN-ncnn-vulkan. The SAFE path to high resolution on M5 Max — renders FLUX at default 1280×720 (low memory, ~3 min), then external upscaler boosts to 4× / 8× in ~6-15 seconds. 8× = 10240×5760 (59 MP), comfortably print-ready. Native Hi-res / Ultra-res checkboxes below are now SECONDARY — use upscale instead. (For --from-image / Kontext runs, native Hi-res is auto-clamped to default size because Kontext + high-res over-subscribes Metal memory and can freeze the GPU.)",
   quantize: "mflux model weight quantization (Apple Silicon). Lower bits = lower RAM + slightly faster. Default q8 is indistinguishable from fp16. q4 is ~10 % faster on M5 Max with mild face softening. q0 forces full fp16 (max quality, slowest, ~24 GB). Set FORGE_FLUX_QUANTIZE env var to change the default for all renders. NOTE: weight quantization is NOT the big speed lever on Apple Silicon — the activations stay fp16. The big levers are step count + resolution + schnell vs dev.",
   no_default_loras: "By default, each engine auto-applies its curated LoRA stack (see brand/loras/README.md) — RealismLora + add-details for wildlife, film-noir + add-details for noir-cinema, Coloring-Book LoRA for childrens-coloring-book, Van Gogh for impressionist, Indo-Realism for indian-classical. Check this box to render WITHOUT them (vanilla FLUX) — useful for A/B comparison or when iterating on a new prompt without LoRA bias. Engines without curated picks (mandala-art) ignore this flag.",
 };
@@ -3056,6 +3067,14 @@ function optionsFor(field) {
   if (field.options === "scSkyStates") return [{value:"from-prompt", label:"(from prompt — let your text decide)"}, ...["clear-blue", "partly-cumulus", "dramatic-cumulus", "cirrus-streak", "overcast-blanket", "sunset-pastel", "starfield-rural", "milky-way-band", "aurora-curtain", "stormy-cloud-anvil"].map(v => ({value:v, label:v}))];
   if (field.options === "scTwinkles") return [{value:"from-prompt", label:"(from prompt — let your text decide)"}, ...["none", "scattered-fireflies", "distant-city-lights", "candle-cluster", "fairy-lights-string", "lantern-cluster", "sparse-stars", "dense-star-field", "bioluminescent-water"].map(v => ({value:v, label:v}))];
   if (field.options === "scAtmospheres") return [{value:"from-prompt", label:"(from prompt — let your text decide)"}, ...["clear-dry", "fog-low", "mist-mid", "rain-streak", "smoke-haze", "dust-mote", "snow-fall", "volumetric-shaft"].map(v => ({value:v, label:v}))];
+  // RealESRGAN post-render upscale — safer than native hi-res, near-zero memory cost
+  if (field.options === "upscaleOptions") return [
+    {value:"",    label:"none (base size — 1280×720 default)"},
+    {value:"2x",  label:"2× upscale → 2560×1440 (~6 s post-process)"},
+    {value:"4x",  label:"4× upscale → 5120×2880 (~6 s post-process)"},
+    {value:"8x",  label:"8× upscale → 10240×5760 (~15 s post-process) — recommended for print"},
+    {value:"16x", label:"16× upscale → 20480×11520 (~30 s post-process) — experimental"},
+  ];
   // mflux --quantize selector (env default = q8 if not set)
   if (field.options === "quantizeOptions") return [
     {value:"",  label:"default (q8 — balanced, indistinguishable from fp16)"},
