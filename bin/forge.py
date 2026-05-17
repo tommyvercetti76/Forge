@@ -3068,6 +3068,32 @@ def cmd_engine_render(args) -> int:
             )
         except Exception as e:
             print(dim(f"  · gallery capture skipped: {e}"))
+        # Post-render upscale via RealESRGAN — replaces native hi-res / ultra-res
+        # with the safe two-stage path: FLUX at base size, then external upscaler.
+        upscale_spec = getattr(args, "upscale", None)
+        if upscale_spec:
+            try:
+                factor = int(str(upscale_spec).lower().rstrip("x"))
+            except ValueError:
+                sys.exit(red(f"--upscale value must look like 2x / 4x / 8x — got {upscale_spec!r}"))
+            if factor < 2 or factor > 16:
+                sys.exit(red(f"--upscale factor must be between 2 and 16 (got {factor})"))
+            model = REALESRGAN_MODEL_FOR_ENGINE.get(engine_name, REALESRGAN_DEFAULT_MODEL)
+            upscaled_path = png_path.with_name(png_path.stem + f".x{factor}.png")
+            try:
+                _upscale_to_factor(png_path, upscaled_path, factor=factor, model=model)
+                # Replace the base render with the upscaled one so the gallery + path
+                # the user sees is the high-res final. Keep base as .base.png for diff.
+                base_kept = png_path.with_name(png_path.stem + ".base.png")
+                if base_kept.exists():
+                    base_kept.unlink()
+                os.replace(png_path, base_kept)
+                os.replace(upscaled_path, png_path)
+                print(green(f"    ✓ upscaled {factor}× → {png_path}  (base kept at {base_kept.name})"))
+            except SystemExit:
+                raise
+            except Exception as e:
+                print(dim(f"    · upscale skipped — {e}"))
         variants.append({"seed": this_seed, "png_name": png_path.name, "png_path": str(png_path)})
         print(green(f"    ✓ {png_path}"))
 
@@ -5078,6 +5104,8 @@ def main() -> int:
     eng_render.add_argument("--profile", choices=list(PROFILES), default=None)
     eng_render.add_argument("--quantize", type=int, choices=[0, 3, 4, 5, 6, 8], default=None, dest="quantize",
                             help="mflux quantization (3/4/5/6/8 bits). 8=indistinguishable from fp16 +25%% speed (default), 4=~50%% faster with mild quality drop, 0=force fp16. Env: FORGE_FLUX_QUANTIZE.")
+    eng_render.add_argument("--upscale", type=str, default=None, dest="upscale",
+                            help="post-render upscale via RealESRGAN-ncnn-vulkan (safe high-res — renders FLUX at base size, then upscales). Values: 2x / 3x / 4x / 6x / 8x / 12x / 16x. Adds ~6 s per 4× pass. Replaces --hi-res / --ultra-res when memory matters.")
     eng_render.set_defaults(func=cmd_engine_render)
 
     p_th = sub.add_parser("thumbnail", help="render one thumbnail")
