@@ -1369,6 +1369,10 @@ _CB_AGE_RANGE = EnumBank("age_range", [
 
 _CB_CHARACTER_ARCHETYPE = EnumBank("character_archetype", [
     EnumValue(
+        "from-prompt",
+        "(no character template — the user's free-form prompt fully describes the character)",
+    ),
+    EnumValue(
         "friendly-dragon",
         "Friendly dragon: rounded snout (NOT pointed/predatory), small rounded "
         "horns (no spikes), soft belly, expressive forward-facing eyes (children's-"
@@ -1499,6 +1503,10 @@ _CB_PROPS = EnumBank("props", [
 
 _CB_SETTING = EnumBank("setting", [
     EnumValue(
+        "from-prompt",
+        "(no setting template — the user's free-form prompt fully describes the setting)",
+    ),
+    EnumValue(
         "enchanted-forest",
         "Enchanted forest: 3-5 stylized trees (tall trunk + canopy as a simple "
         "rounded cloud-shape), a few mushrooms with rounded caps, occasional "
@@ -1560,6 +1568,10 @@ _CB_SETTING = EnumBank("setting", [
 ])
 
 _CB_TIME_OF_DAY = EnumBank("time_of_day", [
+    EnumValue(
+        "from-prompt",
+        "(no time-of-day template — the user's free-form prompt sets the time)",
+    ),
     EnumValue("morning",      "Morning: rising-sun shape on the horizon, a few birds as M-shaped silhouettes high in the frame."),
     EnumValue("midday",       "Midday: sun high in frame, small fluffy clouds, no shadows drawn (line-art convention)."),
     EnumValue("golden-hour",  "Golden hour: low sun (large circle near horizon), longer suggestive ground-lines (without rendering shadow as filled-in)."),
@@ -1569,6 +1581,10 @@ _CB_TIME_OF_DAY = EnumBank("time_of_day", [
 ])
 
 _CB_NARRATIVE_MOMENT = EnumBank("narrative_moment", [
+    EnumValue(
+        "from-prompt",
+        "(no narrative-moment template — the user's free-form prompt carries the beat)",
+    ),
     EnumValue(
         "first-meeting",
         "First meeting: two characters in the scene seeing each other for the "
@@ -1629,6 +1645,10 @@ _CB_NARRATIVE_MOMENT = EnumBank("narrative_moment", [
 ])
 
 _CB_EMOTION = EnumBank("emotion", [
+    EnumValue(
+        "from-prompt",
+        "(no emotion template — the user's free-form prompt carries the feeling)",
+    ),
     EnumValue("curious",            "Curious: head tilted slightly, eyes wide, mouth small open or slightly puckered."),
     EnumValue("joyful",             "Joyful: eyes upturned-crescents OR wide-and-shining, mouth in a wide open smile."),
     EnumValue("worried-but-brave",  "Worried-but-brave: eyebrows raised inner edge, mouth small and set, body posture leaning forward."),
@@ -1701,19 +1721,23 @@ _CB_DENSITY = EnumBank("environmental_density", [
 @dataclass(frozen=True)
 class CBSubjectConfig:
     subject: str                                  # free text describing the central scene
-    character_archetype: str = "curious-bear-cub"
-    emotion: str = "curious"
+    # Defaults below are all "from-prompt" — the user's free-form prompt
+    # is the source of truth. Pick an explicit value only when you want the
+    # engine to ANCHOR that aspect (e.g. force the character to be a wise-owl
+    # archetype regardless of what the prompt names).
+    character_archetype: str = "from-prompt"
+    emotion: str = "from-prompt"
     props: str = "no-prop"
 
 @dataclass(frozen=True)
 class CBSceneConfig:
-    setting: str = "magical-meadow"
-    time_of_day: str = "no-time"
+    setting: str = "from-prompt"
+    time_of_day: str = "from-prompt"
     environmental_density: str = "balanced"
 
 @dataclass(frozen=True)
 class CBNarrativeConfig:
-    moment: str = "first-meeting"
+    moment: str = "from-prompt"
     story_beat: str = ""                          # optional one-line free text continuing the moment
 
 @dataclass(frozen=True)
@@ -1877,6 +1901,12 @@ class ChildrensColoringBookEngine(Engine):
         # T5-XXL budget — keep total prompt under ~2200 chars (~550 tokens).
         # Lead with the line-art directive (FLUX otherwise colorizes scenes with
         # human characters + rich settings), then the subject, then style detail.
+        #
+        # CRITICAL UX RULE: each enum block ONLY gets injected when the user
+        # picked a real value. The "from-prompt" sentinel means "I want the
+        # user's prompt to fully describe this aspect — don't override". This
+        # is the fix for the famous "I typed 'puppy' but the dropdown stayed
+        # at 'blue-jay-with-finches' and I got a blue jay" bug.
         prompt_parts = [
             "COLORING BOOK PAGE — black ink line drawing on a pure white page. "
             "NO COLOR anywhere. NO shading, NO gradient, NO grey, NO interior fill. "
@@ -1884,13 +1914,22 @@ class ChildrensColoringBookEngine(Engine):
             "Single-color black ink only. White background edge-to-edge.",
 
             f"SCENE TO DRAW: {clean_subject}.{story_beat_line}",
-
-            f"CHARACTER DETAIL: {archetype.description}",
-
-            f"EMOTION: {emotion.description}{prop_line}",
-
-            f"SETTING: {setting.description} Time: {tod.description}",
-
+        ]
+        if archetype.key != "from-prompt":
+            prompt_parts.append(f"CHARACTER DETAIL: {archetype.description}")
+        if emotion.key != "from-prompt":
+            prompt_parts.append(f"EMOTION: {emotion.description}{prop_line}")
+        elif prop_line:
+            # Emotion was 'from-prompt' but a prop was picked — surface the prop alone.
+            prompt_parts.append(f"PROP:{prop_line}")
+        if setting.key != "from-prompt" or tod.key != "from-prompt":
+            setting_line = f"SETTING: "
+            if setting.key != "from-prompt":
+                setting_line += setting.description + " "
+            if tod.key != "from-prompt":
+                setting_line += f"Time: {tod.description}"
+            prompt_parts.append(setting_line.strip())
+        prompt_parts.extend([
             f"COMPOSITION: {layout.description} {framing.description} "
             f"Exactly {cmp.character_count} named figure{plural} in the scene. "
             f"Density: {density.description}",
@@ -1906,7 +1945,7 @@ class ChildrensColoringBookEngine(Engine):
 
             "PAGE FORMAT: white background edge-to-edge, ~10% margin, NO frame, "
             "NO border, NO watermark, NO text overlay, NO page number.",
-        ]
+        ])
         prompt = "\n\n".join(p for p in prompt_parts if p)
 
         return Directive(

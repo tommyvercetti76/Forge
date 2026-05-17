@@ -2332,10 +2332,10 @@ const specs = {
       {name:"cb_tradition", label:"Tradition", type:"select", options:"cbTraditions", value:"mo-willems-minimal"},
       {name:"cb_age_range", label:"Age range", type:"select", options:"cbAgeRanges", value:"kids-6-9"},
       {name:"cb_density", label:"Density", type:"select", options:"cbDensity", value:"balanced"},
-      {name:"cb_archetype", label:"Character", type:"select", options:"cbArchetypes", value:"curious-bear-cub"},
-      {name:"cb_setting", label:"Setting", type:"select", options:"cbSettings", value:"magical-meadow"},
-      {name:"cb_moment", label:"Narrative moment", type:"select", options:"cbMoments", value:"quiet-rest"},
-      {name:"cb_emotion", label:"Emotion", type:"select", options:"cbEmotions", value:"gentle"},
+      {name:"cb_archetype", label:"Character (from-prompt = let prompt decide)", type:"select", options:"cbArchetypes", value:"from-prompt"},
+      {name:"cb_setting", label:"Setting (from-prompt = let prompt decide)", type:"select", options:"cbSettings", value:"from-prompt"},
+      {name:"cb_moment", label:"Narrative moment (from-prompt = let prompt decide)", type:"select", options:"cbMoments", value:"from-prompt"},
+      {name:"cb_emotion", label:"Emotion (from-prompt = let prompt decide)", type:"select", options:"cbEmotions", value:"from-prompt"},
       {name:"cb_props", label:"Prop", type:"select", options:"cbProps", value:"no-prop"},
       {name:"cb_character_count", label:"Characters in scene", type:"number", value:"1"},
       {name:"seeds", label:"Variants", type:"number", value:"1"},
@@ -2779,10 +2779,10 @@ function optionsFor(field) {
   if (field.options === "cbTraditions") return ["mo-willems-minimal", "sandra-boynton-whimsical", "eric-carle-bold", "beatrix-potter-naturalistic", "miyazaki-storyboard", "hanna-barbera-flat-cartoon"].map(v => ({value:v, label:v}));
   if (field.options === "cbAgeRanges") return ["toddler-3-5", "kids-6-9", "pre-teen-10-12"].map(v => ({value:v, label:v}));
   if (field.options === "cbDensity") return ["sparse", "balanced", "rich"].map(v => ({value:v, label:v}));
-  if (field.options === "cbArchetypes") return ["friendly-dragon", "curious-bear-cub", "brave-rabbit", "wise-owl", "whimsical-fox", "gentle-giant", "adventurous-child", "helpful-elephant", "mischievous-mouse", "elderly-marathi-couple", "songbird-flock", "blue-jay-with-finches", "cottontail-rabbit-and-kit"].map(v => ({value:v, label:v}));
-  if (field.options === "cbSettings") return ["enchanted-forest", "cozy-cottage-interior", "magical-meadow", "by-the-pond", "treehouse-platform", "starry-night-rooftop", "village-square", "mountain-cave", "texas-backyard-patio"].map(v => ({value:v, label:v}));
-  if (field.options === "cbMoments") return ["first-meeting", "shared-secret", "problem-discovered", "decision-to-help", "big-leap", "triumph-celebration", "quiet-rest", "bedtime-blessing", "wildlife-visit"].map(v => ({value:v, label:v}));
-  if (field.options === "cbEmotions") return ["curious", "joyful", "worried-but-brave", "gentle", "triumphant", "sleepy-content", "determined", "surprised-delighted"].map(v => ({value:v, label:v}));
+  if (field.options === "cbArchetypes") return [{value:"from-prompt", label:"(from prompt — let your text decide)"}, ...["friendly-dragon", "curious-bear-cub", "brave-rabbit", "wise-owl", "whimsical-fox", "gentle-giant", "adventurous-child", "helpful-elephant", "mischievous-mouse", "elderly-marathi-couple", "songbird-flock", "blue-jay-with-finches", "cottontail-rabbit-and-kit"].map(v => ({value:v, label:v}))];
+  if (field.options === "cbSettings") return [{value:"from-prompt", label:"(from prompt — let your text decide)"}, ...["enchanted-forest", "cozy-cottage-interior", "magical-meadow", "by-the-pond", "treehouse-platform", "starry-night-rooftop", "village-square", "mountain-cave", "texas-backyard-patio"].map(v => ({value:v, label:v}))];
+  if (field.options === "cbMoments") return [{value:"from-prompt", label:"(from prompt — let your text decide)"}, ...["first-meeting", "shared-secret", "problem-discovered", "decision-to-help", "big-leap", "triumph-celebration", "quiet-rest", "bedtime-blessing", "wildlife-visit"].map(v => ({value:v, label:v}))];
+  if (field.options === "cbEmotions") return [{value:"from-prompt", label:"(from prompt — let your text decide)"}, ...["curious", "joyful", "worried-but-brave", "gentle", "triumphant", "sleepy-content", "determined", "surprised-delighted"].map(v => ({value:v, label:v}))];
   if (field.options === "cbProps") return ["no-prop", "balloon", "teacup-and-saucer", "picnic-basket", "storybook-open", "paper-boat", "flower-bouquet", "lantern-glowing", "kite-and-string", "steel-thali-of-seed", "bird-feeder-tube", "chai-cup-and-saucer", "rocking-chair-side"].map(v => ({value:v, label:v}));
   // Mandala-art enums (mirror bin/style_engines.py)
   if (field.options === "maTraditions") return ["zentangle-organic", "sacred-geometry", "henna-mehndi", "madhubani-mandala", "floral-art-nouveau"].map(v => ({value:v, label:v}));
