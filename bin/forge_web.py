@@ -1404,17 +1404,27 @@ button:focus-visible {
   outline-offset: 2px;
 }
 
-/* Layout grid */
+/* Layout grid — each column gets its own scroll context so the right
+ * Process panel + the left Sidebar stay locked in view while the user
+ * scrolls through a long form in the middle column. */
 .app {
   display: grid;
   grid-template-columns: 296px minmax(420px, 1fr) minmax(360px, .9fr);
-  min-height: 100vh;
+  height: 100vh;
+  overflow: hidden;
+}
+.sidebar, .main, .process {
+  height: 100vh;
+  overflow-y: auto;
+  overflow-x: hidden;
 }
 .sidebar {
   border-right: 2px solid var(--line);
   background: var(--surface-2);
   padding: 22px 18px;
-  overflow: auto;
+}
+.process {
+  border-left: 2px solid var(--line);
 }
 .brand {
   font: 14px/1 var(--font-pixel);
@@ -2309,8 +2319,11 @@ form { padding: 18px; display: grid; gap: 14px; }
 .hidden { display: none !important; }
 
 @media (max-width: 1060px) {
-  .app { grid-template-columns: 240px 1fr; }
-  .process { grid-column: 1 / -1; border-top: 2px solid var(--line); }
+  /* Below 3-column threshold: stop locking columns to viewport height so the
+   * page can scroll normally as one tall document. */
+  .app { grid-template-columns: 240px 1fr; height: auto; overflow: visible; }
+  .sidebar, .main, .process { height: auto; overflow: visible; }
+  .process { grid-column: 1 / -1; border-top: 2px solid var(--line); border-left: 0; }
 }
 @media (max-width: 760px) {
   .app { display: block; }
@@ -2504,21 +2517,15 @@ const specs = {
       {name:"seeds", label:"Variants", type:"number", value:"1"},
       {name:"seed", label:"Seed", type:"number", value:"1"},
       {name:"guidance", label:"Guidance", type:"number", value:"6.5"},
-      {name:"refine", label:"Refine", type:"checkbox"},
-      {name:"hi_res", label:"Hi-res", type:"checkbox"},
-      {name:"ultra_res", label:"Ultra-res", type:"checkbox"},
+      {name:"draft", label:"Draft (schnell @ 4 steps — ~25 s fast preview)", type:"checkbox"},
+      {name:"refine", label:"Refine (extra ~30 s, micro-detail pass)", type:"checkbox"},
+      {name:"hi_res", label:"Hi-res (1920×1080)", type:"checkbox"},
+      {name:"ultra_res", label:"Ultra-res (2048×1152, ~6 min)", type:"checkbox"},
       {name:"no_default_loras", label:"Skip engine's default LoRA stack", type:"checkbox"},
 
-      {name:"_adv", label:"ADVANCED — img2img + runtime overrides", type:"section", hint:"Turn YOUR photo into a coloring page (img2img). Or override resolution / speed. Leave blank to use the defaults."},
-      {name:"from_image", label:"Source image — your photo → coloring page", type:"path"},
-      {name:"from_image_strength", label:"Image strength (0.3 minor edit, 0.85 default, 0.95 near-replace)", type:"number", value:"0.85"},
-      {name:"draft", label:"Draft (schnell @ 4 steps — fast preview)", type:"checkbox"},
-      {name:"profile", label:"Speed profile", type:"select", options:"profiles"},
-      {name:"width", label:"Width override (px)", type:"number"},
-      {name:"height", label:"Height override (px)", type:"number"},
-      {name:"refine_strength", label:"Refine strength (only if Refine is on)", type:"number", value:"0.25"},
-      {name:"quantize", label:"Quantize (FLUX weight precision — speed vs quality)", type:"select", options:"quantizeOptions"},
-      {name:"negative", label:"Extra negative terms (comma-sep)", type:"text"},
+      {name:"_adv", label:"Use your photo (optional)", type:"section", hint:"Pick a source image to restyle it into this engine's look (img2img via FLUX-Kontext). Leave blank to render fresh from the prompt above."},
+      {name:"from_image", label:"Source image", type:"path"},
+      {name:"from_image_strength", label:"Image strength (0.3 minor, 0.85 default, 0.95 near-replace)", type:"number", value:"0.85"},
 
       {name:"out", label:"Output path", type:"path"}
     ]
@@ -2543,21 +2550,15 @@ const specs = {
       {name:"seeds", label:"Variants", type:"number", value:"1"},
       {name:"seed", label:"Seed", type:"number", value:"7"},
       {name:"guidance", label:"Guidance", type:"number", value:"5.0"},
-      {name:"refine", label:"Refine", type:"checkbox"},
-      {name:"hi_res", label:"Hi-res", type:"checkbox"},
-      {name:"ultra_res", label:"Ultra-res", type:"checkbox"},
+      {name:"draft", label:"Draft (schnell @ 4 steps — ~25 s fast preview)", type:"checkbox"},
+      {name:"refine", label:"Refine (extra ~30 s, micro-detail pass)", type:"checkbox"},
+      {name:"hi_res", label:"Hi-res (1920×1080)", type:"checkbox"},
+      {name:"ultra_res", label:"Ultra-res (2048×1152, ~6 min)", type:"checkbox"},
       {name:"no_default_loras", label:"Skip engine's default LoRA stack", type:"checkbox"},
 
-      {name:"_adv", label:"ADVANCED — img2img + runtime overrides", type:"section", hint:"Turn YOUR photo into Madhubani / Warli / Tanjore / Pahari / Ravi-Varma (img2img). Or override resolution / speed."},
-      {name:"from_image", label:"Source image — your photo → folk-art style", type:"path"},
+      {name:"_adv", label:"Use your photo (optional)", type:"section", hint:"Pick a source image to restyle it into this tradition (Madhubani / Warli / Tanjore / Pahari / Ravi-Varma) via FLUX-Kontext. Leave blank to render fresh from the prompt above."},
+      {name:"from_image", label:"Source image", type:"path"},
       {name:"from_image_strength", label:"Image strength (0.3 minor, 0.85 default, 0.95 near-replace)", type:"number", value:"0.85"},
-      {name:"draft", label:"Draft (schnell @ 4 steps — fast preview)", type:"checkbox"},
-      {name:"profile", label:"Speed profile", type:"select", options:"profiles"},
-      {name:"width", label:"Width override (px)", type:"number"},
-      {name:"height", label:"Height override (px)", type:"number"},
-      {name:"refine_strength", label:"Refine strength (only if Refine is on)", type:"number", value:"0.25"},
-      {name:"quantize", label:"Quantize (FLUX weight precision — speed vs quality)", type:"select", options:"quantizeOptions"},
-      {name:"negative", label:"Extra negative terms (comma-sep)", type:"text"},
 
       {name:"out", label:"Output path", type:"path"}
     ]
@@ -2576,21 +2577,15 @@ const specs = {
       {name:"seeds", label:"Variants", type:"number", value:"1"},
       {name:"seed", label:"Seed", type:"number", value:"1"},
       {name:"guidance", label:"Guidance", type:"number", value:"7.5"},
-      {name:"refine", label:"Refine", type:"checkbox"},
-      {name:"hi_res", label:"Hi-res", type:"checkbox"},
-      {name:"ultra_res", label:"Ultra-res", type:"checkbox"},
+      {name:"draft", label:"Draft (schnell @ 4 steps — ~25 s fast preview)", type:"checkbox"},
+      {name:"refine", label:"Refine (extra ~30 s, micro-detail pass)", type:"checkbox"},
+      {name:"hi_res", label:"Hi-res (1920×1080)", type:"checkbox"},
+      {name:"ultra_res", label:"Ultra-res (2048×1152, ~6 min)", type:"checkbox"},
       {name:"no_default_loras", label:"Skip engine's default LoRA stack", type:"checkbox"},
 
-      {name:"_adv", label:"ADVANCED — img2img + runtime overrides", type:"section", hint:"Turn YOUR photo into a mandala (img2img — e.g. a photo of a whale gets re-rendered as the silhouette of an ornamental mandala). Or override resolution / speed."},
-      {name:"from_image", label:"Source image — your photo → mandala", type:"path"},
+      {name:"_adv", label:"Use your photo (optional)", type:"section", hint:"Pick a source image to mandalize — your subject's outline gets re-rendered as ornamental mandala line art via FLUX-Kontext."},
+      {name:"from_image", label:"Source image", type:"path"},
       {name:"from_image_strength", label:"Image strength (0.3 minor, 0.85 default, 0.95 near-replace)", type:"number", value:"0.85"},
-      {name:"draft", label:"Draft (schnell @ 4 steps — fast preview)", type:"checkbox"},
-      {name:"profile", label:"Speed profile", type:"select", options:"profiles"},
-      {name:"width", label:"Width override (px)", type:"number"},
-      {name:"height", label:"Height override (px)", type:"number"},
-      {name:"refine_strength", label:"Refine strength (only if Refine is on)", type:"number", value:"0.25"},
-      {name:"quantize", label:"Quantize (FLUX weight precision — speed vs quality)", type:"select", options:"quantizeOptions"},
-      {name:"negative", label:"Extra negative terms (comma-sep)", type:"text"},
 
       {name:"out", label:"Output path", type:"path"}
     ]
@@ -2615,21 +2610,15 @@ const specs = {
       {name:"seeds", label:"Variants", type:"number", value:"1"},
       {name:"seed", label:"Seed", type:"number", value:"7"},
       {name:"guidance", label:"Guidance", type:"number", value:"4.5"},
-      {name:"refine", label:"Refine", type:"checkbox"},
-      {name:"hi_res", label:"Hi-res", type:"checkbox"},
-      {name:"ultra_res", label:"Ultra-res", type:"checkbox"},
+      {name:"draft", label:"Draft (schnell @ 4 steps — ~25 s fast preview)", type:"checkbox"},
+      {name:"refine", label:"Refine (extra ~30 s, micro-detail pass)", type:"checkbox"},
+      {name:"hi_res", label:"Hi-res (1920×1080)", type:"checkbox"},
+      {name:"ultra_res", label:"Ultra-res (2048×1152, ~6 min)", type:"checkbox"},
       {name:"no_default_loras", label:"Skip engine's default LoRA stack", type:"checkbox"},
 
-      {name:"_adv", label:"ADVANCED — img2img + runtime overrides", type:"section", hint:"Turn YOUR photo into a stylized cinematic frame (img2img — e.g. a landscape photo gets re-rendered in McQuarrie's Star-Wars-concept register). Or override resolution / speed."},
-      {name:"from_image", label:"Source image — your photo → cinematic style", type:"path"},
+      {name:"_adv", label:"Use your photo (optional)", type:"section", hint:"Pick a source image to restyle it in the chosen tradition (Tartakovsky / Mignola / McQuarrie / Ghibli...) via FLUX-Kontext."},
+      {name:"from_image", label:"Source image", type:"path"},
       {name:"from_image_strength", label:"Image strength (0.3 minor, 0.85 default, 0.95 near-replace)", type:"number", value:"0.85"},
-      {name:"draft", label:"Draft (schnell @ 4 steps — fast preview)", type:"checkbox"},
-      {name:"profile", label:"Speed profile", type:"select", options:"profiles"},
-      {name:"width", label:"Width override (px)", type:"number"},
-      {name:"height", label:"Height override (px)", type:"number"},
-      {name:"refine_strength", label:"Refine strength (only if Refine is on)", type:"number", value:"0.25"},
-      {name:"quantize", label:"Quantize (FLUX weight precision — speed vs quality)", type:"select", options:"quantizeOptions"},
-      {name:"negative", label:"Extra negative terms (comma-sep)", type:"text"},
 
       {name:"out", label:"Output path", type:"path"}
     ]
