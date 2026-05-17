@@ -50,10 +50,13 @@ from forge_runtime import (
 from mandala_engine import (
     CHILD_THEMES,
     COMPLEXITY_LEVELS,
+    FOLK_ART_THEMES,
     MANDALA_STYLES,
     ChildrensBookConfig,
+    FolkArtConfig,
     MandalaConfig,
     write_childrens_book,
+    write_folk_art_page,
     write_mandala,
 )
 
@@ -73,6 +76,7 @@ THUMB_W, THUMB_H = 1280, 720
 
 DEFAULT_SUBPROCESS_TIMEOUT_SEC = float(os.environ.get("FORGE_SUBPROCESS_TIMEOUT_SEC", "1800"))
 MFLUX_TIMEOUT_SEC = float(os.environ.get("FORGE_MFLUX_TIMEOUT_SEC", str(DEFAULT_SUBPROCESS_TIMEOUT_SEC)))
+MFLUX_HEARTBEAT_SEC = float(os.environ.get("FORGE_MFLUX_HEARTBEAT_SEC", "30"))
 VOICE_TIMEOUT_SEC = float(os.environ.get("FORGE_VOICE_TIMEOUT_SEC", "600"))
 # Cooldown between consecutive heavy mflux gens — lets the Metal GPU/SoC dissipate heat
 # rather than running pinned at 100%. 0 = off. 10–30 s is reasonable on a hot chassis.
@@ -96,6 +100,14 @@ def _cmd_display(cmd: list[str]) -> str:
         if part in {"--prompt"}:
             parts[i + 1] = "<prompt>"
     return " ".join(shlex.quote(p if len(p) <= 120 else p[:117] + "...") for p in parts)
+
+
+def _format_duration(seconds: float) -> str:
+    seconds_i = int(max(0, seconds))
+    minutes, secs = divmod(seconds_i, 60)
+    if minutes:
+        return f"{minutes}m {secs:02d}s"
+    return f"{secs}s"
 
 
 def _tmp_sibling(path: Path) -> Path:
@@ -168,6 +180,8 @@ def run_subprocess(
     text: bool = False,
     input: str | bytes | None = None,
     check: bool = True,
+    heartbeat_label: str | None = None,
+    heartbeat_seconds: float | None = None,
 ) -> subprocess.CompletedProcess:
     display = _cmd_display(cmd)
     proc = subprocess.Popen(
@@ -179,8 +193,41 @@ def run_subprocess(
         env=child_env(),
     )
     _CHILD_PROCS.add(proc)
+    stdout = stderr = None
     try:
-        stdout, stderr = proc.communicate(input=input, timeout=timeout)
+        use_heartbeat = (
+            heartbeat_label is not None
+            and heartbeat_seconds is not None
+            and heartbeat_seconds > 0
+            and not capture_output
+            and input is None
+        )
+        if use_heartbeat:
+            start = time.monotonic()
+            while True:
+                if timeout is None:
+                    wait_for = heartbeat_seconds
+                else:
+                    elapsed = time.monotonic() - start
+                    remaining = timeout - elapsed
+                    if remaining <= 0:
+                        _terminate_proc(proc)
+                        raise subprocess.TimeoutExpired(display, timeout)
+                    wait_for = min(heartbeat_seconds, remaining)
+                try:
+                    proc.wait(timeout=wait_for)
+                    break
+                except subprocess.TimeoutExpired:
+                    elapsed = time.monotonic() - start
+                    if timeout is not None and elapsed >= timeout:
+                        _terminate_proc(proc)
+                        raise subprocess.TimeoutExpired(display, timeout)
+                    suffix = ""
+                    if timeout is not None:
+                        suffix = f", timeout {_format_duration(timeout)}"
+                    print(f"  · {heartbeat_label} still running ({_format_duration(elapsed)} elapsed{suffix})", flush=True)
+        else:
+            stdout, stderr = proc.communicate(input=input, timeout=timeout)
     except subprocess.TimeoutExpired:
         _terminate_proc(proc)
         raise subprocess.TimeoutExpired(display, timeout)
@@ -1021,7 +1068,11 @@ def flux_generate(
         with ResourceLock("metal-heavy") as lock:
             if lock.wait_seconds > 0.1:
                 print(dim(f"  · waited {lock.wait_seconds:.1f}s for Metal lock"))
-            run_subprocess(cmd, check=True, timeout=MFLUX_TIMEOUT_SEC)
+            run_subprocess(
+                cmd, check=True, timeout=MFLUX_TIMEOUT_SEC,
+                heartbeat_label=f"mflux {model}/{step_count} steps",
+                heartbeat_seconds=MFLUX_HEARTBEAT_SEC,
+            )
     except Exception:
         if tmp_out.exists():
             tmp_out.unlink()
@@ -1425,6 +1476,13 @@ def read_book_text(path: Path) -> str:
     suffix = path.suffix.lower()
     if suffix in {".txt", ".md", ".markdown", ".text"}:
         return clean_book_text(path.read_text(encoding="utf-8", errors="ignore"))
+    if suffix == ".rtf":
+        try:
+            from striprtf.striprtf import rtf_to_text  # type: ignore
+        except ImportError:
+            sys.exit(red("RTF input requires striprtf in this Python. Convert to .txt or install striprtf."))
+        raw = path.read_text(encoding="utf-8", errors="ignore")
+        return clean_book_text(rtf_to_text(raw))
     if suffix == ".pdf":
         try:
             import pypdf  # type: ignore
@@ -1432,7 +1490,7 @@ def read_book_text(path: Path) -> str:
             sys.exit(red("PDF input requires pypdf in this Python. Convert to .txt/.md or install pypdf."))
         reader = pypdf.PdfReader(str(path))
         return clean_book_text("\n\n".join(page.extract_text() or "" for page in reader.pages))
-    sys.exit(red(f"unsupported book format: {suffix}") + dim(" (use .txt, .md, or .pdf with pypdf)"))
+    sys.exit(red(f"unsupported book format: {suffix}") + dim(" (use .txt, .md, .rtf, or .pdf)"))
 
 
 def text_digest(text: str, *, max_chars: int = 12000) -> str:
@@ -2204,11 +2262,108 @@ def cmd_childrens_book(args) -> int:
     return 0
 
 
+def cmd_folk_art(args) -> int:
+    out = args.out or str(Path.home() / "Pictures" / "forge-folk-art" / f"{args.theme}.png")
+    out_path = Path(out).expanduser().resolve()
+    config = FolkArtConfig(
+        theme=args.theme,
+        width=args.width,
+        height=args.height,
+        complexity=args.complexity,
+        stroke_width=args.stroke_width,
+        palette=args.palette,
+        supersample=args.supersample,
+    )
+    try:
+        artifact = write_folk_art_page(config, out_path)
+        validate_png(Path(artifact["png"]), width=args.width, height=args.height, min_bytes=1024)
+    except ValueError as e:
+        sys.exit(red(str(e)))
+    print(green(f"✓ folk-art page: {artifact['png']}"))
+    print(dim(f"  SVG: {artifact['svg']}"))
+    print(dim(f"  QC:  {artifact['qc']}"))
+    return 0
+
+
 # ─────────────── style engines (forge engine ...) ───────────────
 
 
 PROMPT_LIBRARY_PATH = FORGE_HOME / "brand" / "prompts" / "library.json"
 DEFAULT_ENGINE_OUTPUT_ROOT = Path.home() / "Desktop" / "forge-test" / "engine-renders"
+
+
+def _engine_img2img(src_path: Path, prompt: str, dst_path: Path, *,
+                    strength: float = 0.85, seed: int = 42, steps: int = 32,
+                    guidance: float = 3.5) -> None:
+    """Engine-driven img2img — restyle a source image with an engine's directive.
+
+    Different from `_img2img_refine` (low-denoise polish, ≤0.50 strength).
+    This is for the "turn my photo into the engine's style" use-case:
+    high-strength restyle preferring FLUX-Kontext (true instruction-following),
+    falling back to FLUX-dev img2img.
+    """
+    strength = max(0.05, min(0.95, float(strength)))
+    tmp = _register_tmp(_tmp_sibling(dst_path))
+
+    kontext_ready, _ = _flux_model_ready("kontext-dev")
+    dev_ready, dev_reason = _flux_model_ready("dev")
+
+    if kontext_ready and shutil.which("mflux-generate-kontext"):
+        cmd = [
+            "mflux-generate-kontext",
+            "--base-model", "dev",
+            "--prompt", prompt,
+            "--image-path", str(src_path),
+            "--guidance", "2.5",
+            "--steps", str(steps),
+            "--seed", str(seed),
+            "--output", str(tmp),
+        ]
+        mode_label = "Kontext"
+    elif kontext_ready:
+        cmd = [
+            "mflux-generate",
+            "--model", "dev-kontext",
+            "--prompt", prompt,
+            "--init-image-path", str(src_path),
+            "--steps", str(steps),
+            "--guidance", "3.5",
+            "--seed", str(seed),
+            "--output", str(tmp),
+        ]
+        mode_label = "Kontext (legacy mflux)"
+    elif dev_ready:
+        cmd = [
+            "mflux-generate",
+            "--model", "dev",
+            "--prompt", prompt,
+            "--image-path", str(src_path),
+            "--image-strength", f"{1.0 - strength:.3f}",  # mflux: higher = preserve more
+            "--steps", str(steps),
+            "--guidance", str(guidance),
+            "--seed", str(seed),
+            "--output", str(tmp),
+        ]
+        mode_label = f"dev img2img (strength={strength})"
+    else:
+        sys.exit(red(
+            f"Neither Kontext-dev nor FLUX.1-dev is ready.\n"
+            f"  dev: {dev_reason}\n"
+            f"  Run: hf download black-forest-labs/FLUX.1-dev"
+        ))
+
+    print(dim(f"    · {mode_label} · steps={steps} seed={seed}"))
+    with ResourceLock("metal-heavy") as lock:
+        if lock.wait_seconds > 0.1:
+            print(dim(f"    · waited {lock.wait_seconds:.1f}s for Metal lock"))
+        run_subprocess(
+            cmd, check=True, timeout=MFLUX_TIMEOUT_SEC,
+            heartbeat_label=f"{cmd[0]} render",
+            heartbeat_seconds=MFLUX_HEARTBEAT_SEC,
+        )
+    validate_png(tmp, min_bytes=4096)
+    os.replace(tmp, dst_path)
+    _discard_tmp(tmp)
 
 
 def _img2img_refine(src_path: Path, prompt: str, dst_path: Path, *,
@@ -2237,7 +2392,11 @@ def _img2img_refine(src_path: Path, prompt: str, dst_path: Path, *,
     with ResourceLock("metal-heavy") as lock:
         if lock.wait_seconds > 0.1:
             print(dim(f"    · waited {lock.wait_seconds:.1f}s for Metal lock"))
-        run_subprocess(cmd, check=True, timeout=MFLUX_TIMEOUT_SEC)
+        run_subprocess(
+            cmd, check=True, timeout=MFLUX_TIMEOUT_SEC,
+            heartbeat_label=f"{cmd[0]} render",
+            heartbeat_seconds=MFLUX_HEARTBEAT_SEC,
+        )
     validate_png(tmp, min_bytes=4096)
     os.replace(tmp, dst_path)
     _discard_tmp(tmp)
@@ -2538,6 +2697,19 @@ def cmd_engine_render(args) -> int:
     res_label = f"{eff_w}x{eff_h}" if eff_w and eff_h else "1280x720 (default)"
     print(dim(f"  · seeds: {seeds_n} (base {directive.seed})  refine: {refine}  res: {res_label}  guidance: {guidance_override or 'preset-default'}"))
 
+    # If --from-image is set, we skip text-to-image and instead restyle the
+    # source image with the engine's directive via FLUX-Kontext (or dev img2img).
+    from_image = getattr(args, "from_image", None)
+    from_image_strength = float(getattr(args, "from_image_strength", 0.85) or 0.85)
+    src_image_path: Path | None = None
+    if from_image:
+        src_image_path = Path(from_image).expanduser().resolve()
+        if not src_image_path.exists():
+            sys.exit(red(f"--from-image not found: {src_image_path}"))
+        if src_image_path.stat().st_size < 1024:
+            sys.exit(red(f"--from-image too small ({src_image_path.stat().st_size} bytes): {src_image_path}"))
+        print(dim(f"  · from-image: {src_image_path}  strength: {from_image_strength}"))
+
     variants: list[dict[str, Any]] = []
     base_seed = directive.seed
     from _engine_base import Directive  # type: ignore
@@ -2558,19 +2730,32 @@ def cmd_engine_render(args) -> int:
 
         # First-pass render — base composition
         base_target = png_path
-        if refine:
+        if refine and not src_image_path:
             base_target = png_path.with_name(png_path.stem + "-base.png")
         print(cyan(f"  ▶ seed {i+1}/{seeds_n} (seed={this_seed}) → {png_path.name}"))
-        flux_generate(
-            synth, "", base_target,
-            seed=this_seed,
-            steps=args.profile and PROFILES.get(args.profile, {}).get("flux_steps"),
-            series=None, draft=args.draft, profile=args.profile,
-            width=eff_w, height=eff_h, guidance_override=guidance_override,
-        )
 
-        # Second pass — img2img refinement at low denoise
-        if refine:
+        if src_image_path:
+            # img2img path — engine directive restyles the user's photo.
+            steps_count = int(directive.runtime.get("steps", 32))
+            guidance_val = float(guidance_override if guidance_override is not None
+                                 else directive.runtime.get("guidance", 3.5))
+            _engine_img2img(
+                src_path=src_image_path, prompt=directive.positive, dst_path=base_target,
+                strength=from_image_strength, seed=this_seed,
+                steps=steps_count, guidance=guidance_val,
+            )
+        else:
+            # txt2img path — engine directive generates a fresh image.
+            flux_generate(
+                synth, "", base_target,
+                seed=this_seed,
+                steps=args.profile and PROFILES.get(args.profile, {}).get("flux_steps"),
+                series=None, draft=args.draft, profile=args.profile,
+                width=eff_w, height=eff_h, guidance_override=guidance_override,
+            )
+
+        # Second pass — img2img refinement at low denoise (txt2img path only)
+        if refine and not src_image_path:
             print(dim(f"    · refining (strength={refine_strength}) via FLUX-dev img2img…"))
             _img2img_refine(
                 src_path=base_target, prompt=directive.positive, dst_path=png_path,
@@ -3250,7 +3435,11 @@ def cmd_edit(args) -> int:
         with ResourceLock("metal-heavy") as lock:
             if lock.wait_seconds > 0.1:
                 print(dim(f"  · waited {lock.wait_seconds:.1f}s for Metal lock"))
-            run_subprocess(cmd, check=True, timeout=MFLUX_TIMEOUT_SEC)
+            run_subprocess(
+                cmd, check=True, timeout=MFLUX_TIMEOUT_SEC,
+                heartbeat_label=f"{cmd[0]} render",
+                heartbeat_seconds=MFLUX_HEARTBEAT_SEC,
+            )
     except Exception:
         if tmp_out.exists():
             tmp_out.unlink()
@@ -3722,6 +3911,13 @@ def cmd_bench(args) -> int:
     print(green(f"✓ benchmark profile written: {out}"))
     for profile, values in report["profiles"].items():
         print(f"  {profile:8s} {values}")
+    return 0
+
+
+def cmd_web(args) -> int:
+    from forge_web import run_server
+
+    run_server(host=args.host, port=args.port, open_browser=not args.no_open)
     return 0
 
 # ─────────────── wizard ───────────────
@@ -4394,6 +4590,7 @@ def print_menu(short: bool = True) -> None:
     print()
     print(gold("SYSTEM"))
     print(f"  forge {bold('wizard')}             guided interactive mode")
+    print(f"  forge {bold('web')}                browser wizard + run console")
     print(f"  forge {bold('doctor')}             verify/repair local ML runtime")
     print(f"  forge {bold('status')}             recent jobs, locks, readiness")
     print(f"  forge {bold('bench')}              write machine quality profiles")
@@ -4466,6 +4663,17 @@ def main() -> int:
     p_cb.add_argument("--out")
     p_cb.set_defaults(func=cmd_childrens_book)
 
+    p_folk = sub.add_parser("folk-art", help="procedural folk/devotional coloring page line art")
+    p_folk.add_argument("--theme", choices=list(FOLK_ART_THEMES), default="buddha-peacock")
+    p_folk.add_argument("--width", type=int, default=2400)
+    p_folk.add_argument("--height", type=int, default=1800)
+    p_folk.add_argument("--complexity", choices=list(COMPLEXITY_LEVELS), default="max")
+    p_folk.add_argument("--stroke-width", type=float, default=3.0)
+    p_folk.add_argument("--palette", choices=["ink", "soft"], default="ink")
+    p_folk.add_argument("--supersample", type=int, default=2, help="anti-aliasing scale; 1 is fastest")
+    p_folk.add_argument("--out")
+    p_folk.set_defaults(func=cmd_folk_art)
+
     # forge engine — domain-expert style engines (noir-cinema, wildlife-photo, etc.)
     p_eng = sub.add_parser("engine", help="domain-expert style engines (specialist FLUX prompt builders)")
     eng_sub = p_eng.add_subparsers(dest="engine_cmd", required=True)
@@ -4508,6 +4716,10 @@ def main() -> int:
     eng_render.add_argument("--seed", type=int, default=None)
     eng_render.add_argument("--out", default=None,
                             help="output PNG path. If omitted, lands in ~/Desktop/forge-test/engine-renders/<engine>/<recipe-or-slug>.png")
+    eng_render.add_argument("--from-image", default=None, dest="from_image",
+                            help="source image to restyle with the engine's directive (img2img via FLUX-Kontext / dev). Turns your photo into the engine's style — e.g. a bald-eagle photo into a mandala.")
+    eng_render.add_argument("--from-image-strength", type=float, default=0.85, dest="from_image_strength",
+                            help="strength of the restyle when --from-image is set (0.3=minor edit, 0.85=major restyle, 0.95=near-replace). Default 0.85.")
     eng_render.add_argument("--draft", action="store_true", help="schnell @ 4 steps (cool/fast)")
     eng_render.add_argument("--profile", choices=list(PROFILES), default=None)
     eng_render.set_defaults(func=cmd_engine_render)
@@ -4669,6 +4881,12 @@ def main() -> int:
 
     p_w = sub.add_parser("wizard", help="full guided interactive mode")
     p_w.set_defaults(func=cmd_wizard)
+
+    p_web = sub.add_parser("web", help="browser wizard + run console")
+    p_web.add_argument("--host", default="127.0.0.1")
+    p_web.add_argument("--port", type=int, default=8765)
+    p_web.add_argument("--no-open", action="store_true", help="serve without opening a browser")
+    p_web.set_defaults(func=cmd_web)
 
     args = parser.parse_args()
     if not args.cmd:

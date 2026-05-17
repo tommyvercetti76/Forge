@@ -473,18 +473,32 @@ def ffprobe_duration(path: Path) -> float:
 # ─────────────── RTF parsing + chunking ───────────────
 
 def parse_rtf(rtf_path: Path) -> str:
-    """Read RTF or plain text → clean plain text.
+    """Read RTF / plain text / PDF → clean plain text.
 
-    Auto-detects format: if the file starts with `{\\rtf` we strip RTF control
-    words via striprtf; otherwise we treat it as UTF-8 text. This lets users
-    drop either a .rtf or .txt transcript.
+    Auto-detects format by suffix and content:
+      - .pdf  → extracted via pypdf
+      - .rtf  (or any file starting with `{\\rtf`) → striprtf
+      - everything else → UTF-8 plain text
+
+    Function name is historical — accepts more than just RTF now.
     """
-    raw = rtf_path.read_text(encoding="utf-8", errors="ignore")
-    if raw.lstrip().startswith("{\\rtf"):
-        from striprtf.striprtf import rtf_to_text
-        text = rtf_to_text(raw)
+    suffix = rtf_path.suffix.lower()
+    if suffix == ".pdf":
+        try:
+            import pypdf  # type: ignore
+        except ImportError:
+            raise RuntimeError(
+                "PDF input needs pypdf. Install with: pip install pypdf"
+            )
+        reader = pypdf.PdfReader(str(rtf_path))
+        text = "\n\n".join(page.extract_text() or "" for page in reader.pages)
     else:
-        text = raw
+        raw = rtf_path.read_text(encoding="utf-8", errors="ignore")
+        if suffix == ".rtf" or raw.lstrip().startswith("{\\rtf"):
+            from striprtf.striprtf import rtf_to_text
+            text = rtf_to_text(raw)
+        else:
+            text = raw
     # Normalize whitespace; preserve paragraph breaks.
     text = re.sub(r"[ \t]+", " ", text)
     text = re.sub(r"\n{3,}", "\n\n", text)
@@ -492,7 +506,7 @@ def parse_rtf(rtf_path: Path) -> str:
 
 
 # Glob patterns for folder mode — transcript first, then video.
-TRANSCRIPT_EXTS = (".rtf", ".txt", ".md")
+TRANSCRIPT_EXTS = (".rtf", ".txt", ".md", ".pdf")
 VIDEO_EXTS = (".mp4", ".mov", ".m4v", ".webm")
 
 

@@ -239,10 +239,12 @@ def _watch_dirs_for(action: str, payload: dict[str, Any]) -> list[str]:
             paths.append(str(out.with_name(out.stem + "-bg.png")))
     elif action in {"edit", "voice", "video", "mandala", "folk-art"}:
         paths += _payload_paths(payload, "out")
-    elif action in {"brief", "episode", "audiobook", "childrens-book", "engine", "coloring-page", "mandala-art-page"}:
+    elif action in {"brief", "episode", "audiobook", "audiobook-simple", "childrens-book", "engine", "coloring-page", "mandala-art-page"}:
         paths += _payload_paths(payload, "out")
         if action in {"engine", "coloring-page", "mandala-art-page"} and not str(payload.get("out") or "").strip():
             paths.append(str(DEFAULT_OUTPUT_ROOT / "engine-renders"))
+        if action == "audiobook-simple" and not str(payload.get("out") or "").strip():
+            paths.append(str(DEFAULT_OUTPUT_ROOT / "audiobook"))
     elif action == "audiobook-asmr":
         paths += _payload_paths(payload, "folder", "out_dir")
         folder = _expand(str(payload.get("folder") or ""))
@@ -457,6 +459,36 @@ def build_command(action: str, payload: dict[str, Any]) -> tuple[list[str], list
         _add(cmd, "--chunk-chars", payload.get("chunk_chars"))
         _add(cmd, "--max-chunks", payload.get("max_chunks"))
         _add(cmd, "--out", payload.get("out"))
+    elif action == "audiobook-simple":
+        cmd.append("audiobook")
+        book = str(payload.get("book") or "").strip()
+        if not book:
+            raise ValueError("Pick a book file (.txt / .rtf / .pdf) — required.")
+        book_path = Path(book).expanduser()
+        if not book_path.exists():
+            raise ValueError(f"Book file not found: {book_path}")
+        _add(cmd, "--book", str(book_path))
+        # Title: explicit user value, else derive from filename stem.
+        title = str(payload.get("title") or "").strip() or book_path.stem
+        _add(cmd, "--title", title)
+        _add(cmd, "--voice", payload.get("voice"))
+        # Translate list — Hindi and/or Marathi, never include English in --translate
+        # (the forge audiobook flow always produces English from the source text).
+        translate = []
+        if str(payload.get("do_hi")).lower() in {"true", "on", "1"}:
+            translate.append("hi")
+        if str(payload.get("do_mr")).lower() in {"true", "on", "1"}:
+            translate.append("mr")
+        if translate:
+            cmd.extend(["--translate", ",".join(translate)])
+        # Output folder — default per-book if blank
+        out = str(payload.get("out") or "").strip()
+        if not out:
+            safe_stem = re.sub(r"[^a-zA-Z0-9._-]+", "-", title).strip("-") or "audiobook"
+            out = str(DEFAULT_OUTPUT_ROOT / "audiobook" / safe_stem)
+        cmd.extend(["--out", out])
+        # Sensible defaults for chunking — user shouldn't have to tune these
+        cmd.extend(["--chunk-chars", "1400"])
     elif action == "audiobook-asmr":
         cmd = [sys.executable, str(AUDIOBOOK_BIN)]
         _add(cmd, "--folder", payload.get("folder"))
@@ -1363,6 +1395,22 @@ form { padding: 18px; display: grid; gap: 14px; }
   box-shadow: var(--shadow-press);
 }
 .form-section:first-child { margin-top: 0; }
+
+/* Toast banner — pixel-framed strip near the top of the form panel */
+.toast {
+  margin: 0 18px 12px;
+  padding: 12px 14px;
+  border: 2px solid var(--line-hi);
+  border-left-width: 6px;
+  background: var(--bg-deep);
+  color: var(--ink-bright);
+  font: 13px/1.4 var(--font-ui);
+  letter-spacing: 0.3px;
+  box-shadow: var(--shadow);
+}
+.toast.error   { border-left-color: var(--rose);  color: var(--rose);  }
+.toast.success { border-left-color: var(--green); color: var(--green); }
+.toast.info    { border-left-color: var(--gold);  color: var(--gold);  }
 .form-section-hint {
   font: 13px/1.5 var(--font-ui);
   color: var(--muted);
@@ -1822,6 +1870,7 @@ form { padding: 18px; display: grid; gap: 14px; }
         <h1 id="formTitle">Loading</h1>
         <button id="refreshConfig" type="button">Refresh</button>
       </div>
+      <div id="toast" class="toast" hidden></div>
       <form id="jobForm"></form>
       <pre id="commandPreview" class="cmd"></pre>
     </section>
@@ -1893,7 +1942,8 @@ const groups = [
   ["CONTENT", [
     ["brief", "Episode kit"],
     ["episode", "Episode"],
-    ["audiobook", "Audiobook"],
+    ["audiobook-simple", "Audiobook (simple)"],
+    ["audiobook", "Audiobook (advanced)"],
     ["audiobook-asmr", "ASMR audiobook"],
     ["voice", "Voiceover"],
     ["video", "Mux video"],
@@ -2058,6 +2108,26 @@ const specs = {
       {name:"out", label:"Output dir", type:"path", value:"~/Desktop/forge-test/episode"}
     ]
   },
+  "audiobook-simple": {
+    title: "Audiobook — simple (book → en + hi + mr audio)",
+    fields: [
+      {name:"_s1", label:"BOOK", type:"section", hint:"Pick a .txt, .rtf, or .pdf file. The pipeline reads the full text, translates to Hindi + Marathi (if selected), and narrates each language as a separate audio file."},
+      {name:"book", label:"Book file (.txt / .rtf / .pdf)", type:"path", required:true},
+      {name:"title", label:"Title (blank = use filename)", type:"text"},
+
+      {name:"_s2", label:"VOICE", type:"section", hint:"English narration uses Kokoro neural TTS (best quality). Hindi + Marathi use Sarvam Bulbul cloud TTS. The voice preset only affects English narration; Hindi/Marathi voices are picked automatically."},
+      {name:"voice", label:"English voice preset", type:"select", options:"voices"},
+
+      {name:"_s3", label:"LANGUAGES", type:"section", hint:"All three are on by default. Uncheck any you don't want. English is always produced (it's the source narration); turning off the others just skips translation."},
+      {name:"do_en", label:"English (Kokoro)", type:"checkbox", checked:true},
+      {name:"do_hi", label:"Hindi (Sarvam)", type:"checkbox", checked:true},
+      {name:"do_mr", label:"Marathi (Sarvam)", type:"checkbox", checked:true},
+
+      {name:"_s4", label:"OUTPUT", type:"section", hint:"Folder where audio files land. One audio file per selected language. Defaults to ~/Desktop/forge-test/audiobook/<title>/."},
+      {name:"out", label:"Output folder (blank = auto)", type:"path"}
+    ]
+  },
+
   audiobook: {
     title: "Audiobook — audio only (single voice)",
     fields: [
@@ -2569,15 +2639,38 @@ function updateCommandPreview() {
 
 async function startJob(event) {
   event.preventDefault();
+  clearToast();
   const res = await fetch("/api/jobs", {
     method: "POST",
     headers: {"Content-Type": "application/json"},
     body: JSON.stringify({action: state.action, payload: gatherPayload()})
   });
-  const job = await res.json();
-  state.activeJob = job.id;
-  renderJob(job);
+  const body = await res.json();
+  if (!res.ok) {
+    showToast(body.error || `request failed: HTTP ${res.status}`, "error");
+    return;
+  }
+  state.activeJob = body.id;
+  state.lastStatus = body.status;
+  renderJob(body);
   pollNow();
+}
+
+function showToast(message, kind = "info") {
+  const t = document.getElementById("toast");
+  if (!t) return;
+  t.textContent = message;
+  t.className = "toast " + kind;
+  t.hidden = false;
+  if (t._timer) clearTimeout(t._timer);
+  t._timer = setTimeout(() => clearToast(), kind === "error" ? 10000 : 5000);
+}
+function clearToast() {
+  const t = document.getElementById("toast");
+  if (!t) return;
+  t.hidden = true;
+  t.textContent = "";
+  if (t._timer) clearTimeout(t._timer);
 }
 
 function renderJob(job) {
@@ -2723,6 +2816,17 @@ async function pollNow() {
   if (!res.ok) return;
   const job = await res.json();
   renderJob(job);
+  // Status-transition handling — surface the user-facing outcome
+  const prev = state.lastStatus;
+  if (prev === "running" && job.status === "ok") {
+    showToast("✓ Job completed — previewing first output", "success");
+    const arts = job.artifacts || [];
+    if (arts.length > 0) previewFile(arts[0]);
+  } else if (prev === "running" && job.status === "failed") {
+    const issues = (job.issues || []).slice(0, 1)[0] || `process exited ${job.returncode}`;
+    showToast("✗ Job failed: " + issues, "error");
+  }
+  state.lastStatus = job.status;
   if (job.status !== "running") loadRuns();
 }
 
