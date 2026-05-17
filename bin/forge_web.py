@@ -240,9 +240,9 @@ def _watch_dirs_for(action: str, payload: dict[str, Any]) -> list[str]:
             paths.append(str(out.with_name(out.stem + "-bg.png")))
     elif action in {"edit", "voice", "video", "mandala", "folk-art"}:
         paths += _payload_paths(payload, "out")
-    elif action in {"brief", "episode", "audiobook", "audiobook-simple", "childrens-book", "engine", "coloring-page", "mandala-art-page", "indian-folk-page"}:
+    elif action in {"brief", "episode", "audiobook", "audiobook-simple", "childrens-book", "engine", "coloring-page", "mandala-art-page", "indian-folk-page", "stylized-cinematic-page"}:
         paths += _payload_paths(payload, "out")
-        if action in {"engine", "coloring-page", "mandala-art-page", "indian-folk-page"} and not str(payload.get("out") or "").strip():
+        if action in {"engine", "coloring-page", "mandala-art-page", "indian-folk-page", "stylized-cinematic-page"} and not str(payload.get("out") or "").strip():
             paths.append(str(DEFAULT_OUTPUT_ROOT / "engine-renders"))
         if action == "audiobook-simple" and not str(payload.get("out") or "").strip():
             paths.append(str(DEFAULT_OUTPUT_ROOT / "audiobook"))
@@ -388,6 +388,26 @@ def build_command(action: str, payload: dict[str, Any]) -> tuple[list[str], list
             ("composition.border",    payload.get("ma_border")),
         ])
         _add(cmd, "--config", ma_config)
+        _add(cmd, "--seeds", payload.get("seeds"))
+        _add(cmd, "--seed", payload.get("seed"))
+        _add(cmd, "--guidance", payload.get("guidance"))
+        _add_bool(cmd, "--refine", payload.get("refine"))
+        _add_bool(cmd, "--hi-res", payload.get("hi_res"))
+        _add_bool(cmd, "--ultra-res", payload.get("ultra_res"))
+        _add_bool(cmd, "--no-default-loras", payload.get("no_default_loras"))
+        _add(cmd, "--out", payload.get("out"))
+    elif action == "stylized-cinematic-page":
+        cmd.extend(["engine", "render", "stylized-cinematic"])
+        _add(cmd, "--recipe", payload.get("recipe"))
+        _add(cmd, "--subject", payload.get("subject"))
+        sc_config = _join_kv_pairs([
+            ("style.tradition",             payload.get("sc_tradition")),
+            ("light.time_of_day",           payload.get("sc_time_of_day")),
+            ("light.sky_state",             payload.get("sc_sky_state")),
+            ("light.twinkles_and_glow",     payload.get("sc_twinkles")),
+            ("light.atmospheric_medium",    payload.get("sc_atmosphere")),
+        ])
+        _add(cmd, "--config", sc_config)
         _add(cmd, "--seeds", payload.get("seeds"))
         _add(cmd, "--seed", payload.get("seed"))
         _add(cmd, "--guidance", payload.get("guidance"))
@@ -2338,12 +2358,13 @@ const groups = [
     ["gallery", "All renders + ratings"],
   ]],
   ["CREATE — TYPE A PROMPT", [
-    ["coloring-page",     "▸ Children's coloring book"],
-    ["mandala-art-page",  "▸ Mandala art (subject-centred)"],
-    ["indian-folk-page",  "▸ Indian folk art (Madhubani / Warli / Tanjore)"],
-    ["thumbnail",         "▸ Thumbnail (preset + prompt)"],
-    ["engine",            "▸ Other engine (advanced)"],
-    ["edit",              "▸ Edit / restyle an image"],
+    ["coloring-page",            "▸ Children's coloring book"],
+    ["mandala-art-page",         "▸ Mandala art (subject-centred)"],
+    ["indian-folk-page",         "▸ Indian folk art (Madhubani / Warli / Tanjore)"],
+    ["stylized-cinematic-page",  "▸ Stylized cinematic (Tartakovsky / Mignola / McQuarrie / Ghibli)"],
+    ["thumbnail",                "▸ Thumbnail (preset + prompt)"],
+    ["engine",                   "▸ Other engine (advanced)"],
+    ["edit",                     "▸ Edit / restyle an image"],
   ]],
   ["CONTENT PIPELINES", [
     ["brief", "Episode kit"],
@@ -2494,6 +2515,33 @@ const specs = {
       {name:"seeds", label:"Variants", type:"number", value:"1"},
       {name:"seed", label:"Seed", type:"number", value:"1"},
       {name:"guidance", label:"Guidance", type:"number", value:"7.5"},
+      {name:"refine", label:"Refine", type:"checkbox"},
+      {name:"hi_res", label:"Hi-res", type:"checkbox"},
+      {name:"ultra_res", label:"Ultra-res", type:"checkbox"},
+      {name:"no_default_loras", label:"Skip engine's default LoRA stack", type:"checkbox"},
+      {name:"out", label:"Output path", type:"path"}
+    ]
+  },
+
+  "stylized-cinematic-page": {
+    title: "Stylized cinematic (Tartakovsky / Darksiders / Mignola / McQuarrie / Ghibli)",
+    fields: [
+      {name:"_s1", label:"SUBJECT", type:"section", hint:"Describe the scene. Examples: 'a lone samurai on a windswept hill at dusk', 'a knight kneeling in a cathedral with shafts of light from rose windows', 'a forest spirit standing in a misty bamboo grove'."},
+      {name:"subject", label:"Prompt — describe the scene", type:"textarea", required:true, value:"a lone samurai on a windswept hill at dusk"},
+
+      {name:"_s2", label:"VISUAL TRADITION", type:"section", hint:"Each tradition is a different drawn / painted register. Tartakovsky = flat-color cel with thick ink; Darksiders = thick-ink heroic anatomy with apocalyptic palette; Mignola = black-mass + single accent color; McQuarrie = painterly skies dominating silhouettes; Ghibli = soft gouache+watercolor backgrounds. (from-prompt) lets your prompt name the register."},
+      {name:"sc_tradition", label:"Tradition", type:"select", options:"scTraditions", value:"tartakovsky-cel"},
+
+      {name:"_s3", label:"CINEMATOGRAPHY — LIGHT + SKY + ATMOSPHERE", type:"section", hint:"Cinematic light science (color temperature, sun-angle, sky state). Leave any field as 'from-prompt' to let your prompt set it; choose an explicit value to anchor that layer regardless of prompt."},
+      {name:"sc_time_of_day", label:"Time of day (Kelvin + sun angle)", type:"select", options:"scTimeOfDay", value:"from-prompt"},
+      {name:"sc_sky_state", label:"Sky state", type:"select", options:"scSkyStates", value:"from-prompt"},
+      {name:"sc_twinkles", label:"Twinkles + glow (fireflies, lanterns, city lights)", type:"select", options:"scTwinkles", value:"from-prompt"},
+      {name:"sc_atmosphere", label:"Atmospheric medium (fog, mist, dust, rain, snow)", type:"select", options:"scAtmospheres", value:"from-prompt"},
+
+      {name:"_s4", label:"RENDER", type:"section", hint:"Defaults render at 1280×720, 28 steps, guidance 4.5. Use --seeds 4 for a best-of-4 contact sheet."},
+      {name:"seeds", label:"Variants", type:"number", value:"1"},
+      {name:"seed", label:"Seed", type:"number", value:"7"},
+      {name:"guidance", label:"Guidance", type:"number", value:"4.5"},
       {name:"refine", label:"Refine", type:"checkbox"},
       {name:"hi_res", label:"Hi-res", type:"checkbox"},
       {name:"ultra_res", label:"Ultra-res", type:"checkbox"},
@@ -2866,6 +2914,12 @@ const FIELD_HELP = {
   ic_mudra: "Hand gesture / body pose. abhaya = right hand raised, palm out (fearlessness). varada = palm down (giving). dhyana = both palms in lap (meditation). vitarka = thumb + index touching (teaching). anjali = palms together at chest (greeting). tribhanga-flute = three-bend Krishna stance with flute.",
   ic_ground: "Where the scene takes place. madhubani-paper = cream paper with floral border bands (use with madhubani tradition). warli-mud-wall = brown earth wall, white pigment only (use with warli). warli-tarpa-circle = brown ground with central chauk + circular tarpa dance (use with warli). temple-interior / forest-grove / river-bank-yamuna / cosmic-water / celestial-sky / village-pastoral = classical settings for tanjore / pahari / ravi-varma.",
   ic_composition: "Figure arrangement. hieratic-centered = one large deity at center, attendants small around. narrative-multi-figure = scene unfolding across the canvas (e.g. tarpa dance, Krishna's leelas). lyric-intimate = two-figure close composition. cosmic-cosmic = vast multi-scale cosmological tableau.",
+  // Stylized cinematic — friendly form fields
+  sc_tradition: "Visual register. tartakovsky-cel = flat-color cel + thick uniform ink (Samurai Jack 2001, Primal 2019). darksiders-comic = thick-ink heroic anatomy + apocalyptic palette (Joe Mad). mignola-hellboy-ink = pure black masses + single saturated accent (Hellboy 1993). mcquarrie-conceptual = painterly skies dominating hard-edged silhouettes (Star Wars concept 1975-83). studio-ghibli-painterly = soft gouache+watercolor backgrounds (Kazuo Oga, Yoji Takeshige).",
+  sc_time_of_day: "Cinematographer-grounded time-of-day. pre-dawn-blue (8000-10000K, sun -6° to -12°). civil-dawn (4500-6500K, sun -3° to +3°). golden-hour-late (2700-3500K, sun +3° to +10°). harsh-noon (5500-6500K, sun +60°+). blue-hour (9000-12000K, sun -4° to -8°, the cinematic moment for city lights). urban-night-sodium (2200-2800K street lamps). moonlit-night (4100K reflected sunlight). starlit-night-rural (deep cobalt sky, no light pollution).",
+  sc_sky_state: "Sky as a character. clear-blue = smooth gradient. partly-cumulus = friendly cotton-puff sky. dramatic-cumulus = vertical stacks with crepuscular rays. cirrus-streak = high wispy ice clouds. overcast-blanket = featureless soft-shadow sky. sunset-pastel = magenta + amber gradient. starfield-rural / milky-way-band = deep-sky astronomy. aurora-curtain = green/magenta high-latitude. stormy-cloud-anvil = anvil-headed cumulonimbus.",
+  sc_twinkles: "Small light sources. none = subject + major light only. scattered-fireflies = 8-20 warm-yellow specks. distant-city-lights = pin-prick window-lights at horizon. candle-cluster = warm 1850K candle flames. fairy-lights-string = even-spaced warm-white dots. lantern-cluster = paper lanterns (Diwali / Mid-Autumn register). sparse-stars = 30-80 visible stars (early evening). dense-star-field = 200+ stars (rural deep sky). bioluminescent-water = blue-green plankton glow.",
+  sc_atmosphere: "Air medium. clear-dry = sharp colors + distance visibility. fog-low = ground-level dense fog, mystery+isolation register. mist-mid = waist-to-head-height mist, painterly depth (Ghibli classic). rain-streak = diagonal rain lines + wet surfaces. smoke-haze = warm-tinted hanging smoke (urban / fire / cigar register). dust-mote = floating particles caught in light shafts. snow-fall = active snowflakes + breath-puffs. volumetric-shaft = visible god-rays through windows / canopy / barn doors.",
   no_default_loras: "By default, each engine auto-applies its curated LoRA stack (see brand/loras/README.md) — RealismLora + add-details for wildlife, film-noir + add-details for noir-cinema, Coloring-Book LoRA for childrens-coloring-book, Van Gogh for impressionist, Indo-Realism for indian-classical. Check this box to render WITHOUT them (vanilla FLUX) — useful for A/B comparison or when iterating on a new prompt without LoRA bias. Engines without curated picks (mandala-art) ignore this flag.",
 };
 
@@ -2901,6 +2955,12 @@ function optionsFor(field) {
   if (field.options === "icMudras") return [{value:"from-prompt", label:"(from prompt — let your text decide)"}, ...["abhaya", "varada", "dhyana", "vitarka", "anjali", "tribhanga-flute"].map(v => ({value:v, label:v}))];
   if (field.options === "icGrounds") return [{value:"from-prompt", label:"(from prompt — let your text decide)"}, ...["madhubani-paper", "warli-mud-wall", "warli-tarpa-circle", "temple-interior", "forest-grove", "river-bank-yamuna", "cosmic-water", "celestial-sky", "village-pastoral"].map(v => ({value:v, label:v}))];
   if (field.options === "icCompositions") return [{value:"from-prompt", label:"(from prompt — let your text decide)"}, ...["hieratic-centered", "narrative-multi-figure", "lyric-intimate", "cosmic-cosmic"].map(v => ({value:v, label:v}))];
+  // Stylized-cinematic enums (mirror bin/style_engines.py)
+  if (field.options === "scTraditions") return [{value:"from-prompt", label:"(from prompt — let your text decide)"}, ...["tartakovsky-cel", "darksiders-comic", "mignola-hellboy-ink", "mcquarrie-conceptual", "studio-ghibli-painterly"].map(v => ({value:v, label:v}))];
+  if (field.options === "scTimeOfDay") return [{value:"from-prompt", label:"(from prompt — let your text decide)"}, ...["pre-dawn-blue", "civil-dawn", "mid-morning", "harsh-noon", "golden-hour-late", "golden-hour-low", "blue-hour", "urban-night-sodium", "moonlit-night", "starlit-night-rural", "aurora-magic"].map(v => ({value:v, label:v}))];
+  if (field.options === "scSkyStates") return [{value:"from-prompt", label:"(from prompt — let your text decide)"}, ...["clear-blue", "partly-cumulus", "dramatic-cumulus", "cirrus-streak", "overcast-blanket", "sunset-pastel", "starfield-rural", "milky-way-band", "aurora-curtain", "stormy-cloud-anvil"].map(v => ({value:v, label:v}))];
+  if (field.options === "scTwinkles") return [{value:"from-prompt", label:"(from prompt — let your text decide)"}, ...["none", "scattered-fireflies", "distant-city-lights", "candle-cluster", "fairy-lights-string", "lantern-cluster", "sparse-stars", "dense-star-field", "bioluminescent-water"].map(v => ({value:v, label:v}))];
+  if (field.options === "scAtmospheres") return [{value:"from-prompt", label:"(from prompt — let your text decide)"}, ...["clear-dry", "fog-low", "mist-mid", "rain-streak", "smoke-haze", "dust-mote", "snow-fall", "volumetric-shaft"].map(v => ({value:v, label:v}))];
   return (cfg[field.options] || []).map(v => ({value:v, label:v}));
 }
 
@@ -3408,6 +3468,7 @@ function renderForm() {
     "coloring-page": "childrens-coloring-book",
     "mandala-art-page": "mandala-art",
     "indian-folk-page": "indian-classical",
+    "stylized-cinematic-page": "stylized-cinematic",
   };
   const sugEngine = engineForAction[state.action];
   if (sugEngine !== undefined) {

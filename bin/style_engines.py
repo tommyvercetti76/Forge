@@ -2388,6 +2388,527 @@ class MandalaArtEngine(Engine):
 
 
 # ════════════════════════════════════════════════════════════════════════════
+# StylizedCinematicEngine — 2D-illustration traditions × deep cinematography
+# ════════════════════════════════════════════════════════════════════════════
+#
+# Five visual registers (tradition) × four atmospheric sub-configs (time of day,
+# sky state, twinkles & glow, atmospheric medium). Subject is free-form. Every
+# enum value carries 30-50 tokens of specific craft / science description so the
+# engine reaches genuinely-on-tradition output instead of generic "stylized".
+#
+# Tradition = WHO drew it. Light/sky/twinkles/atmosphere = WHAT MOMENT it shows.
+# Free-form subject = WHAT'S IN IT.
+
+
+_SC_TRADITION = EnumBank("tradition", [
+    EnumValue(
+        "from-prompt",
+        "(no tradition fingerprint — the user's free-form prompt names the visual register)",
+    ),
+    EnumValue(
+        "tartakovsky-cel",
+        "Genndy Tartakovsky 2D cel-animation tradition (Samurai Jack 2001-2004 + "
+        "Primal 2019-2022 + Star Wars: Clone Wars 2003-2005): hand-drawn cel "
+        "frames, THICK uniform black ink outlines (1.5-2pt at 1080p), FLAT color "
+        "fills with NO gradients, max-TWO cel-shadow tones per surface (light + "
+        "one darker step, never smooth ramps), geometric shape-language "
+        "(silhouettes built from triangles, trapezoids, circles), hand-painted "
+        "backgrounds at slightly softer line-weight than the foreground, 60-30-10 "
+        "palette with one focal saturated color (Jack's white robe against teal+"
+        "ochre desert; Spear's red+ochre against rain-soaked indigo).",
+        masters=("Tartakovsky — Samurai Jack S1E1 'I' (2001)", "Tartakovsky — Primal S1E1 'Spear and Fang' (2019)", "Scott Wills (BG painter on Samurai Jack)"),
+    ),
+    EnumValue(
+        "darksiders-comic",
+        "Joe Madureira Darksiders register (2010 Darksiders + 2012 Darksiders II "
+        "+ his Battle Chasers + Inhumans comics): thick BLACK ink outlines with "
+        "deliberate thick-to-thin modulation along contour, exaggerated heroic "
+        "anatomy (oversized shoulders + forearms + weapons, narrow waist), gothic-"
+        "apocalyptic palette (hot orange/red lava + bronze + cool indigo + charcoal "
+        "blacks), heavy chiaroscuro with carved-out shadow shapes, weathered "
+        "surfaces (rust on metal, cracked stone, scorched leather), ALWAYS a "
+        "dramatic foreshortened pose or low-angle hero composition.",
+        masters=("Joe Madureira — Darksiders concept art (2010)", "Joe Mad — Battle Chasers covers (1998-2001)", "Joe Mad — Inhumans (1998)"),
+    ),
+    EnumValue(
+        "mignola-hellboy-ink",
+        "Mike Mignola Hellboy ink-and-mass tradition (Hellboy 1993-present, "
+        "BPRD): pure BLACK MASSES filling 50-60% of every panel, contour drawn "
+        "with strong jagged silhouette edges (not smooth curves — angular "
+        "stylization), ONE saturated accent color in the whole frame (Mignola's "
+        "signature is hellboy-red on grey + black ground), no rendered shading — "
+        "darks are flat shape, not ramp, deep occult / folkloric subject register, "
+        "tarot-card-like composition.",
+        masters=("Mike Mignola — Hellboy: Seed of Destruction (1993)", "Mignola — The Conqueror Worm (2001)", "Mignola — Pancakes (1999)"),
+    ),
+    EnumValue(
+        "mcquarrie-conceptual",
+        "Ralph McQuarrie Star-Wars-concept-art register (1975-1977 concept "
+        "paintings for Star Wars, Empire, Jedi + the Battlestar Galactica + "
+        "Cocoon work): painterly skies dominating the frame (golden-hour "
+        "horizons, alien planetary atmospheres), hard-edged silhouettes of "
+        "machinery + figures against soft backgrounds, restrained palette of "
+        "two or three families (warm horizon + cool foreground OR alien "
+        "magenta-teal), brushed gouache feel with visible stroke texture, "
+        "epic scale (figure tiny against landscape or vehicle).",
+        masters=("Ralph McQuarrie — Boba Fett concept (1978)", "McQuarrie — Cloud City matte paintings", "McQuarrie — Yavin temple paintings (1975)"),
+    ),
+    EnumValue(
+        "studio-ghibli-painterly",
+        "Studio Ghibli painterly background tradition (Kazuo Oga's painted "
+        "backgrounds for Totoro 1988 + Mononoke 1997 + Spirited Away 2001 + "
+        "Yoji Takeshige's later work): SOFT brush-painted gouache + watercolor "
+        "backgrounds with visible brush direction, lush atmospheric depth "
+        "(misty mid-grounds, sun-shaft volumetrics), naturalistic lighting "
+        "with golden-warm key + cool shadow, figures drawn in cleaner anime-"
+        "line over the painterly background, every leaf cluster / cloud / "
+        "water-surface treated as a small painting rather than a mass-fill.",
+        masters=("Kazuo Oga — My Neighbor Totoro (1988)", "Oga — Princess Mononoke (1997)", "Yoji Takeshige — Spirited Away (2001), The Wind Rises (2013)"),
+    ),
+])
+
+_SC_TIME_OF_DAY = EnumBank("time_of_day", [
+    EnumValue(
+        "from-prompt",
+        "(no time-of-day template — the user's free-form prompt sets the time)",
+    ),
+    EnumValue(
+        "pre-dawn-blue",
+        "Pre-dawn / civil twilight (sun 6-12° below horizon, 30-40 min before "
+        "sunrise). Sky deep blue gradient (#0a2540 at zenith → #5077a8 at horizon), "
+        "no direct sun shadows yet, color temperature ~8000-10000 K. Vegetation + "
+        "buildings read as silhouettes against the brightening east. Often the "
+        "FIRST stars are still visible at the western half of the sky.",
+    ),
+    EnumValue(
+        "civil-dawn",
+        "Sun at the horizon, just rising. Sky on the eastern half is a fierce "
+        "horizontal gradient: deep red-orange (#c43d10) at the horizon → magenta-"
+        "pink (#d9587a) at ~15° → indigo at zenith. Long horizontal shadows from "
+        "everything; color temperature on the lit side ~2000-3000 K. Light is "
+        "GOLDEN-WARM but at a low angle that fills the underside of clouds.",
+    ),
+    EnumValue(
+        "golden-hour-low",
+        "1 hour after sunrise OR 1 hour before sunset. Sun at 5-15° elevation. "
+        "The CINEMATOGRAPHER'S favorite light (Roger Deakins, Christopher Doyle, "
+        "Emmanuel Lubezki all schedule for this). Color temperature 2700-3500 K — "
+        "deep amber-gold. Long soft shadows reaching ~3-5× the subject's height. "
+        "Rim-lighting on every contour facing the sun; the opposite contour "
+        "drops into deep ambient blue (#3a5470 typical). Atmosphere visible as "
+        "soft haze that turns distant landscape pale + warm.",
+    ),
+    EnumValue(
+        "mid-morning",
+        "3-5 hours after sunrise. Sun at 35-55° elevation, 5000-5500 K white-"
+        "neutral light, shadows fall at ~45° from vertical, medium-length and "
+        "hard-edged. Sky a clean cyan-blue at zenith (#4a90b8) gradient to "
+        "pale-blue at horizon. Highest LEGIBILITY light — every surface is "
+        "evenly lit and colors render at their truest. Suitable for active / "
+        "energetic / journalistic compositions.",
+    ),
+    EnumValue(
+        "harsh-noon",
+        "Sun at 75-90° elevation. Color temperature 5500-6500 K. Shadows are "
+        "tiny and directly below every subject (under the brow, under the chin, "
+        "directly underfoot). High-contrast unflattering light on faces — eye "
+        "sockets and the underside of the nose drop into deep shadow. Use "
+        "DELIBERATELY for graphic / intense / desert / midday-confrontation "
+        "subjects. Sky is cyan-blue (#4a8fb0) and the air has zero atmosphere-"
+        "color (no haze).",
+    ),
+    EnumValue(
+        "golden-hour-late",
+        "1 hour before sunset. Same physics as golden-hour-low but on the "
+        "OPPOSITE side of the day — the sun moves from high to low. Color "
+        "temperature 2700-3200 K, slightly warmer-redder than morning golden "
+        "hour (atmospheric scattering accumulates particulate over the day, "
+        "shifting light redder). Shadows extend AWAY from the viewer in most "
+        "Western compositions (sun is camera-left or camera-right at low angle).",
+    ),
+    EnumValue(
+        "blue-hour",
+        "20-40 minutes AFTER sunset (or before sunrise). Sun 4-8° below horizon. "
+        "No direct sun; the sky itself is the light source — saturated deep blue "
+        "(#0e2645) at zenith, fading to indigo-violet (#3a3a72) at horizon, "
+        "sometimes with a thin band of magenta-pink (#d96080) where the sun went "
+        "down. Color temperature 9000-12000 K. The MOST CINEMATIC moment for "
+        "city lights — warm 2200 K street lamps glow vividly against the deep "
+        "blue ambient. Strongly recommended for urban-night narratives.",
+    ),
+    EnumValue(
+        "starlit-night-rural",
+        "Deep rural night, no moon, far from cities. Sky black (#000d1e zenith) "
+        "with thousands of visible stars at various intensities. Color temperature "
+        "of starlight ~8000 K but at extremely low absolute brightness — the eye "
+        "sees mostly silhouettes against the sky. Milky Way band visible as a "
+        "faint diagonal cloud across the sky if the latitude is right. Landscape "
+        "reads as black silhouettes against slightly-paler sky.",
+    ),
+    EnumValue(
+        "moonlit-night",
+        "Full or near-full moon, high in the sky. Moonlight is sunlight reflected "
+        "off the moon's albedo-0.12 grey surface — same color spectrum as the sun "
+        "but ~400,000× dimmer. Color temperature 4000-4500 K (cooler than direct "
+        "sun, slightly warmer than blue-hour). Shadows present and hard but very "
+        "low-intensity. Landscape painted in muted blue-grey tones; the moon "
+        "itself often visible in frame as a pale disc with subtle crater shadows.",
+    ),
+    EnumValue(
+        "urban-night-sodium",
+        "Urban / suburban night under sodium-vapor or warm LED street lamps. "
+        "Color temperature 2200 K at the lamps themselves — deep yellow-amber. "
+        "Sky above the city glows pale orange (light pollution dome) — almost no "
+        "stars visible. Shadows are diffuse + multi-directional from competing "
+        "lamps. Wet pavement (rain, recent rain) doubles the visible light count "
+        "via reflection — the signature look of urban noir.",
+    ),
+    EnumValue(
+        "aurora-magic",
+        "Polar / sub-polar latitudes, clear winter sky, magnetic storm active. "
+        "Aurora visible as flowing curtains of green (#5fe858, dominant), often "
+        "with violet-red (#a0408a) lower edge from oxygen O2 emissions. Stars "
+        "visible behind/around the aurora. Color temperature for the aurora "
+        "itself is meaningless (emission spectrum, not blackbody) — it's a real "
+        "additive light source, NOT a sky color. Landscape readable in faint "
+        "green ambient.",
+    ),
+])
+
+_SC_SKY_STATE = EnumBank("sky_state", [
+    EnumValue(
+        "from-prompt",
+        "(no sky-state template — the user's free-form prompt describes the sky)",
+    ),
+    EnumValue(
+        "clear-blue",
+        "Cloudless or near-cloudless. Sky reads as a smooth gradient from "
+        "saturated cyan-blue at zenith to pale-blue near the horizon. Suitable "
+        "background for hero-shot subjects when the figure needs to dominate.",
+    ),
+    EnumValue(
+        "partly-cumulus",
+        "Scattered cumulus clouds (the puffy 'fair-weather' kind), each cloud "
+        "discrete with a defined base + rounded top. Cloud bottoms are flat + "
+        "shadowed; tops are sunlit + bright. Wind direction visible in the slight "
+        "lean of taller clouds. Sky between clouds is clear blue.",
+    ),
+    EnumValue(
+        "dramatic-cumulus",
+        "Tall vertical cumulus or cumulonimbus formations — stacked stories of "
+        "cloud rising to 5-15 km. Strong vertical light shafts (crepuscular rays) "
+        "may pierce between clouds. Hard contrast between bright sunlit tops and "
+        "deep shadowed undersides. The sky becomes a CHARACTER in the frame.",
+    ),
+    EnumValue(
+        "cirrus-streak",
+        "High-altitude cirrus — thin, wispy, brush-stroked clouds at 7-13 km "
+        "elevation. Cirrus form parallel streaks across the sky reading direction "
+        "of high-altitude jet stream. Color: pure white in mid-day light, fiery "
+        "pink/orange at golden hour, blue-grey at twilight.",
+    ),
+    EnumValue(
+        "overcast-blanket",
+        "Complete cloud cover, no sun visible. Sky reads as a flat soft-grey "
+        "(neutral 5000 K diffuse), no shadows on the ground anywhere — every "
+        "surface is evenly lit by the hemisphere. Highest detail-rendering "
+        "light. Mood: contemplative, melancholic, neutral.",
+    ),
+    EnumValue(
+        "sunset-pastel",
+        "Sky at sunset / sunrise gradient with pastel rather than saturated "
+        "colors: pale peach (#f5d4b8) at horizon → soft lavender (#d9c8e8) "
+        "at mid-sky → pale blue at zenith. Cloud edges catch the light at "
+        "warm pastel hues. Mood: gentle, romantic, end-of-day.",
+    ),
+    EnumValue(
+        "starfield-rural",
+        "Full visible starfield from a dark-sky site. Stars at multiple "
+        "brightnesses — bright + close stars render as small bright dots with "
+        "slight cross-flare; dim + distant ones as fine grain. Constellations "
+        "may be recognizable (Orion, Big Dipper, Southern Cross depending on "
+        "hemisphere). NO light pollution.",
+    ),
+    EnumValue(
+        "milky-way-band",
+        "The Milky Way galactic disc visible as a luminous diagonal cloud "
+        "across the sky — a band of densely-packed stars too faint to resolve "
+        "individually, with darker dust-lane interruptions. Best visible "
+        "April-September in the northern hemisphere, looking south. The "
+        "GALACTIC CENTER (in Sagittarius) is the brightest section.",
+    ),
+    EnumValue(
+        "aurora-curtain",
+        "Northern or southern lights as flowing curtains across the sky — "
+        "predominantly emerald green (oxygen 558 nm emission), occasionally "
+        "red lower edge (oxygen 630 nm) or violet upper edge (nitrogen). "
+        "Curtains often hang vertically from a 'top' altitude of ~100 km. "
+        "Stars remain visible BEHIND the aurora.",
+    ),
+    EnumValue(
+        "stormy-cloud-anvil",
+        "Mature thunderstorm anvil cloud — flat-topped, spread laterally above "
+        "a tall column. Dark grey-purple base, brilliantly lit top in raking "
+        "sun. May contain visible lightning streaks. Atmospheric tension at "
+        "maximum.",
+    ),
+])
+
+_SC_TWINKLES = EnumBank("twinkles_and_glow", [
+    EnumValue("from-prompt", "(no twinkle template — prompt sets the small light sources)"),
+    EnumValue("none",          "No small light sources in frame. Subject and major light only."),
+    EnumValue(
+        "scattered-fireflies",
+        "Scattered fireflies / lightning bugs — 8-20 small warm-yellow glowing "
+        "spots, slightly out-of-focus, distributed through the mid-ground and "
+        "background. Best at late dusk or in dark woodland. Each glow ~2200 K, "
+        "soft halo.",
+    ),
+    EnumValue(
+        "distant-city-lights",
+        "Distant city skyline at night — many small warm-amber + cool-white "
+        "windows + streetlamps spread across a distant horizon. Individual lights "
+        "as 1-2-pixel bright dots; collective sodium-orange glow above. Strong "
+        "atmospheric depth signal — places the camera FAR from the city.",
+    ),
+    EnumValue(
+        "candle-cluster",
+        "Cluster of 3-8 candle flames in the foreground or mid-ground. Each "
+        "flame ~1900 K, casts a warm orange glow on nearby surfaces with deep "
+        "falloff. Often arranged on a shrine, altar, or windowsill.",
+    ),
+    EnumValue(
+        "fairy-lights-string",
+        "String of small warm-white LED 'fairy lights' looping through trees, "
+        "across an awning, or wrapped around a structural element. Each light "
+        "~3000 K, small + numerous + slightly varied intensity. Suggests "
+        "celebration, intimacy, festive evening.",
+    ),
+    EnumValue(
+        "lantern-cluster",
+        "Cluster of paper or metal lanterns hanging mid-air — each one a "
+        "discrete warm point of light (2400-2800 K), often with the lantern "
+        "shape visible as a soft silhouette around the flame. Diwali / Lunar "
+        "New Year / Mid-Autumn festival register.",
+    ),
+    EnumValue(
+        "sparse-stars",
+        "8-30 individual stars scattered against the sky — visible enough to "
+        "read as 'a night with stars' without dominating the frame. Mix of "
+        "brighter primary stars and fainter background stars.",
+    ),
+    EnumValue(
+        "dense-star-field",
+        "Hundreds to thousands of stars filling the night sky — full visible "
+        "Milky Way + scattered foreground brights. Maximum stellar density "
+        "the eye / camera can resolve. Best paired with starlit-night-rural "
+        "time-of-day.",
+    ),
+    EnumValue(
+        "bioluminescent-water",
+        "Bioluminescent plankton / algae in water producing soft blue-green "
+        "glow (~480 nm) along wave crests, footprints in wet sand, oar strokes. "
+        "Quiet eerie magic register — rare coastal phenomenon.",
+    ),
+])
+
+_SC_ATMOSPHERIC_MEDIUM = EnumBank("atmospheric_medium", [
+    EnumValue("from-prompt", "(no atmospheric template — prompt sets the air)"),
+    EnumValue(
+        "clear-dry",
+        "Dry transparent air. Sharp visibility into the distance. Colors render "
+        "at their true saturation. Used for high-desert / clean-air / cold-front "
+        "compositions.",
+    ),
+    EnumValue(
+        "fog-low",
+        "Dense ground-level fog, knee-height to chest-height in foreground, "
+        "thickening into the mid-distance until everything beyond ~50m fades "
+        "to white. Subjects' lower halves obscured. Mood: mystery, isolation, "
+        "danger-imminent.",
+    ),
+    EnumValue(
+        "mist-mid",
+        "Light mist at mid-air — visibility maintained but distant landscape "
+        "softened + lifted in value (mid-grey replaces full saturation past "
+        "~200m). Common at golden hour in coastal / valley terrain.",
+    ),
+    EnumValue(
+        "rain-streak",
+        "Active rain — diagonal silver streaks visible against dark backgrounds, "
+        "wet sheen on every horizontal surface, characters slightly diminished "
+        "in contrast by intervening atmosphere. Mood: melancholic, intense, "
+        "cinematic.",
+    ),
+    EnumValue(
+        "smoke-haze",
+        "Heavy smoke or industrial haze — visible as a bright glowing volume "
+        "wherever light passes through it (volumetric shafts), surfaces beyond "
+        "the haze drop in saturation. Use for industrial / war / wildfire / "
+        "Blade-Runner registers.",
+    ),
+    EnumValue(
+        "dust-mote",
+        "Dust motes drifting in sunlight, visible as small bright specks in "
+        "the light cones. Suggests stillness, abandoned spaces, archives, "
+        "long-undisturbed interiors.",
+    ),
+    EnumValue(
+        "snow-fall",
+        "Active snowfall — visible flakes diagonally drifting in the foreground "
+        "and mid-ground, ground-snow accumulating, breath visible from "
+        "characters as small puffs of warm-vapor against the cold air.",
+    ),
+    EnumValue(
+        "volumetric-shaft",
+        "Single or multiple visible light shafts piercing through a darker "
+        "interior — sun through cathedral windows, through forest canopy, through "
+        "a barn door. Dust + humidity make the shaft visible as a solid bright "
+        "volume rather than just a path of light.",
+    ),
+])
+
+
+@dataclass(frozen=True)
+class SCSubjectConfig:
+    subject: str                                  # free text — the scene
+
+@dataclass(frozen=True)
+class SCStyleConfig:
+    tradition: str = "tartakovsky-cel"            # explicit default — defines the visual register
+
+@dataclass(frozen=True)
+class SCLightConfig:
+    time_of_day: str = "from-prompt"
+    sky_state: str = "from-prompt"
+    twinkles_and_glow: str = "from-prompt"
+    atmospheric_medium: str = "from-prompt"
+
+@dataclass(frozen=True)
+class StylizedCinematicConfig:
+    subject: SCSubjectConfig
+    style: SCStyleConfig = field(default_factory=SCStyleConfig)
+    light: SCLightConfig = field(default_factory=SCLightConfig)
+    seed: int = 1
+
+
+class StylizedCinematicEngine(Engine):
+    name: ClassVar[str] = "stylized-cinematic"
+    config_cls: ClassVar[type] = StylizedCinematicConfig
+    masters: ClassVar[tuple[str, ...]] = (
+        "Genndy Tartakovsky — Samurai Jack (2001) + Primal (2019): flat-color cel "
+        "with hand-painted backgrounds + 60/30/10 palette discipline",
+        "Joe Madureira — Darksiders (2010) + Battle Chasers: heavy black-ink "
+        "anatomical exaggeration + apocalyptic palette",
+        "Mike Mignola — Hellboy (1993): black-mass composition with single "
+        "saturated accent (the red-on-grey-on-black signature)",
+        "Ralph McQuarrie — Star Wars concept paintings (1975-1983): painterly "
+        "skies dominating hard-edged subject silhouettes",
+        "Kazuo Oga + Yoji Takeshige — Studio Ghibli background paintings: "
+        "lush atmospheric depth with gouache+watercolor brushwork",
+        "Roger Deakins (1917, Blade Runner 2049): golden-hour + volumetric-"
+        "atmosphere cinematography reference for time-of-day science",
+    )
+    palette_60_30_10 = {
+        "dominant":  {"hex": "#1A4A52", "role": "background / sky / large surfaces"},
+        "secondary": {"hex": "#E8D9B8", "role": "midground + character highlights"},
+        "accent":    {"hex": "#D4751A", "role": "single focal accent (ON-AIR sign, mic light, golden-hour rim)"},
+    }
+    default_runtime = {"model": "dev", "steps": 28, "guidance": 4.5}
+    engine_negatives: ClassVar[tuple[str, ...]] = (
+        "photorealism", "photographic detail", "3D rendered look",
+        "smooth digital gradients", "anatomically wrong limbs", "extra fingers",
+        "AI glow halo", "halation bloom", "soft focus haze", "watercolor smudge",
+        "anime sparkle giant eyes", "manga chibi proportions",
+        "Disney-3D plastic look", "Pixar volumetric render",
+        "watermark", "signature", "text overlay", "page number",
+        "uniform pattern density", "claustrophobic over-rendered",
+    )
+    # No curated FLUX LoRA for this register yet — relies on prompt + master
+    # citations. Future option: add a Tartakovsky / Mignola LoRA when available.
+    default_lora_stack: ClassVar[tuple[tuple[str, float], ...]] = ()
+
+    TRADITION = _SC_TRADITION
+    TIME_OF_DAY = _SC_TIME_OF_DAY
+    SKY_STATE = _SC_SKY_STATE
+    TWINKLES = _SC_TWINKLES
+    ATMOSPHERIC_MEDIUM = _SC_ATMOSPHERIC_MEDIUM
+
+    @classmethod
+    def build(cls, config: StylizedCinematicConfig) -> Directive:
+        sub = config.subject
+        st = config.style
+        lt = config.light
+
+        tradition = cls.TRADITION.validate(st.tradition)
+        tod = cls.TIME_OF_DAY.validate(lt.time_of_day)
+        sky = cls.SKY_STATE.validate(lt.sky_state)
+        twinkle = cls.TWINKLES.validate(lt.twinkles_and_glow)
+        atmo = cls.ATMOSPHERIC_MEDIUM.validate(lt.atmospheric_medium)
+
+        clean_subject = normalize_subject(sub.subject)
+
+        audit = {
+            "tradition": tradition.description,
+            "time_of_day": tod.description,
+            "sky_state": sky.description,
+            "twinkles_and_glow": twinkle.description,
+            "atmospheric_medium": atmo.description,
+        }
+
+        # Trim the tradition description to fit T5-XXL window without truncating
+        # the load-bearing light + atmosphere descriptions.
+        tradition_short = tradition.description
+        if len(tradition_short) > 480:
+            tradition_short = tradition_short[:480].rsplit(". ", 1)[0] + "."
+
+        prompt_parts = [f"SCENE: {clean_subject}."]
+        if tradition.key != "from-prompt":
+            prompt_parts.append(f"VISUAL REGISTER ({tradition.key}): {tradition_short}")
+        prompt_parts.append(assemble_masters_line(cls.masters))
+
+        if tod.key != "from-prompt":
+            prompt_parts.append(f"LIGHT — TIME OF DAY: {tod.description}")
+        if sky.key != "from-prompt":
+            prompt_parts.append(f"SKY STATE: {sky.description}")
+        if twinkle.key != "from-prompt":
+            prompt_parts.append(f"TWINKLES + GLOW: {twinkle.description}")
+        if atmo.key != "from-prompt":
+            prompt_parts.append(f"ATMOSPHERIC MEDIUM: {atmo.description}")
+
+        prompt_parts.extend([
+            "RENDER DISCIPLINE: respect the tradition above absolutely — flat "
+            "color fills, deliberate cel-shadow tones (not smooth ramps), bold "
+            "ink outlines where the tradition calls for them. The sky / light / "
+            "atmospheric layers above are SCIENCE-grounded — render the color "
+            "temperature, the shadow angles, the cloud structure faithfully. "
+            "NO photorealism creep, NO 3D-render plastic, NO AI-glow halo, "
+            "NO smooth digital gradients. The frame should read as a hand-"
+            "drawn / hand-painted production-grade still from the named "
+            "tradition's repertoire.",
+
+            "PALETTE — strict 60-30-10 discipline: 60% dominant (sky / large "
+            "background surfaces), 30% midground + character base tones, 10% "
+            "ONE focal accent color drawing the eye to the subject's most "
+            "important element.",
+        ])
+
+        prompt = "\n\n".join(prompt_parts)
+
+        return Directive(
+            engine=cls.name,
+            positive=prompt,
+            negatives=tuple(cls.engine_negatives),
+            palette_60_30_10=dict(cls.palette_60_30_10),
+            runtime=dict(cls.default_runtime),
+            seed=int(config.seed),
+            audit=audit,
+            config=_config_to_dict(config),
+            masters=cls.masters,
+        )
+
+
+# ════════════════════════════════════════════════════════════════════════════
 # Registry + entry points
 # ════════════════════════════════════════════════════════════════════════════
 
@@ -2407,6 +2928,7 @@ ENGINES: dict[str, type[Engine]] = {
     IndianClassicalEngine.name: IndianClassicalEngine,
     ChildrensColoringBookEngine.name: ChildrensColoringBookEngine,
     MandalaArtEngine.name: MandalaArtEngine,
+    StylizedCinematicEngine.name: StylizedCinematicEngine,
 }
 
 
