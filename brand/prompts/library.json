@@ -306,5 +306,95 @@
       "composition.character_count": 2
     },
     "seed": 17
+  },
+
+  "_series_aaji_aajoba_texas": "4-page Hanna-Barbera-style series: elderly Marathi couple (Aaji + Aajoba) feeding garden visitors on their Texas backyard patio. Use seeds 21..24 across pages for compositional variation while the character description anchors consistency.",
+
+  "coloring-aaji-aajoba-page1-morning-sparrows": {
+    "engine": "childrens-coloring-book",
+    "description": "Page 1 — Morning routine: Aaji carries a steel thali of seed onto the patio while Aajoba waits in the rocking chair; the first house sparrows arrive at the feeder.",
+    "subject": "an elderly Marathi grandfather (Aajoba) seated in a wooden rocking chair on a Texas backyard patio, his elderly wife (Aaji) in a cotton sari with pallu over her shoulder stepping out from a doorway carrying a round steel thali brimming with bird seed, three or four small house sparrows already perched on a hanging tube feeder under a wide-spreading live oak — drawn in Hanna-Barbera flat-cartoon line art (uniform black outlines, white-oval eyes with single-dot pupils, simple curved mouths, closed fillable shapes throughout)",
+    "config": {
+      "style.tradition": "hanna-barbera-flat-cartoon",
+      "style.age_range": "kids-6-9",
+      "subject.character_archetype": "elderly-marathi-couple",
+      "subject.emotion": "gentle",
+      "subject.props": "steel-thali-of-seed",
+      "scene.setting": "texas-backyard-patio",
+      "scene.time_of_day": "morning",
+      "scene.environmental_density": "balanced",
+      "narrative.moment": "wildlife-visit",
+      "narrative.story_beat": "Aaji has just stepped onto the patio with the morning seed; Aajoba smiles from the rocking chair; the first sparrows have already noticed.",
+      "composition.layout": "two-figure-balance",
+      "composition.framing": "wide",
+      "composition.character_count": 2
+    },
+    "seed": 21
+  },
+
+  "coloring-aaji-aajoba-page2-songbird-rush": {
+    "engine": "childrens-coloring-book",
+    "description": "Page 2 — Songbird rush: Aaji scattering seed by hand, a busy flock of sparrows and house finches at the feeder and on the patio, Aajoba pointing in delight.",
+    "subject": "the same elderly Marathi couple on their Texas backyard patio — Aaji (silver hair in a low bun, cotton sari with pallu, bindi on forehead, mangalsutra) is scattering bird seed by hand from a steel thali while Aajoba (silver hair, round glasses, cotton kurta) is pointing happily at the chaos — six to eight small songbirds (mostly house sparrows with one or two house finches) are perched on the tube feeder, the patio fence, and the live-oak branches, with a couple more in mid-flight — Hanna-Barbera flat-cartoon line art (uniform outlines, HB-style eyes, closed fillable shapes throughout, no shading)",
+    "config": {
+      "style.tradition": "hanna-barbera-flat-cartoon",
+      "style.age_range": "kids-6-9",
+      "subject.character_archetype": "songbird-flock",
+      "subject.emotion": "joyful",
+      "subject.props": "steel-thali-of-seed",
+      "scene.setting": "texas-backyard-patio",
+      "scene.time_of_day": "midday",
+      "scene.environmental_density": "rich",
+      "narrative.moment": "triumph-celebration",
+      "narrative.story_beat": "The morning's seed has drawn the whole songbird flock; Aaji laughs softly as Aajoba points out a finch hopping near his shoe.",
+      "composition.layout": "environmental-wide",
+      "composition.framing": "wide",
+      "composition.character_count": 3
+    },
+    "seed": 22
+  },
+
+  "coloring-aaji-aajoba-page3-blue-jay-visit": {
+    "engine": "childrens-coloring-book",
+    "description": "Page 3 — A Blue Jay arrives: the larger crested jay lands on the feeder while smaller songbirds make room; Aaji and Aajoba look up in surprise-delight.",
+    "subject": "the same elderly Marathi couple on the patio — Aaji standing with her steel thali held mid-air, Aajoba half-risen from the rocking chair, both looking up at a Blue Jay that has just landed on the tube feeder with its distinctive head crest raised and black neck-collar visible — two or three sparrows perched on the fence have shuffled to make room, and one house finch is visible in mid-flight at the edge — Hanna-Barbera flat-cartoon line art (uniform outlines, white-oval HB eyes with dot pupils, simple curved mouths, closed fillable regions throughout)",
+    "config": {
+      "style.tradition": "hanna-barbera-flat-cartoon",
+      "style.age_range": "kids-6-9",
+      "subject.character_archetype": "blue-jay-with-finches",
+      "subject.emotion": "surprised-delighted",
+      "subject.props": "bird-feeder-tube",
+      "scene.setting": "texas-backyard-patio",
+      "scene.time_of_day": "midday",
+      "scene.environmental_density": "balanced",
+      "narrative.moment": "wildlife-visit",
+      "narrative.story_beat": "A Blue Jay's first visit of the season — Aaji whispers 'look!' as the crested bird settles; the smaller songbirds politely shuffle aside.",
+      "composition.layout": "environmental-wide",
+      "composition.framing": "medium",
+      "composition.character_count": 4
+    },
+    "seed": 23
+  },
+
+  "coloring-aaji-aajoba-page4-rabbit-and-kit": {
+    "engine": "childrens-coloring-book",
+    "description": "Page 4 — A cottontail mother and her baby kit appear at the edge of the patio; Aaji crouches with a piece of carrot, Aajoba pointing in wonder. The closing page of the series.",
+    "subject": "the same elderly Marathi couple on the Texas backyard patio in late golden-hour light — Aaji is crouched low on her chappals (sari hem gathered) holding out a small piece of carrot, Aajoba half-leaning from the rocking chair pointing in delighted surprise — at the edge of the patio sits an Eastern Cottontail rabbit (long upright ears, large hind legs, cotton-puff tail) with a noticeably smaller baby kit beside her (shorter ears, smaller body), both looking attentively at the offered carrot — two small house sparrows still on the fence in the background — Hanna-Barbera flat-cartoon line art (uniform outlines, HB-style white-oval eyes with dot pupils, simple curved mouths, fully closed fillable shapes — NO predatory teeth, NO cartoon clothing on the rabbits)",
+    "config": {
+      "style.tradition": "hanna-barbera-flat-cartoon",
+      "style.age_range": "kids-6-9",
+      "subject.character_archetype": "cottontail-rabbit-and-kit",
+      "subject.emotion": "surprised-delighted",
+      "subject.props": "no-prop",
+      "scene.setting": "texas-backyard-patio",
+      "scene.time_of_day": "golden-hour",
+      "scene.environmental_density": "balanced",
+      "narrative.moment": "wildlife-visit",
+      "narrative.story_beat": "A surprise late-afternoon visitor — Aaji freezes mid-crouch with her offering; Aajoba points as the cottontail mother and kit hesitate at the edge of the patio.",
+      "composition.layout": "environmental-wide",
+      "composition.framing": "wide",
+      "composition.character_count": 4
+    },
+    "seed": 24
   }
 }

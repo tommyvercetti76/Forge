@@ -1275,6 +1275,22 @@ _CB_TRADITION = EnumBank("tradition", [
         "younger-age traditions but still age-9+ readable.",
         masters=("Hayao Miyazaki — My Neighbor Totoro (1988) storyboards", "Spirited Away (2001) production sketches", "Howl's Moving Castle (2004) layouts"),
     ),
+    EnumValue(
+        "hanna-barbera-flat-cartoon",
+        "Hanna-Barbera 1957-1970s flat cel-animation tradition translated to line art: "
+        "uniform medium-weight black outlines around every form (no thick-to-thin "
+        "modulation), bodies built from smooth simple geometric shapes (oval torsos, "
+        "pill-shaped limbs, circular heads), CHARACTERISTIC HB EYES — a white oval "
+        "or circle for each eye containing a single round black pupil (NOT two-dot "
+        "Mo Willems minimal, NOT manga giant-eye sparkle), mouths drawn as a simple "
+        "curve or oval, eyebrows as small detached strokes above the eyes, hair "
+        "rendered as a few large flowing shapes rather than individual strands. "
+        "Backgrounds are flat silhouettes (trees as trunk-rectangle + canopy-oval, "
+        "houses as box + triangle roof), every shape closed and fillable. The page "
+        "should read instantly as 'a still from a Hanna-Barbera Saturday-morning "
+        "cartoon, but as a coloring page'.",
+        masters=("Hanna-Barbera — The Flintstones (1960-66)", "Yogi Bear (1958-62)", "The Jetsons (1962-63)", "Top Cat (1961-62)", "Huckleberry Hound (1958-62)"),
+    ),
 ])
 
 _CB_AGE_RANGE = EnumBank("age_range", [
@@ -1365,6 +1381,36 @@ _CB_CHARACTER_ARCHETYPE = EnumBank("character_archetype", [
         "twinkling expression, often partly hidden behind something or peeking "
         "around a corner — the page invites the child to find the mouse.",
     ),
+    EnumValue(
+        "elderly-marathi-couple",
+        "Elderly Marathi couple, ~70: Aajoba (grandpa) — silver hair, round glasses, "
+        "gentle smile, cotton kurta + loose trousers, chappal sandals. Aaji (grandma) "
+        "— silver hair in low bun, small bindi on forehead, cotton sari with pallu "
+        "over left shoulder, mangalsutra, simple bangles, chappals. Both kind, "
+        "rounded faces, simple eyes, small smiles.",
+    ),
+    EnumValue(
+        "songbird-flock",
+        "A flock of small Texas backyard birds: 4-6 HOUSE SPARROWS (small, round, "
+        "short conical beak), 1-2 HOUSE FINCHES (similar size, slightly slimmer), "
+        "optional 1 AMERICAN CROW (much larger, jet-black, blockier). Perched on "
+        "fence/feeder/ground, anisodactyl feet, side-set eye, beak proportional.",
+    ),
+    EnumValue(
+        "blue-jay-with-finches",
+        "ONE BLUE JAY (clearly central, pointed crest raised on top of head, blue "
+        "body with black necklace-band at throat, white wing-bars, sturdy beak, "
+        "noticeably larger than sparrows) plus 2-3 small house sparrows or house "
+        "finches at perch or ground level. The Jay's crest is the species ID — "
+        "draw it obviously.",
+    ),
+    EnumValue(
+        "cottontail-rabbit-and-kit",
+        "Eastern Cottontail rabbit + baby kit: adult has long upright ears, large "
+        "hind legs, signature white cotton-puff tail, side-set eyes. Kit is clearly "
+        "smaller with shorter ears, still big eyes. NATURAL non-anthropomorphic "
+        "posture (sitting on haunches or mid-hop). NO cartoon clothing, NO teeth.",
+    ),
 ])
 
 _CB_PROPS = EnumBank("props", [
@@ -1376,6 +1422,32 @@ _CB_PROPS = EnumBank("props", [
     EnumValue("flower-bouquet", "Small bouquet of 3-5 large rounded flowers (daisies / tulips), each flower-head a simple fillable shape."),
     EnumValue("lantern-glowing","Paper lantern with handle, simple geometric form (sphere / cylinder), no light rays drawn (line-art only — colorist supplies glow)."),
     EnumValue("kite-and-string","Diamond-shaped kite with bow-tail and long string snaking down to the character's hand."),
+    EnumValue(
+        "steel-thali-of-seed",
+        "Round Indian steel thali (flat metal plate) held in two hands, brimming "
+        "with bird-seed grains drawn as small simple ovals or dots. The thali's "
+        "rim shown as a clean outline. A traditional Marathi household object "
+        "used here for feeding garden birds.",
+    ),
+    EnumValue(
+        "bird-feeder-tube",
+        "Cylindrical tube bird-feeder hanging by a simple curved hook from a "
+        "tree branch — vertical tube with two or three small perches sticking "
+        "out near the base, a small dome cap on top. Inside, simple dot-patterns "
+        "suggest seed. A common Texas backyard fixture.",
+    ),
+    EnumValue(
+        "chai-cup-and-saucer",
+        "Small Indian-style chai cup (cutting-chai size, no handle OR a tiny "
+        "loop handle) on a small saucer, gentle steam curling up in a couple of "
+        "simple loops. Held in one hand or resting on a side table.",
+    ),
+    EnumValue(
+        "rocking-chair-side",
+        "Wooden rocking chair shown in side profile: simple seat + back + two "
+        "curved rocker rails on the ground, perhaps a folded shawl draped over "
+        "the back. The chair is a stable supporting element, not the focus.",
+    ),
     EnumValue("no-prop",        "No prop — character is the entire focus."),
 ])
 
@@ -1430,6 +1502,14 @@ _CB_SETTING = EnumBank("setting", [
         "mountain silhouette behind (simple triangular peak), occasional small "
         "plant. Cave interior remains lighter (not heavily blacked-in) so child "
         "can color it.",
+    ),
+    EnumValue(
+        "texas-backyard-patio",
+        "Texas suburban backyard OUTDOORS: wide spreading LIVE OAK tree (stout "
+        "trunk + broad low canopy), wooden patio deck in foreground, horizontal-"
+        "plank wooden fence at back, scattered bluebonnet wildflowers along edge, "
+        "a hanging tube bird-feeder on a branch, open sky with simple rounded "
+        "clouds. Outdoor scene — NOT an indoor room.",
     ),
 ])
 
@@ -1490,6 +1570,15 @@ _CB_NARRATIVE_MOMENT = EnumBank("narrative_moment", [
         "Bedtime blessing: tucking-in moment — child or creature in bed, a "
         "loving figure leaning to kiss forehead, lamp or moon overhead. Closing "
         "spread of a goodnight book.",
+    ),
+    EnumValue(
+        "wildlife-visit",
+        "Wildlife visit: human character(s) feeding or peacefully observing "
+        "wild animal visitors (birds at a feeder, rabbit in a yard, squirrel "
+        "at a branch). Body language gentle, slow, attentive — the moment of "
+        "shared peace between the human and the wild creature. Eye-contact "
+        "between human and animal optional, but the human's attention is "
+        "clearly on the animal.",
     ),
 ])
 
@@ -1720,69 +1809,52 @@ class ChildrensColoringBookEngine(Engine):
             f"STORY BEAT: {nar.story_beat.strip()}." if nar.story_beat.strip() else ""
         )
 
+        # T5-XXL budget — keep total prompt under ~2200 chars (~550 tokens).
+        # Subject + composition come FIRST so they never get truncated; style and
+        # rendering rules come after.
+        prop_line = f" Holding/with: {props.description}" if props.key != "no-prop" else ""
+        story_beat_line = f" {nar.story_beat.strip()}" if nar.story_beat.strip() else ""
+        plural = "" if cmp.character_count == 1 else "s"
+
+        # Trim the tradition description to its first ~400 chars so the page-art
+        # rules + subject still fit in the T5 window.
+        tradition_short = tradition.description
+        if len(tradition_short) > 420:
+            tradition_short = tradition_short[:420].rsplit(". ", 1)[0] + "."
+
+        # T5-XXL budget — keep total prompt under ~2200 chars (~550 tokens).
+        # Lead with the line-art directive (FLUX otherwise colorizes scenes with
+        # human characters + rich settings), then the subject, then style detail.
         prompt_parts = [
-            "GENRE: SINGLE PAGE FROM A CHILDREN'S COLORING BOOK — pure black-and-white "
-            "line art on a clean white page, NO color, NO shading, NO gradient, NO "
-            "interior fill. Every region is a closed continuous outline a child can "
-            "color inside. This is a finished spread from a published children's "
-            "title, not a sketch or doodle.",
+            "COLORING BOOK PAGE — black ink line drawing on a pure white page. "
+            "NO COLOR anywhere. NO shading, NO gradient, NO grey, NO interior fill. "
+            "Every region is a closed fillable outline a child colors inside. "
+            "Single-color black ink only. White background edge-to-edge.",
 
-            f"TRADITION: in the manner of {tradition.key}. {tradition.description}",
+            f"SCENE TO DRAW: {clean_subject}.{story_beat_line}",
 
-            assemble_masters_line(cls.masters),
+            f"CHARACTER DETAIL: {archetype.description}",
 
-            f"SUBJECT: {clean_subject}.",
-            f"CENTRAL CHARACTER: {archetype.description}",
-            f"EMOTION ON FACE: {emotion.description}",
+            f"EMOTION: {emotion.description}{prop_line}",
+
+            f"SETTING: {setting.description} Time: {tod.description}",
+
+            f"COMPOSITION: {layout.description} {framing.description} "
+            f"Exactly {cmp.character_count} named figure{plural} in the scene. "
+            f"Density: {density.description}",
+
+            f"DRAWING STYLE: {tradition.key} — {tradition_short}",
+
+            "LINE-ART RULES: closed continuous outlines; uniform line weight "
+            f"({age.key}-appropriate); PURE WHITE backgrounds (no grey/black fill); "
+            "texture only as sparse edge marks (NEVER interior hatching); "
+            "simple eyes — NEVER manga giant-eye sparkle, NEVER realistic irises; "
+            "no fangs, no snarls, no predatory expression. NO photorealism, "
+            "NO 3D-render, NO AI-glow halo, NO watercolor wash. ABSOLUTELY MONOCHROME.",
+
+            "PAGE FORMAT: white background edge-to-edge, ~10% margin, NO frame, "
+            "NO border, NO watermark, NO text overlay, NO page number.",
         ]
-        if props.key != "no-prop":
-            prompt_parts.append(f"PROP: {props.description}")
-        prompt_parts.extend([
-            f"SETTING: {setting.description}",
-            f"TIME / SKY: {tod.description}",
-            f"ENVIRONMENTAL DENSITY: {density.description}",
-
-            f"NARRATIVE MOMENT: {moment.description}",
-        ])
-        if story_beat_line:
-            prompt_parts.append(story_beat_line)
-        prompt_parts.extend([
-            f"COMPOSITION — LAYOUT: {layout.description}",
-            f"COMPOSITION — FRAMING: {framing.description}",
-            f"CHARACTER COUNT: exactly {cmp.character_count} named figure"
-            f"{'' if cmp.character_count == 1 else 's'} in the scene.",
-
-            f"AGE-APPROPRIATE COMPLEXITY: {age.description}",
-
-            "LINE-ART DISCIPLINE — ABSOLUTE REQUIREMENT: "
-            "(1) every shape is a closed continuous outline — no broken lines, no "
-            "wandering tails, no dangling strokes. "
-            "(2) the page is PURE WHITE except for the ink outlines — no grey fill, "
-            "no interior shading, no hatching inside fillable regions. "
-            "(3) line weight is consistent throughout (set by the age-range above) — "
-            "do NOT mix thick-and-thin within a single contour. "
-            "(4) any texture (fur direction, leaf veins, wood grain) is suggested by "
-            "a SMALL number of clean sparse marks ALONG the edge or contour, NEVER "
-            "as solid black fill or interior shading. "
-            "(5) eyes are simple closed shapes (two dots, two ovals, or two crescents) "
-            "— NEVER realistic gradient irises, NEVER manga giant-eye sparkle. "
-            "(6) no character bares fangs, snarls, or wears a predatory expression "
-            "regardless of species — this is a children's book. "
-            "(7) NO photorealism, NO 3D-render look, NO AI-glow halo, NO halation, "
-            "NO watercolor smudge, NO digital airbrush.",
-
-            "PAGE FORMAT: white background fills the canvas edge-to-edge. NO frame, "
-            "NO border, NO watermark, NO page number, NO signature, NO text overlay. "
-            "The composition leaves room around the figures (margin equivalent to "
-            "~10% of the canvas on all sides).",
-
-            "RENDER: the image should look like it was inked with a clean technical "
-            "pen on bright cartridge paper, then scanned at high resolution. Reads "
-            "instantly as a 'page from a real children's book' — not as a generic "
-            "cartoon, not as an AI generation. A parent should be able to print this "
-            "page, hand it to a child with crayons, and the child should know where "
-            "every color goes.",
-        ])
         prompt = "\n\n".join(p for p in prompt_parts if p)
 
         return Directive(
