@@ -618,6 +618,7 @@ class Job:
         self.lock = threading.Lock()
         self.proc: subprocess.Popen[str] | None = None
         self.resources: ResourceSampler | None = None
+        self.progress: dict[str, Any] = {}
         stamp = time.strftime("%Y%m%d-%H%M%S", time.localtime(self.started_at))
         safe_action = re.sub(r"[^a-zA-Z0-9_.-]+", "-", action).strip("-") or "job"
         self.run_dir = WEB_RUNS_DIR / f"{stamp}-{job_id:04d}-{safe_action}"
@@ -654,8 +655,39 @@ class Job:
             self.logs.append(clean)
             if len(self.logs) > 1200:
                 self.logs = self.logs[-1200:]
+            self._parse_progress(clean)
         with self.log_path.open("a", encoding="utf-8") as fh:
             fh.write(clean + "\n")
+
+    # Match tqdm-style mflux progress lines. mflux's carriage-return-updated
+    # output gets concatenated by line-based readline, so we look for the LAST
+    # "STEP/TOTAL [elapsed<eta, rate s/it|it/s]" segment in the line.
+    _PROGRESS_RE = re.compile(
+        r"(\d+)/(\d+)\s*\[(\d+:\d+)(?:<(\d+:\d+|\?))?,?\s*([\d.]+|\?)\s*(s/it|it/s)\]"
+    )
+
+    def _parse_progress(self, line: str) -> None:
+        matches = self._PROGRESS_RE.findall(line)
+        if not matches:
+            return
+        step_s, total_s, elapsed, eta, rate, unit = matches[-1]
+        try:
+            step, total = int(step_s), int(total_s)
+            if total <= 0:
+                return
+            pct = round(100.0 * step / total, 1)
+            self.progress = {
+                "step": step,
+                "total": total,
+                "percent": pct,
+                "elapsed": elapsed,
+                "eta": eta or "",
+                "rate": rate,
+                "rate_unit": unit,
+                "ts": time.time(),
+            }
+        except ValueError:
+            return
 
     def _event(self, kind: str, payload: dict[str, Any] | None = None) -> None:
         _append_jsonl(self.events_path, {
@@ -748,6 +780,8 @@ class Job:
         if not running:
             self._write_manifest(status)
         resources = self.resources.latest if self.resources is not None else {"available": False, "note": "no sampler"}
+        with self.lock:
+            progress = dict(self.progress) if self.progress else {}
         return {
             "id": self.id,
             "action": self.action,
@@ -763,6 +797,7 @@ class Job:
             "artifacts": artifacts,
             "issues": issues,
             "resources": resources,
+            "progress": progress,
             "run_dir": str(self.run_dir),
             "log_path": str(self.log_path),
             "events_path": str(self.events_path),
@@ -1720,6 +1755,7 @@ form { padding: 18px; display: grid; gap: 14px; }
         <div id="resources" class="resources" hidden>
           <div class="resBar"><div class="resLabel">CPU <span id="cpuLabel">—</span></div><div class="resTrack"><div id="cpuFill" class="resFill"></div></div></div>
           <div class="resBar"><div class="resLabel">RAM <span id="memLabel">—</span></div><div class="resTrack"><div id="memFill" class="resFill"></div></div></div>
+          <div class="resBar"><div class="resLabel">Steps <span id="stepsLabel">—</span></div><div class="resTrack"><div id="stepsFill" class="resFill"></div></div></div>
           <div class="resBar"><div class="resLabel">Worker <span id="workerLabel">—</span></div><div class="resTrack"><div id="workerFill" class="resFill"></div></div></div>
         </div>
         <div id="issues" class="issues"></div>
@@ -2363,39 +2399,55 @@ function renderProcess(job) {
 function renderResources(job) {
   const box = document.getElementById("resources");
   const r = job.resources || {};
-  if (!r.available) {
-    if (job.status === "running") {
-      box.hidden = false;
-      document.getElementById("cpuLabel").textContent = r.note || "sampling…";
-      document.getElementById("memLabel").textContent = "";
-      document.getElementById("workerLabel").textContent = "";
-      for (const id of ["cpuFill","memFill","workerFill"]) {
-        const el = document.getElementById(id);
-        el.style.width = "0%";
-        el.className = "resFill";
-      }
-    } else {
-      box.hidden = true;
-    }
+  const prog = job.progress || {};
+  const isRunning = job.status === "running";
+
+  if (!r.available && !isRunning) {
+    box.hidden = true;
     return;
   }
   box.hidden = false;
+
+  // CPU + RAM from the sampler (system-wide)
   const cpuPct = r.cpu_pct || 0;
   const memPct = r.mem_pct || 0;
+  document.getElementById("cpuLabel").textContent = r.available ? `${cpuPct.toFixed(1)}%` : (r.note || "sampling…");
+  document.getElementById("memLabel").textContent = r.available
+    ? `${memPct.toFixed(1)}% · ${r.mem_used_gb}/${r.mem_total_gb} GB`
+    : "—";
+  setBar("cpuFill", cpuPct);
+  setBar("memFill", memPct);
+
+  // Steps — the real GPU-work signal on Apple Silicon, parsed from mflux output
+  const stepsEl = document.getElementById("stepsLabel");
+  if (prog.total) {
+    const rateLabel = prog.rate_unit
+      ? `${prog.rate} ${prog.rate_unit}`
+      : "";
+    const etaLabel = prog.eta && prog.eta !== "?" ? ` · ETA ${prog.eta}` : "";
+    stepsEl.textContent = `${prog.step}/${prog.total} (${prog.percent}%) · ${rateLabel}${etaLabel}`;
+    setBar("stepsFill", prog.percent || 0);
+  } else if (isRunning) {
+    stepsEl.textContent = "(no step counter — pre-flight)";
+    setBar("stepsFill", 0);
+  } else {
+    stepsEl.textContent = "—";
+    setBar("stepsFill", 0);
+  }
+
+  // Worker — the heaviest child process. Honest: on Apple Silicon mflux Python
+  // CPU is near-zero while the GPU works, so this often shows 0%. The Steps
+  // bar above is the better signal of GPU activity.
   const worker = r.worker || null;
   const cores = r.cpu_cores || 0;
   const workerCpuRaw = worker ? (worker.cpu || 0) : 0;
-  // worker.cpu is in single-core %; normalize to "% of total CPU available" for the bar
   const workerCpuNorm = cores > 0 ? Math.min(100, workerCpuRaw / cores) : Math.min(100, workerCpuRaw);
-
-  document.getElementById("cpuLabel").textContent = `${cpuPct.toFixed(1)}%`;
-  document.getElementById("memLabel").textContent = `${memPct.toFixed(1)}% · ${r.mem_used_gb}/${r.mem_total_gb} GB`;
-  document.getElementById("workerLabel").textContent = worker
-    ? `${worker.name} · ${workerCpuRaw.toFixed(0)}% (${(worker.mem_mb/1024).toFixed(1)} GB)`
-    : "—";
-
-  setBar("cpuFill", cpuPct);
-  setBar("memFill", memPct);
+  if (worker) {
+    document.getElementById("workerLabel").textContent =
+      `${worker.name} · ${workerCpuRaw.toFixed(0)}% CPU (${(worker.mem_mb/1024).toFixed(1)} GB) — GPU work not shown`;
+  } else {
+    document.getElementById("workerLabel").textContent = isRunning ? "(no heavy child detected)" : "—";
+  }
   setBar("workerFill", workerCpuNorm);
 }
 
