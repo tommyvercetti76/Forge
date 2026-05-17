@@ -333,10 +333,23 @@ class NoirCinematographyEngine(Engine):
     }
     default_runtime = {"model": "dev", "steps": 28, "guidance": 4.5}
     engine_negatives: ClassVar[tuple[str, ...]] = (
+        # Wrong register
         "bright daylight bleed", "smiling face", "centered square-on pose",
         "modern brand aesthetic", "cheerful palette", "soft fill light",
         "smooth digital cartoon shading", "pastel color grading",
         "anime stylization", "Disney proportions",
+        # Anatomy basics
+        "mangled hands", "fused fingers", "six fingers", "missing fingers",
+        "deformed hands", "extra limbs", "asymmetric eyes", "lazy eye",
+        "fused eyes", "doll face", "doll-like skin", "plastic skin",
+        "porcelain finish", "uncanny valley face",
+        # FLUX-default failure modes (film grain IS noir, but AI bloom is NOT)
+        "AI gloss", "cartoon gloss", "plastic sheen",
+        "fake bloom", "lens flare overlay", "rainbow chromatic aberration",
+        "oversaturated neon", "HDR bloom artifact",
+        # Page-format killers
+        "watermark", "signature", "stock photo logo", "subtitle bar",
+        "jpeg compression artifacts", "moire pattern",
     )
     # Curated LoRAs per brand/loras/README.md. Paths are directory names —
     # the resolver auto-picks the largest .safetensors inside each dir, so
@@ -648,11 +661,25 @@ class WildlifePhotorealismEngine(Engine):
     }
     default_runtime = {"model": "dev", "steps": 30, "guidance": 3.5}
     engine_negatives: ClassVar[tuple[str, ...]] = (
+        # Wrong register
         "fused toes", "extra toes", "extra fingers on paws",
         "doll-eye plastic catch-light", "uncanny anthropomorphic face",
         "cartoon proportions", "Disney-cute eyes", "anime stylization",
         "studio strobe-flat lighting", "photoshopped HDR halos",
-        "bird beak open with no purpose", "watermark", "stock photo logo",
+        "bird beak open with no purpose",
+        # Wildlife wants SHARP photo detail — kill AI softness
+        "AI glow", "halation bloom", "ambient bloom around feathers",
+        "soft focus haze", "dreamy gradient haze",
+        "milky highlight glow", "blurry edge bleed", "anti-aliased fuzz",
+        "default FLUX dreamy aesthetic", "rainbow chromatic aberration",
+        "oversaturated neon",
+        # Anatomy guards specific to wildlife
+        "mangled limbs", "extra limbs", "missing limbs",
+        "broken wing anatomy", "asymmetric eyes", "lazy eye", "fused eyes",
+        "doll face", "plastic skin", "porcelain feathers",
+        # Page-format killers
+        "watermark", "stock photo logo", "subtitle bar",
+        "jpeg compression artifacts", "moire pattern",
     )
     # Curated LoRAs per brand/loras/README.md — the verified-best stack for
     # photo-realism. flux-RealismLora is the most-downloaded FLUX LoRA (15k+).
@@ -913,10 +940,22 @@ class ImpressionistPaintingEngine(Engine):
     }
     default_runtime = {"model": "dev", "steps": 30, "guidance": 4.0}
     engine_negatives: ClassVar[tuple[str, ...]] = (
+        # Wrong medium
         "smooth digital gradient", "photo-realism creep", "modern HDR color grade",
         "Instagram filter aesthetic", "vector art clean lines", "anime line art",
         "watercolor wash (different medium)", "uniform brushwork direction",
         "single-color flat fill", "3D rendered look",
+        # Impressionism wants DELIBERATE brushwork, not AI-fuzzy haze
+        "AI glow", "halation bloom", "milky highlight glow",
+        "soft focus haze", "anti-aliased fuzz", "blurry edge bleed",
+        "default FLUX dreamy aesthetic", "out-of-focus mist around subject",
+        "rainbow chromatic aberration", "HDR bloom artifact",
+        # Anatomy guards
+        "mangled hands", "fused fingers", "six fingers", "missing fingers",
+        "extra limbs", "broken anatomy", "asymmetric eyes",
+        # Page-format killers
+        "watermark", "signature", "stock photo logo",
+        "jpeg compression artifacts", "moire pattern",
     )
     # Only Van Gogh has a curated FLUX LoRA — the engine's own master citations
     # plus this LoRA push toward authentic post-impressionist register.
@@ -2918,13 +2957,27 @@ class StylizedCinematicEngine(Engine):
     }
     default_runtime = {"model": "dev", "steps": 28, "guidance": 4.5}
     engine_negatives: ClassVar[tuple[str, ...]] = (
+        # Wrong register
         "photorealism", "photographic detail", "3D rendered look",
-        "smooth digital gradients", "anatomically wrong limbs", "extra fingers",
-        "AI glow halo", "halation bloom", "soft focus haze", "watercolor smudge",
+        "smooth digital gradients",
         "anime sparkle giant eyes", "manga chibi proportions",
         "Disney-3D plastic look", "Pixar volumetric render",
-        "watermark", "signature", "text overlay", "page number",
         "uniform pattern density", "claustrophobic over-rendered",
+        # Anatomy guards
+        "anatomically wrong limbs", "extra fingers", "fused fingers",
+        "six fingers", "missing fingers", "deformed hands", "extra limbs",
+        "missing limbs", "asymmetric eyes", "lazy eye", "fused eyes",
+        "doll face", "plastic skin", "uncanny valley face",
+        # FLUX-default failure modes
+        "AI glow halo", "halation bloom", "soft focus haze",
+        "watercolor smudge", "milky highlight glow",
+        "anti-aliased fuzz", "blurry edge bleed", "default FLUX dreamy aesthetic",
+        "rainbow chromatic aberration", "HDR bloom artifact",
+        "AI grain", "film grain on stylized art",
+        # Page-format killers
+        "watermark", "signature", "text overlay", "page number",
+        "stock photo logo", "subtitle bar",
+        "jpeg compression artifacts", "moire pattern",
     )
     # No curated FLUX LoRA for this register yet — relies on prompt + master
     # citations. Future option: add a Tartakovsky / Mignola LoRA when available.
