@@ -349,12 +349,20 @@ def build_command(action: str, payload: dict[str, Any]) -> tuple[list[str], list
             ("composition.character_count",    payload.get("cb_character_count")),
         ])
         _add(cmd, "--config", cb_config)
+        _add(cmd, "--negative", payload.get("negative"))
         _add(cmd, "--seeds", payload.get("seeds"))
         _add(cmd, "--seed", payload.get("seed"))
         _add(cmd, "--guidance", payload.get("guidance"))
         _add_bool(cmd, "--refine", payload.get("refine"))
+        _add(cmd, "--refine-strength", payload.get("refine_strength"))
         _add_bool(cmd, "--hi-res", payload.get("hi_res"))
         _add_bool(cmd, "--ultra-res", payload.get("ultra_res"))
+        _add(cmd, "--width", payload.get("width"))
+        _add(cmd, "--height", payload.get("height"))
+        _add(cmd, "--from-image", payload.get("from_image"))
+        _add(cmd, "--from-image-strength", payload.get("from_image_strength"))
+        _add_bool(cmd, "--draft", payload.get("draft"))
+        _add(cmd, "--profile", payload.get("profile"))
         _add_bool(cmd, "--no-default-loras", payload.get("no_default_loras"))
         _add(cmd, "--out", payload.get("out"))
     elif action == "indian-folk-page":
@@ -368,12 +376,20 @@ def build_command(action: str, payload: dict[str, Any]) -> tuple[list[str], list
             ("subject.composition",   payload.get("ic_composition")),
         ])
         _add(cmd, "--config", ic_config)
+        _add(cmd, "--negative", payload.get("negative"))
         _add(cmd, "--seeds", payload.get("seeds"))
         _add(cmd, "--seed", payload.get("seed"))
         _add(cmd, "--guidance", payload.get("guidance"))
         _add_bool(cmd, "--refine", payload.get("refine"))
+        _add(cmd, "--refine-strength", payload.get("refine_strength"))
         _add_bool(cmd, "--hi-res", payload.get("hi_res"))
         _add_bool(cmd, "--ultra-res", payload.get("ultra_res"))
+        _add(cmd, "--width", payload.get("width"))
+        _add(cmd, "--height", payload.get("height"))
+        _add(cmd, "--from-image", payload.get("from_image"))
+        _add(cmd, "--from-image-strength", payload.get("from_image_strength"))
+        _add_bool(cmd, "--draft", payload.get("draft"))
+        _add(cmd, "--profile", payload.get("profile"))
         _add_bool(cmd, "--no-default-loras", payload.get("no_default_loras"))
         _add(cmd, "--out", payload.get("out"))
     elif action == "mandala-art-page":
@@ -388,12 +404,20 @@ def build_command(action: str, payload: dict[str, Any]) -> tuple[list[str], list
             ("composition.border",    payload.get("ma_border")),
         ])
         _add(cmd, "--config", ma_config)
+        _add(cmd, "--negative", payload.get("negative"))
         _add(cmd, "--seeds", payload.get("seeds"))
         _add(cmd, "--seed", payload.get("seed"))
         _add(cmd, "--guidance", payload.get("guidance"))
         _add_bool(cmd, "--refine", payload.get("refine"))
+        _add(cmd, "--refine-strength", payload.get("refine_strength"))
         _add_bool(cmd, "--hi-res", payload.get("hi_res"))
         _add_bool(cmd, "--ultra-res", payload.get("ultra_res"))
+        _add(cmd, "--width", payload.get("width"))
+        _add(cmd, "--height", payload.get("height"))
+        _add(cmd, "--from-image", payload.get("from_image"))
+        _add(cmd, "--from-image-strength", payload.get("from_image_strength"))
+        _add_bool(cmd, "--draft", payload.get("draft"))
+        _add(cmd, "--profile", payload.get("profile"))
         _add_bool(cmd, "--no-default-loras", payload.get("no_default_loras"))
         _add(cmd, "--out", payload.get("out"))
     elif action == "stylized-cinematic-page":
@@ -408,12 +432,20 @@ def build_command(action: str, payload: dict[str, Any]) -> tuple[list[str], list
             ("light.atmospheric_medium",    payload.get("sc_atmosphere")),
         ])
         _add(cmd, "--config", sc_config)
+        _add(cmd, "--negative", payload.get("negative"))
         _add(cmd, "--seeds", payload.get("seeds"))
         _add(cmd, "--seed", payload.get("seed"))
         _add(cmd, "--guidance", payload.get("guidance"))
         _add_bool(cmd, "--refine", payload.get("refine"))
+        _add(cmd, "--refine-strength", payload.get("refine_strength"))
         _add_bool(cmd, "--hi-res", payload.get("hi_res"))
         _add_bool(cmd, "--ultra-res", payload.get("ultra_res"))
+        _add(cmd, "--width", payload.get("width"))
+        _add(cmd, "--height", payload.get("height"))
+        _add(cmd, "--from-image", payload.get("from_image"))
+        _add(cmd, "--from-image-strength", payload.get("from_image_strength"))
+        _add_bool(cmd, "--draft", payload.get("draft"))
+        _add(cmd, "--profile", payload.get("profile"))
         _add_bool(cmd, "--no-default-loras", payload.get("no_default_loras"))
         _add(cmd, "--out", payload.get("out"))
     elif action == "edit":
@@ -2471,6 +2503,17 @@ const specs = {
       {name:"hi_res", label:"Hi-res", type:"checkbox"},
       {name:"ultra_res", label:"Ultra-res", type:"checkbox"},
       {name:"no_default_loras", label:"Skip engine's default LoRA stack", type:"checkbox"},
+
+      {name:"_adv", label:"ADVANCED — img2img + runtime overrides", type:"section", hint:"Turn YOUR photo into a coloring page (img2img). Or override resolution / speed. Leave blank to use the defaults."},
+      {name:"from_image", label:"Source image — your photo → coloring page", type:"path"},
+      {name:"from_image_strength", label:"Image strength (0.3 minor edit, 0.85 default, 0.95 near-replace)", type:"number", value:"0.85"},
+      {name:"draft", label:"Draft (schnell @ 4 steps — fast preview)", type:"checkbox"},
+      {name:"profile", label:"Speed profile", type:"select", options:"profiles"},
+      {name:"width", label:"Width override (px)", type:"number"},
+      {name:"height", label:"Height override (px)", type:"number"},
+      {name:"refine_strength", label:"Refine strength (only if Refine is on)", type:"number", value:"0.25"},
+      {name:"negative", label:"Extra negative terms (comma-sep)", type:"text"},
+
       {name:"out", label:"Output path", type:"path"}
     ]
   },
@@ -2498,6 +2541,17 @@ const specs = {
       {name:"hi_res", label:"Hi-res", type:"checkbox"},
       {name:"ultra_res", label:"Ultra-res", type:"checkbox"},
       {name:"no_default_loras", label:"Skip engine's default LoRA stack", type:"checkbox"},
+
+      {name:"_adv", label:"ADVANCED — img2img + runtime overrides", type:"section", hint:"Turn YOUR photo into Madhubani / Warli / Tanjore / Pahari / Ravi-Varma (img2img). Or override resolution / speed."},
+      {name:"from_image", label:"Source image — your photo → folk-art style", type:"path"},
+      {name:"from_image_strength", label:"Image strength (0.3 minor, 0.85 default, 0.95 near-replace)", type:"number", value:"0.85"},
+      {name:"draft", label:"Draft (schnell @ 4 steps — fast preview)", type:"checkbox"},
+      {name:"profile", label:"Speed profile", type:"select", options:"profiles"},
+      {name:"width", label:"Width override (px)", type:"number"},
+      {name:"height", label:"Height override (px)", type:"number"},
+      {name:"refine_strength", label:"Refine strength (only if Refine is on)", type:"number", value:"0.25"},
+      {name:"negative", label:"Extra negative terms (comma-sep)", type:"text"},
+
       {name:"out", label:"Output path", type:"path"}
     ]
   },
@@ -2519,6 +2573,17 @@ const specs = {
       {name:"hi_res", label:"Hi-res", type:"checkbox"},
       {name:"ultra_res", label:"Ultra-res", type:"checkbox"},
       {name:"no_default_loras", label:"Skip engine's default LoRA stack", type:"checkbox"},
+
+      {name:"_adv", label:"ADVANCED — img2img + runtime overrides", type:"section", hint:"Turn YOUR photo into a mandala (img2img — e.g. a photo of a whale gets re-rendered as the silhouette of an ornamental mandala). Or override resolution / speed."},
+      {name:"from_image", label:"Source image — your photo → mandala", type:"path"},
+      {name:"from_image_strength", label:"Image strength (0.3 minor, 0.85 default, 0.95 near-replace)", type:"number", value:"0.85"},
+      {name:"draft", label:"Draft (schnell @ 4 steps — fast preview)", type:"checkbox"},
+      {name:"profile", label:"Speed profile", type:"select", options:"profiles"},
+      {name:"width", label:"Width override (px)", type:"number"},
+      {name:"height", label:"Height override (px)", type:"number"},
+      {name:"refine_strength", label:"Refine strength (only if Refine is on)", type:"number", value:"0.25"},
+      {name:"negative", label:"Extra negative terms (comma-sep)", type:"text"},
+
       {name:"out", label:"Output path", type:"path"}
     ]
   },
@@ -2546,6 +2611,17 @@ const specs = {
       {name:"hi_res", label:"Hi-res", type:"checkbox"},
       {name:"ultra_res", label:"Ultra-res", type:"checkbox"},
       {name:"no_default_loras", label:"Skip engine's default LoRA stack", type:"checkbox"},
+
+      {name:"_adv", label:"ADVANCED — img2img + runtime overrides", type:"section", hint:"Turn YOUR photo into a stylized cinematic frame (img2img — e.g. a landscape photo gets re-rendered in McQuarrie's Star-Wars-concept register). Or override resolution / speed."},
+      {name:"from_image", label:"Source image — your photo → cinematic style", type:"path"},
+      {name:"from_image_strength", label:"Image strength (0.3 minor, 0.85 default, 0.95 near-replace)", type:"number", value:"0.85"},
+      {name:"draft", label:"Draft (schnell @ 4 steps — fast preview)", type:"checkbox"},
+      {name:"profile", label:"Speed profile", type:"select", options:"profiles"},
+      {name:"width", label:"Width override (px)", type:"number"},
+      {name:"height", label:"Height override (px)", type:"number"},
+      {name:"refine_strength", label:"Refine strength (only if Refine is on)", type:"number", value:"0.25"},
+      {name:"negative", label:"Extra negative terms (comma-sep)", type:"text"},
+
       {name:"out", label:"Output path", type:"path"}
     ]
   },
