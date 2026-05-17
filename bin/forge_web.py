@@ -1344,13 +1344,15 @@ form { padding: 18px; display: grid; gap: 14px; }
 .cmd::before { content: "> "; color: var(--gold); }
 
 /* Process column — job cards, paths, logs, artifacts */
-.job-list { display: grid; gap: 8px; margin-bottom: 16px; }
+.job-list { display: grid; gap: 6px; margin-bottom: 16px; }
+
+/* Active job (only one) — flat card, no collapse */
 .job {
   display: grid;
   gap: 4px;
   padding: 12px 14px;
-  border: 2px solid var(--line);
-  background: var(--surface);
+  border: 2px solid var(--green-dim);
+  background: var(--surface-3);
   text-align: left;
   cursor: pointer;
   box-shadow: var(--shadow);
@@ -1360,6 +1362,108 @@ form { padding: 18px; display: grid; gap: 14px; }
 .job:hover { background: var(--hover); border-color: var(--line-hi); }
 .job.active { border-color: var(--green-dim); background: var(--surface-3); }
 .job .meta { font-size: 10px; }
+
+/* Recorded runs — collapsible cards */
+.run-card {
+  border: 2px solid var(--line);
+  background: var(--surface);
+  box-shadow: var(--shadow);
+  display: grid;
+  grid-template-rows: auto 0fr;
+  transition: grid-template-rows 180ms ease-out, border-color 100ms ease-out;
+}
+.run-card.expanded {
+  grid-template-rows: auto 1fr;
+  border-color: var(--line-hi);
+}
+.run-card-head {
+  display: grid;
+  grid-template-columns: auto 1fr auto auto auto;
+  gap: 10px;
+  align-items: center;
+  padding: 10px 12px;
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  text-align: left;
+  cursor: pointer;
+  font-family: var(--font-ui);
+  text-transform: none;
+  letter-spacing: 0;
+  color: var(--ink);
+}
+.run-card-head:hover { background: var(--hover); transform: none; }
+.run-card-head:active { transform: none; box-shadow: none; }
+.run-action {
+  font: 10px/1 var(--font-pixel);
+  letter-spacing: 1.5px;
+  color: var(--ink-bright);
+  text-transform: uppercase;
+}
+.run-elapsed {
+  font: 11px/1 var(--font-mono);
+  color: var(--muted);
+  letter-spacing: 0;
+}
+.art-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 22px;
+  padding: 3px 5px;
+  font: 9px/1 var(--font-pixel);
+  letter-spacing: 1px;
+  color: var(--bg-deep);
+  background: var(--gold);
+  border: 2px solid var(--gold);
+  border-radius: 0;
+}
+.chevron {
+  font: 10px/1 var(--font-pixel);
+  color: var(--green);
+  transition: transform 180ms ease-out;
+}
+.run-card.expanded .chevron { transform: rotate(90deg); }
+
+.run-card-body {
+  overflow: hidden;
+  display: grid;
+  gap: 10px;
+}
+.run-card.expanded .run-card-body {
+  padding: 0 12px 12px;
+}
+.run-cmd {
+  padding: 10px 12px;
+  background: var(--bg-deep);
+  color: var(--green);
+  border: 2px solid var(--line);
+  font: 11px/1.55 var(--font-mono);
+  overflow-wrap: anywhere;
+  box-shadow: inset 0 2px 0 rgba(0,0,0,0.45);
+  max-height: 140px;
+  overflow: auto;
+}
+.run-card-actions {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.run-card-actions button {
+  padding: 7px 10px;
+  font-size: 9px;
+  letter-spacing: 1px;
+}
+.run-card-actions button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.run-card-actions button:disabled:hover {
+  background: var(--surface);
+  border-color: var(--line);
+  color: var(--ink);
+  transform: none;
+}
 
 .status {
   display: inline-block;
@@ -1654,7 +1758,7 @@ form { padding: 18px; display: grid; gap: 14px; }
   </div>
 </div>
 <script>
-const state = { config: null, action: "thumbnail", activeJob: null, pickerField: null, pickerPath: "" };
+const state = { config: null, action: "thumbnail", activeJob: null, pickerField: null, pickerPath: "", expandedRuns: new Set() };
 
 const groups = [
   ["TEXT TO IMAGE", [
@@ -2334,13 +2438,141 @@ async function loadRuns() {
   const data = await res.json();
   const list = document.getElementById("jobList");
   list.innerHTML = "";
-  for (const run of (data.runs || []).slice(0, 8)) {
-    const btn = document.createElement("button");
-    btn.type = "button";
-    btn.className = "job";
-    btn.innerHTML = `<span class="status ${run.status}">${String(run.status || "").toUpperCase()} · #${run.id || ""}</span><span>${escapeHtml(run.action || "run")} · ${run.elapsed || 0}s</span><span class="meta">${escapeHtml(run.cmd_display || "")}</span>`;
-    btn.onclick = () => renderProcess({...run, logs:[`Recorded run: ${run.paths?.run_dir || ""}`], run_dir:run.paths?.run_dir, log_path:run.paths?.stdout_log, events_path:run.paths?.events, manifest_path:run.paths?.manifest});
-    list.appendChild(btn);
+  for (const run of (data.runs || []).slice(0, 12)) {
+    list.appendChild(buildRunCard(run));
+  }
+}
+
+function buildRunCard(run) {
+  const id = String(run.id || "");
+  const card = document.createElement("div");
+  card.className = "run-card";
+  if (state.expandedRuns && state.expandedRuns.has(id)) card.classList.add("expanded");
+
+  // ── header (always visible, click to expand)
+  const head = document.createElement("button");
+  head.type = "button";
+  head.className = "run-card-head";
+  const status = String(run.status || "").toUpperCase();
+  const action = escapeHtml(run.action || "run");
+  const elapsed = `${run.elapsed || 0}s`;
+  const artCount = (run.artifacts || []).length;
+  const artBadge = artCount > 0 ? `<span class="art-count">${artCount}</span>` : "";
+  head.innerHTML = `
+    <span class="status ${run.status}">${status} · #${id}</span>
+    <span class="run-action">${action}</span>
+    <span class="run-elapsed">${elapsed}</span>
+    ${artBadge}
+    <span class="chevron">▶</span>`;
+  head.onclick = () => {
+    if (!state.expandedRuns) state.expandedRuns = new Set();
+    if (state.expandedRuns.has(id)) state.expandedRuns.delete(id);
+    else state.expandedRuns.add(id);
+    card.classList.toggle("expanded");
+  };
+  card.appendChild(head);
+
+  // ── body (visible only when expanded)
+  const body = document.createElement("div");
+  body.className = "run-card-body";
+
+  // Truncated cmd preview
+  const cmd = run.cmd_display || "";
+  const cmdShort = cmd.length > 240 ? cmd.slice(0, 240) + "…" : cmd;
+  if (cmdShort) {
+    const pre = document.createElement("div");
+    pre.className = "run-cmd";
+    pre.textContent = "> " + cmdShort;
+    body.appendChild(pre);
+  }
+
+  // Action buttons row
+  const actions = document.createElement("div");
+  actions.className = "run-card-actions";
+
+  const artifacts = run.artifacts || [];
+  const paths = run.paths || {};
+
+  // Output button — opens first artifact
+  const outBtn = document.createElement("button");
+  outBtn.type = "button";
+  outBtn.textContent = artifacts.length > 0
+    ? (artifacts.length === 1 ? "Output" : `Outputs (${artifacts.length})`)
+    : "No output";
+  outBtn.disabled = artifacts.length === 0;
+  if (artifacts.length === 1) {
+    outBtn.onclick = () => openRunArtifact(run, artifacts[0]);
+  } else if (artifacts.length > 1) {
+    outBtn.onclick = () => openRunDetail(run);
+  }
+  actions.appendChild(outBtn);
+
+  // Log button
+  const logBtn = document.createElement("button");
+  logBtn.type = "button";
+  logBtn.textContent = "Log";
+  logBtn.onclick = () => openRunLog(run);
+  if (!paths.stdout_log) logBtn.disabled = true;
+  actions.appendChild(logBtn);
+
+  // Reveal folder button
+  const revealBtn = document.createElement("button");
+  revealBtn.type = "button";
+  revealBtn.textContent = "Reveal";
+  revealBtn.onclick = () => {
+    if (paths.run_dir) {
+      fetch("/api/reveal", {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({path: paths.run_dir})});
+    }
+  };
+  if (!paths.run_dir) revealBtn.disabled = true;
+  actions.appendChild(revealBtn);
+
+  // Open in detail (re-uses existing detail panel)
+  const detailBtn = document.createElement("button");
+  detailBtn.type = "button";
+  detailBtn.textContent = "Detail";
+  detailBtn.onclick = () => openRunDetail(run);
+  actions.appendChild(detailBtn);
+
+  body.appendChild(actions);
+  card.appendChild(body);
+  return card;
+}
+
+function openRunDetail(run) {
+  renderProcess({
+    ...run,
+    logs: [`Recorded run: ${run.paths?.run_dir || ""}`],
+    run_dir: run.paths?.run_dir,
+    log_path: run.paths?.stdout_log,
+    events_path: run.paths?.events,
+    manifest_path: run.paths?.manifest,
+  });
+}
+
+function openRunArtifact(run, file) {
+  // Show this run in the detail panel + preview the artifact
+  openRunDetail(run);
+  previewFile(file);
+}
+
+async function openRunLog(run) {
+  // Switch detail view to this run, then fetch & display historical stdout.log
+  openRunDetail(run);
+  const path = run.paths?.stdout_log;
+  if (!path) return;
+  try {
+    const res = await fetch(`/api/file?path=${encodeURIComponent(path)}`);
+    if (!res.ok) {
+      document.getElementById("log").textContent = `(failed to fetch log: HTTP ${res.status})`;
+      return;
+    }
+    const text = await res.text();
+    const log = document.getElementById("log");
+    log.textContent = text || "(empty log file)";
+    log.scrollTop = log.scrollHeight;
+  } catch (e) {
+    document.getElementById("log").textContent = `(error loading log: ${e})`;
   }
 }
 
