@@ -239,9 +239,9 @@ def _watch_dirs_for(action: str, payload: dict[str, Any]) -> list[str]:
             paths.append(str(out.with_name(out.stem + "-bg.png")))
     elif action in {"edit", "voice", "video", "mandala", "folk-art"}:
         paths += _payload_paths(payload, "out")
-    elif action in {"brief", "episode", "audiobook", "audiobook-simple", "childrens-book", "engine", "coloring-page", "mandala-art-page"}:
+    elif action in {"brief", "episode", "audiobook", "audiobook-simple", "childrens-book", "engine", "coloring-page", "mandala-art-page", "indian-folk-page"}:
         paths += _payload_paths(payload, "out")
-        if action in {"engine", "coloring-page", "mandala-art-page"} and not str(payload.get("out") or "").strip():
+        if action in {"engine", "coloring-page", "mandala-art-page", "indian-folk-page"} and not str(payload.get("out") or "").strip():
             paths.append(str(DEFAULT_OUTPUT_ROOT / "engine-renders"))
         if action == "audiobook-simple" and not str(payload.get("out") or "").strip():
             paths.append(str(DEFAULT_OUTPUT_ROOT / "audiobook"))
@@ -347,6 +347,24 @@ def build_command(action: str, payload: dict[str, Any]) -> tuple[list[str], list
             ("composition.character_count",    payload.get("cb_character_count")),
         ])
         _add(cmd, "--config", cb_config)
+        _add(cmd, "--seeds", payload.get("seeds"))
+        _add(cmd, "--seed", payload.get("seed"))
+        _add(cmd, "--guidance", payload.get("guidance"))
+        _add_bool(cmd, "--refine", payload.get("refine"))
+        _add_bool(cmd, "--hi-res", payload.get("hi_res"))
+        _add_bool(cmd, "--ultra-res", payload.get("ultra_res"))
+        _add(cmd, "--out", payload.get("out"))
+    elif action == "indian-folk-page":
+        cmd.extend(["engine", "render", "indian-classical"])
+        _add(cmd, "--recipe", payload.get("recipe"))
+        _add(cmd, "--subject", payload.get("subject"))
+        ic_config = _join_kv_pairs([
+            ("style.tradition",       payload.get("ic_tradition")),
+            ("style.ground",          payload.get("ic_ground")),
+            ("subject.mudra",         payload.get("ic_mudra")),
+            ("subject.composition",   payload.get("ic_composition")),
+        ])
+        _add(cmd, "--config", ic_config)
         _add(cmd, "--seeds", payload.get("seeds"))
         _add(cmd, "--seed", payload.get("seed"))
         _add(cmd, "--guidance", payload.get("guidance"))
@@ -1933,6 +1951,7 @@ const groups = [
     ["thumbnail", "Thumbnail"],
     ["coloring-page", "Children's coloring page"],
     ["mandala-art-page", "Mandala art"],
+    ["indian-folk-page", "Indian folk art (Madhubani / Warli / Tanjore)"],
     ["engine", "Branded image (other)"],
     ["edit", "Edit image"],
     ["engine-list", "Engines"],
@@ -2034,6 +2053,32 @@ const specs = {
       {name:"seeds", label:"Variants", type:"number", value:"1"},
       {name:"seed", label:"Seed", type:"number", value:"1"},
       {name:"guidance", label:"Guidance", type:"number", value:"6.5"},
+      {name:"refine", label:"Refine", type:"checkbox"},
+      {name:"hi_res", label:"Hi-res", type:"checkbox"},
+      {name:"ultra_res", label:"Ultra-res", type:"checkbox"},
+      {name:"out", label:"Output path", type:"path"}
+    ]
+  },
+
+  "indian-folk-page": {
+    title: "Indian folk art (Madhubani / Warli / Tanjore / Pahari / Ravi Varma)",
+    fields: [
+      {name:"_s1", label:"SUBJECT", type:"section", hint:"Describe what you want depicted. Be specific — naming deities, characters, attributes, and setting helps the engine. Examples: 'Rama, Lakshmana and Sita standing in a triple-figure portrait', 'a Warli tarpa dance with peacocks and a tree of life', 'Krishna playing flute by the Yamuna at dawn'."},
+      {name:"subject", label:"Prompt — what to depict", type:"textarea", required:true, value:"Rama, Lakshmana and Sita standing side by side in a triple-figure portrait"},
+      {name:"recipe", label:"Recipe (optional shortcut)", type:"select", options:"recipesIndian"},
+
+      {name:"_s2", label:"TRADITION", type:"section", hint:"Each tradition has its own visual language. Madhubani = double-line borders + huge eyes + flat saturated colors. Warli = monochrome white-on-brown stick figures. Tanjore = gold-leaf hieratic deity panels. Pahari = delicate jewel-tone miniature. Ravi Varma = European-realist oleograph naturalism."},
+      {name:"ic_tradition", label:"Tradition", type:"select", options:"icTraditions", value:"madhubani"},
+
+      {name:"_s3", label:"COMPOSITION", type:"section", hint:"How the figures are arranged. Hieratic-centered = one deity at center, attendants smaller around. Narrative-multi-figure = scene unfolds across the canvas. Lyric-intimate = two-figure close composition. Cosmic-cosmic = vast cosmological multi-scale."},
+      {name:"ic_composition", label:"Composition", type:"select", options:"icCompositions", value:"hieratic-centered"},
+      {name:"ic_mudra", label:"Mudra / pose", type:"select", options:"icMudras", value:"abhaya"},
+      {name:"ic_ground", label:"Ground / setting", type:"select", options:"icGrounds", value:"madhubani-paper"},
+
+      {name:"_s4", label:"RENDER", type:"section", hint:"Defaults render at 1280×720. Use --seeds 4 to get a best-of-4 contact sheet. Refine adds a low-denoise micro-detail pass."},
+      {name:"seeds", label:"Variants", type:"number", value:"1"},
+      {name:"seed", label:"Seed", type:"number", value:"7"},
+      {name:"guidance", label:"Guidance", type:"number", value:"5.0"},
       {name:"refine", label:"Refine", type:"checkbox"},
       {name:"hi_res", label:"Hi-res", type:"checkbox"},
       {name:"ultra_res", label:"Ultra-res", type:"checkbox"},
@@ -2416,6 +2461,11 @@ const FIELD_HELP = {
   sarvam_speaker_mr: "Marathi speaker. Defaults to 'manan' which is the most production-tested for Forge. Override only if you have a specific other speaker ID from Sarvam.",
   sent_pause_ms: "Silent pause between sentences, in milliseconds. ASMR default 600ms makes the narration breathe; normal mode trims this to ~300ms.",
   para_pause_ms: "Silent pause between paragraphs (slightly longer than sentence pauses). ASMR default 1200ms gives proper section breathing room.",
+  // Indian folk art — friendly form fields
+  ic_tradition: "Indian folk/classical tradition. madhubani = Mithila double-line borders + huge eyes + flat saturated colors (Sita Devi). warli = monochrome white-rice-paste on brown earth, geometric stick figures (Maharashtra). tanjore = hieratic gold-leaf deity panels (Tamil Nadu). pahari-miniature = delicate jewel-tone scenes (Punjab Hills, Basohli/Kangra). ravi-varma-oleograph = European-realist 19th-c oleograph naturalism.",
+  ic_mudra: "Hand gesture / body pose. abhaya = right hand raised, palm out (fearlessness). varada = palm down (giving). dhyana = both palms in lap (meditation). vitarka = thumb + index touching (teaching). anjali = palms together at chest (greeting). tribhanga-flute = three-bend Krishna stance with flute.",
+  ic_ground: "Where the scene takes place. madhubani-paper = cream paper with floral border bands (use with madhubani tradition). warli-mud-wall = brown earth wall, white pigment only (use with warli). warli-tarpa-circle = brown ground with central chauk + circular tarpa dance (use with warli). temple-interior / forest-grove / river-bank-yamuna / cosmic-water / celestial-sky / village-pastoral = classical settings for tanjore / pahari / ravi-varma.",
+  ic_composition: "Figure arrangement. hieratic-centered = one large deity at center, attendants small around. narrative-multi-figure = scene unfolding across the canvas (e.g. tarpa dance, Krishna's leelas). lyric-intimate = two-figure close composition. cosmic-cosmic = vast multi-scale cosmological tableau.",
 };
 
 function optionsFor(field) {
@@ -2444,6 +2494,12 @@ function optionsFor(field) {
   if (field.options === "maSymmetries") return ["bilateral", "4-fold-rotational", "6-fold-rotational", "8-fold-rotational", "12-fold-rotational", "16-fold-rotational", "kaleidoscope"].map(v => ({value:v, label:v}));
   if (field.options === "maComplexity") return ["medium-adult", "high-meditation", "extreme-zentangle"].map(v => ({value:v, label:v}));
   if (field.options === "maBorders") return ["concentric-rings", "outer-frame-square", "freeform-bleed", "hexagonal-frame"].map(v => ({value:v, label:v}));
+  // Indian-classical (folk) enums (mirror bin/style_engines.py)
+  if (field.options === "recipesIndian") return [{value:"", label:"(write your own prompt)"}, ...((cfg.recipes || []).filter(r => r.engine === "indian-classical").map(r => ({value:r.id, label:r.id})))];
+  if (field.options === "icTraditions") return ["madhubani", "warli", "tanjore", "pahari-miniature", "ravi-varma-oleograph"].map(v => ({value:v, label:v}));
+  if (field.options === "icMudras") return ["abhaya", "varada", "dhyana", "vitarka", "anjali", "tribhanga-flute"].map(v => ({value:v, label:v}));
+  if (field.options === "icGrounds") return ["madhubani-paper", "warli-mud-wall", "warli-tarpa-circle", "temple-interior", "forest-grove", "river-bank-yamuna", "cosmic-water", "celestial-sky", "village-pastoral"].map(v => ({value:v, label:v}));
+  if (field.options === "icCompositions") return ["hieratic-centered", "narrative-multi-figure", "lyric-intimate", "cosmic-cosmic"].map(v => ({value:v, label:v}));
   return (cfg[field.options] || []).map(v => ({value:v, label:v}));
 }
 

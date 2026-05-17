@@ -995,11 +995,20 @@ _IC_TRADITION = EnumBank("tradition", [
     ),
     EnumValue(
         "madhubani",
-        "Madhubani / Mithila tradition (Bihar): folk linework, double-line border "
-        "around every form, geometric/floral fill patterns inside outlines, flat "
-        "color blocks (no shading), red/yellow/green/black/blue on natural cotton "
-        "or paper ground, narrative compositions with multiple figures.",
-        masters=("Sita Devi (Padma Shri 1981)", "Ganga Devi",),
+        "Madhubani / Mithila folk tradition (Bihar): VERY LARGE characteristic eyes "
+        "(white sclera + oversized round black pupils that dominate every face), "
+        "thick black ink outline around every form (every shape carries a DOUBLE-LINE "
+        "border with parallel inner contour), every interior region densely filled "
+        "with one of a finite vocabulary of fill-patterns (dot-clusters, fish-scale "
+        "rows, chevrons, leaf-veins, small floral rosettes), flat saturated color "
+        "blocks (NO shading, NO gradient) using a 6-7-color palette of red + yellow + "
+        "green + blue + orange + black on cream/white paper ground. Figural subjects "
+        "wear elaborate jewelry (kundalas, multi-strand pearl/bead malas, tilak/bindi, "
+        "tall conical mukutas with stacked color-registers), garments with deeply "
+        "decorated border patterns. Background uses peepal-leaf clusters and floral/"
+        "geometric border bands on the canvas edges. Compositions are FLAT (no "
+        "perspective), figures arranged side-by-side in friezes.",
+        masters=("Sita Devi (Padma Shri 1981)", "Ganga Devi", "Bharti Dayal", "Mahasundari Devi"),
     ),
     EnumValue(
         "pahari-miniature",
@@ -1019,10 +1028,20 @@ _IC_TRADITION = EnumBank("tradition", [
     ),
     EnumValue(
         "warli",
-        "Warli tribal tradition (Maharashtra): white pigment (rice paste) on red-ochre "
-        "ground, simple geometric figures (triangles+circles+lines), narrative "
-        "scene-composition (festivals, hunts, farming), no facial detail, motion "
-        "through repeated forms.",
+        "Warli tribal tradition (Maharashtra, Thane/Palghar): MONOCHROME white "
+        "rice-paste pigment on brown earth-ochre ground — ONLY two colors, no "
+        "additional palette. Human figures built from primitive geometry: TWO "
+        "TRIANGLES joined at apex for the torso (point up + point down), a SMALL "
+        "ROUND HEAD on top, thin stick limbs — NO facial detail at all (no eyes, "
+        "no nose, no mouth), the figures are silhouette-rhythmic. Animals (cow, "
+        "dog, deer, peacock) in matching stick-figure form. Compositional "
+        "vocabulary: tree of life with dense leaf-clusters, tarpa (circular ring) "
+        "dance, bullock cart, wedding chauk (sacred square), spirals, peacock-with-"
+        "circular-eye-feather. Dense pattern fills made by repeating small marks "
+        "(dots, hatches, tiny triangles). Composition is grid-organized or "
+        "symmetric around a central sacred square (chauk). NO perspective, NO "
+        "shading, NO color beyond the white pigment.",
+        masters=("traditional Warli wall painting (Maharashtra)", "Jivya Soma Mashe (Padma Shri 2011)"),
     ),
 ])
 
@@ -1069,6 +1088,9 @@ _IC_GROUND = EnumBank("ground", [
     EnumValue("cosmic-water",        "Ocean of cosmic waters with serpent Shesha or floating lotus pedestal, no horizon, mythological setting."),
     EnumValue("celestial-sky",       "Celestial sky with apsaras, vimanas, swirling clouds, gods visible in middle distance — Vaikuntha or Kailash."),
     EnumValue("village-pastoral",    "Village pastoral with thatched huts, grazing cows, women with water-pots, festival activity in middle ground."),
+    EnumValue("madhubani-paper",     "Cream/white paper ground bordered by stacked geometric+floral decorative bands; peepal-leaf and dot-cluster motifs filling negative space behind the figures. Used for Madhubani."),
+    EnumValue("warli-mud-wall",      "Brown earth-ochre wall ground (the geru-coated mud wall surface), entire scene painted in white rice-paste pigment only; surface texture lightly visible under the paint. Used for Warli."),
+    EnumValue("warli-tarpa-circle",  "Brown earth ground with a central sacred-square chauk and a concentric tarpa-dance ring of stick-figure dancers around it, dense white pattern fills on the edges (zigzag, dot-clusters, peacock-feather circles). Used for Warli festival/dance subjects."),
 ])
 
 _IC_COMPOSITION = EnumBank("composition", [
