@@ -2084,8 +2084,9 @@ class MandalaArtEngine(Engine):
         "secondary": {"hex": "#000000", "role": "black ink line — fine, precise, closed continuous outlines"},
         "accent":    {"hex": "#000000", "role": "no chromatic accent (line art); accent via colorist's hand"},
     }
-    default_runtime = {"model": "dev", "steps": 32, "guidance": 6.5}
+    default_runtime = {"model": "dev", "steps": 36, "guidance": 7.5}
     engine_negatives: ClassVar[tuple[str, ...]] = (
+        # Color / shading killers
         "color", "colored", "color illustration", "RGB fill", "saturated tone",
         "grey fill", "tonal shading", "gradient", "interior shading",
         "photorealism", "photographic detail", "rendered shadow",
@@ -2093,11 +2094,25 @@ class MandalaArtEngine(Engine):
         "anime stylization", "manga giant chibi eyes",
         "AI glow", "halation glow", "soft focus haze", "milky highlight",
         "watercolor wash", "ink wash bleed",
+        # Page-format killers
         "watermark", "signature", "artist tag", "text overlay", "page number",
-        "asymmetric mistakes", "broken symmetry", "wandering loose lines",
         "scribbled rough sketch", "messy uncertain line",
         "menacing expression on subject", "predatory teeth", "scary",
         "gore", "blood", "violence",
+        # Ornamental-design failure modes (from the design primer)
+        "uniform pattern density across entire body", "every inch filled equally",
+        "no breathing zones", "no whitespace", "claustrophobic over-rendered",
+        "pattern spilling outside silhouette", "ornament overwhelming anatomy",
+        "subject unrecognizable under patterns", "jagged silhouette edge",
+        "tiny silhouette protrusions from edge decoration",
+        "robotic mirror symmetry", "rigid pattern grid",
+        "ten competing focal points", "no visual hierarchy",
+        "decorated eye", "eye crowded by patterns", "patterns colliding with eye",
+        "tangent line collisions", "trapped tiny spaces",
+        "ultra-thin disappearing lines", "microscopic unreadable regions",
+        "all regions the same size", "all tiny regions",
+        "patterns ignoring anatomy direction", "patterns running cross-grain",
+        "anxious busy chaotic feel",
     )
     TRADITION = _MA_TRADITION
     TREATMENT = _MA_TREATMENT
@@ -2144,44 +2159,93 @@ class MandalaArtEngine(Engine):
             "border": border.description,
         }
 
-        # T5-XXL prompt budget — lead with B&W + mandala framing, then subject,
-        # then style detail. Subject + treatment land in the first ~1200 chars.
+        # T5-XXL prompt budget — lead with B&W framing, subject, primary rule,
+        # then the design-primer principles (60/30/10, hierarchy, breathing zones).
+        # All critical guidance lands inside the first ~2000 chars.
         tradition_short = tradition.description
-        if len(tradition_short) > 380:
-            tradition_short = tradition_short[:380].rsplit(". ", 1)[0] + "."
+        if len(tradition_short) > 280:
+            tradition_short = tradition_short[:280].rsplit(". ", 1)[0] + "."
 
         prompt_parts = [
-            "COLORING BOOK MANDALA PAGE — black ink line art on a pure white page. "
-            "NO COLOR. NO shading, NO gradient, NO grey, NO interior shaded fill. "
-            "Decorative pattern fills are line-only (zentangle micro-patterns "
-            "bounded inside closed outlines). Every region is a closed shape a "
-            "colorist can fill. White background edge-to-edge.",
+            "ORNAMENTAL COLORING-BOOK MANDALA PAGE — black ink line art on pure "
+            "white paper. NO color, NO shading, NO grey, NO gradient fills. "
+            "Decorative pattern is line-only, bounded inside closed outlines.",
 
             f"CENTRAL SUBJECT: {clean_subject}.",
 
+            f"PRIMARY RULE: the viewer must read '{clean_subject}' FIRST, then "
+            "'beautiful ornament' second. The subject's silhouette and anatomy "
+            "are SACRED — patterns SUPPORT them, never overwhelm. At 150px "
+            f"thumbnail the image must still read instantly as {clean_subject}.",
+
             f"TREATMENT: {treatment.description}",
 
-            f"SYMMETRY: {symmetry.description}",
+            "DENSITY — BE SPATIAL: leave AT LEAST 60% of the canvas as PURE "
+            "WHITE PAPER. Specifically: the subject's BELLY / LOWER UNDERSIDE "
+            "stays MOSTLY WHITE (only a few sparse flow-lines, NO pattern fill). "
+            "The background AROUND the subject stays WHITE PAPER. Ornament "
+            "concentrates in roughly 30% of the canvas (head sides, upper "
+            "flanks, supporting flow-ribbons). HERO detail concentrates in only "
+            "10% (forehead, eye area, tail tip, fin tips). DO NOT fill the "
+            "belly with patterns. DO NOT cover the whole subject with uniform "
+            "ornamentation.",
 
-            f"COMPLEXITY: {complexity.description}",
+            "5-LEVEL VISUAL HIERARCHY (each level a FINER line than the one "
+            "above): L1 outer silhouette — thickest, smooth, unbroken contour; "
+            "L2 major anatomical divisions (head / body / fins / tail) — medium "
+            "weight; L3 large ornamental ribbons that flow ALONG anatomy — "
+            "medium; L4 pattern regions — thinner; L5 micro-texture — finest, "
+            "ONLY in focal zones. Most failed mandalas start at L5 everywhere.",
+
+            "BREATHING ZONES (mandatory): large unornamented or low-density "
+            "regions, especially on the belly and lower torso, are part of the "
+            "design — NOT unfinished. They create luxury, focus, calm.",
+
+            "FOCAL POINTS — exactly THREE: ONE primary (subject's eye / head / "
+            "forehead) plus TWO secondary (tail decoration + front fin, or the "
+            "subject's equivalents). NEVER ten competing focal points.",
+
+            "PATTERN FLOW: every pattern stroke follows the subject's natural "
+            "anatomical curves — hydrodynamic for fish/whales, radiating for "
+            "lions/owls, growth-direction for plants. NO rigid grids, NO random "
+            "angular fragmentation, NO patterns running cross-grain to the form.",
+
+            "PATTERN VOCABULARY: 3-5 systems MAX (e.g., scales + flowing "
+            "ribbons + spirals + dots + wave geometry). Repetition + rhythm. "
+            "Never random pattern mixing.",
+
+            "EYE: clean shape, readable pupil, generous clear space around it. "
+            "Patterns DO NOT crowd or collide with the eye. The eye carries the "
+            "subject's intelligence — gentle, aware, ancient.",
+
+            "REGION SIZES: 10-20% small + 50-60% medium + 20-30% large fillable "
+            "regions. Large regions let the colorist breathe and complete "
+            "satisfyingly.",
+
+            "EMOTIONAL TONE: calm, sacred, intelligent, graceful, timeless. "
+            "The subject should feel like a wise ancient being CARRYING sacred "
+            "patterns — never a pattern sheet shaped like a subject. NOT "
+            "chaotic, NOT anxious, NOT over-rendered.",
+
+            f"SYMMETRY: {symmetry.description} Overall balance is mandatory; "
+            "organic asymmetric variation within the symmetry is welcomed — "
+            "natural forms are never robotic-mirror-perfect.",
+
+            f"COMPLEXITY TIER: {complexity.description}",
 
             f"DECORATIVE TRADITION: {tradition.key} — {tradition_short}",
 
-            f"BORDER / FRAME: {border.description}",
+            f"OUTER BORDER / FRAME: {border.description}",
 
-            "ABSOLUTE RULES: (1) the symmetry directive above is EXACT — left "
-            "and right sides (or rotational sectors) must mirror precisely, no "
-            "drift. (2) every interior pattern-fill is LINE-WORK only, not "
-            "shaded grey. (3) line weight is fine + consistent (technical-pen "
-            "feel), no thick-and-thin modulation within a stroke. (4) the "
-            "subject's anatomy stays recognizable underneath the patterning — "
-            "a whale still reads as a whale. (5) NO photorealism, NO 3D render, "
-            "NO AI-glow halo, NO watercolor wash, NO grey-toned fill. "
-            "ABSOLUTELY MONOCHROME LINE ART.",
+            "LINE DISCIPLINE: VARIED line weights (thickest at silhouette, "
+            "finest at micro-detail). Technical-pen ink feel, clean closed "
+            "outlines, no broken or wandering strokes. NO photorealism, NO 3D "
+            "render, NO AI-glow halo, NO watercolor wash. Absolutely monochrome "
+            "black line on white paper.",
 
-            "PAGE FORMAT: white background edge-to-edge, ~8% margin, NO frame "
-            "outside the mandala's own border (above), NO watermark, NO text, "
-            "NO page number, NO signature.",
+            "PAGE FORMAT: pure white background edge-to-edge, ~8% margin, NO "
+            "outer frame beyond the mandala's own border, NO watermark, NO "
+            "text, NO page number, NO signature.",
         ]
         prompt = "\n\n".join(prompt_parts)
 

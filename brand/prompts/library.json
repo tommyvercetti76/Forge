@@ -504,14 +504,306 @@
   },
   "_about_mandala_art": "MandalaArtEngine recipes — FLUX-driven subject mandalas for adult coloring. Different from `forge mandala` (which is exact procedural geometry without a subject).",
 
+  "_about_50_coloring_recipes": "50 vetted children's-coloring-book recipes spanning 6 traditions × 3 age tiers × 6 themes (animals · daily-life · seasons · festivals · nature · fantasy). Codified against docs/COLORING_BOOK_SCIENCE.md — every preset honours the age-tier minimum region width, single-narrative-moment cognitive-load rule, and tradition-specific visual language.",
+
+  "coloring-toddler-anml-cat-yarn": {
+    "engine": "childrens-coloring-book",
+    "description": "Boynton toddler — a chunky cat playing with a ball of yarn.",
+    "subject": "a rounded chunky cartoon cat sitting on the floor batting at a single round ball of yarn, simple closed-shape forms",
+    "config": {"style.tradition": "sandra-boynton-whimsical", "style.age_range": "toddler-3-5", "subject.character_archetype": "curious-bear-cub", "subject.emotion": "joyful", "subject.props": "no-prop", "scene.setting": "cozy-cottage-interior", "scene.time_of_day": "midday", "scene.environmental_density": "sparse", "narrative.moment": "quiet-rest", "composition.layout": "centered-portrait", "composition.framing": "wide", "composition.character_count": 1},
+    "seed": 43
+  },
+  "coloring-toddler-anml-duck-pond": {
+    "engine": "childrens-coloring-book",
+    "description": "Carle toddler — a single duck on a pond with two simple lily pads.",
+    "subject": "a single chunky cartoon duck floating on a small round pond with two large lily-pads beside it, one simple cloud in the sky",
+    "config": {"style.tradition": "eric-carle-bold", "style.age_range": "toddler-3-5", "subject.character_archetype": "helpful-elephant", "subject.emotion": "gentle", "subject.props": "no-prop", "scene.setting": "by-the-pond", "scene.time_of_day": "midday", "scene.environmental_density": "sparse", "narrative.moment": "quiet-rest", "composition.layout": "centered-portrait", "composition.framing": "wide", "composition.character_count": 1},
+    "seed": 45
+  },
+  "coloring-toddler-anml-sheep-meadow": {
+    "engine": "childrens-coloring-book",
+    "description": "Willems toddler — a single cloud-shaped sheep in a small meadow.",
+    "subject": "one round fluffy sheep with a small simple face standing in a small grassy meadow with two simple flowers beside it",
+    "config": {"style.tradition": "mo-willems-minimal", "style.age_range": "toddler-3-5", "subject.character_archetype": "curious-bear-cub", "subject.emotion": "gentle", "subject.props": "no-prop", "scene.setting": "magical-meadow", "scene.time_of_day": "midday", "scene.environmental_density": "sparse", "narrative.moment": "quiet-rest", "composition.layout": "centered-portrait", "composition.framing": "wide", "composition.character_count": 1},
+    "seed": 47
+  },
+  "coloring-toddler-anml-mouse-cheese": {
+    "engine": "childrens-coloring-book",
+    "description": "Boynton toddler — a small mouse holding a wedge of cheese.",
+    "subject": "a small rounded cartoon mouse sitting up on its haunches holding a simple wedge of cheese with both paws, generous white space around",
+    "config": {"style.tradition": "sandra-boynton-whimsical", "style.age_range": "toddler-3-5", "subject.character_archetype": "mischievous-mouse", "subject.emotion": "joyful", "subject.props": "no-prop", "scene.setting": "cozy-cottage-interior", "scene.time_of_day": "midday", "scene.environmental_density": "sparse", "narrative.moment": "quiet-rest", "composition.layout": "centered-portrait", "composition.framing": "medium", "composition.character_count": 1},
+    "seed": 49
+  },
+  "coloring-toddler-anml-puppy-ball": {
+    "engine": "childrens-coloring-book",
+    "description": "Carle toddler — a happy puppy chasing one big ball.",
+    "subject": "a rounded chunky puppy with a wagging tail running after a single large round ball on a simple patch of grass",
+    "config": {"style.tradition": "eric-carle-bold", "style.age_range": "toddler-3-5", "subject.character_archetype": "curious-bear-cub", "subject.emotion": "joyful", "subject.props": "no-prop", "scene.setting": "magical-meadow", "scene.time_of_day": "midday", "scene.environmental_density": "sparse", "narrative.moment": "big-leap", "composition.layout": "centered-portrait", "composition.framing": "wide", "composition.character_count": 1},
+    "seed": 51
+  },
+  "coloring-toddler-anml-elephant-water": {
+    "engine": "childrens-coloring-book",
+    "description": "Boynton toddler — a chunky elephant spraying water with its trunk.",
+    "subject": "one chunky cartoon elephant standing in a small puddle spraying a simple arc of water from its trunk up into the air",
+    "config": {"style.tradition": "sandra-boynton-whimsical", "style.age_range": "toddler-3-5", "subject.character_archetype": "helpful-elephant", "subject.emotion": "joyful", "subject.props": "no-prop", "scene.setting": "by-the-pond", "scene.time_of_day": "midday", "scene.environmental_density": "sparse", "narrative.moment": "quiet-rest", "composition.layout": "centered-portrait", "composition.framing": "wide", "composition.character_count": 1},
+    "seed": 53
+  },
+  "coloring-toddler-life-bath-time": {
+    "engine": "childrens-coloring-book",
+    "description": "Willems toddler — a child in a bathtub with one rubber duck.",
+    "subject": "a small child sitting in a round bathtub holding one yellow rubber duck above the water, simple bubbles floating around",
+    "config": {"style.tradition": "mo-willems-minimal", "style.age_range": "toddler-3-5", "subject.character_archetype": "adventurous-child", "subject.emotion": "joyful", "subject.props": "no-prop", "scene.setting": "cozy-cottage-interior", "scene.time_of_day": "morning", "scene.environmental_density": "sparse", "narrative.moment": "quiet-rest", "composition.layout": "centered-portrait", "composition.framing": "medium", "composition.character_count": 1},
+    "seed": 55
+  },
+  "coloring-toddler-life-bedtime-teddy": {
+    "engine": "childrens-coloring-book",
+    "description": "Boynton toddler — a child tucked in bed with a teddy bear.",
+    "subject": "a small child lying in a simple bed under a blanket cuddling one teddy bear, a small lamp on a bedside table, big crescent moon visible through a square window",
+    "config": {"style.tradition": "sandra-boynton-whimsical", "style.age_range": "toddler-3-5", "subject.character_archetype": "adventurous-child", "subject.emotion": "sleepy-content", "subject.props": "no-prop", "scene.setting": "cozy-cottage-interior", "scene.time_of_day": "night-moonlit", "scene.environmental_density": "sparse", "narrative.moment": "bedtime-blessing", "composition.layout": "centered-portrait", "composition.framing": "medium", "composition.character_count": 2},
+    "seed": 57
+  },
+  "coloring-toddler-natr-flower-bee": {
+    "engine": "childrens-coloring-book",
+    "description": "Willems toddler — a single large daisy with one bumblebee visiting.",
+    "subject": "one large simple daisy flower with rounded petals standing on a slim stem, one chunky bumblebee hovering beside it",
+    "config": {"style.tradition": "mo-willems-minimal", "style.age_range": "toddler-3-5", "subject.character_archetype": "curious-bear-cub", "subject.emotion": "gentle", "subject.props": "no-prop", "scene.setting": "magical-meadow", "scene.time_of_day": "midday", "scene.environmental_density": "sparse", "narrative.moment": "first-meeting", "composition.layout": "centered-portrait", "composition.framing": "medium", "composition.character_count": 2},
+    "seed": 59
+  },
+  "coloring-toddler-natr-fish-bowl": {
+    "engine": "childrens-coloring-book",
+    "description": "Carle toddler — one round fish in a clear fishbowl.",
+    "subject": "one round chunky cartoon fish swimming inside a simple round fishbowl on a small table, two bubbles rising",
+    "config": {"style.tradition": "eric-carle-bold", "style.age_range": "toddler-3-5", "subject.character_archetype": "curious-bear-cub", "subject.emotion": "gentle", "subject.props": "no-prop", "scene.setting": "cozy-cottage-interior", "scene.time_of_day": "midday", "scene.environmental_density": "sparse", "narrative.moment": "quiet-rest", "composition.layout": "centered-portrait", "composition.framing": "medium", "composition.character_count": 1},
+    "seed": 61
+  },
+  "coloring-toddler-seas-snowman-scarf": {
+    "engine": "childrens-coloring-book",
+    "description": "Boynton toddler — a chunky snowman with a striped scarf.",
+    "subject": "one chunky three-ball snowman with a simple round head wearing a striped scarf and a top hat, two simple stick arms holding nothing, a couple of large snowflakes around",
+    "config": {"style.tradition": "sandra-boynton-whimsical", "style.age_range": "toddler-3-5", "subject.character_archetype": "gentle-giant", "subject.emotion": "joyful", "subject.props": "no-prop", "scene.setting": "magical-meadow", "scene.time_of_day": "midday", "scene.environmental_density": "sparse", "narrative.moment": "quiet-rest", "composition.layout": "centered-portrait", "composition.framing": "wide", "composition.character_count": 1},
+    "seed": 63
+  },
+  "coloring-toddler-fant-frog-prince": {
+    "engine": "childrens-coloring-book",
+    "description": "Carle toddler — a friendly frog wearing a simple crown.",
+    "subject": "one chunky cartoon frog sitting on a large lily-pad wearing a small simple crown on its head",
+    "config": {"style.tradition": "eric-carle-bold", "style.age_range": "toddler-3-5", "subject.character_archetype": "friendly-dragon", "subject.emotion": "gentle", "subject.props": "no-prop", "scene.setting": "by-the-pond", "scene.time_of_day": "midday", "scene.environmental_density": "sparse", "narrative.moment": "quiet-rest", "composition.layout": "centered-portrait", "composition.framing": "medium", "composition.character_count": 1},
+    "seed": 65
+  },
+  "coloring-toddler-fant-bunny-balloon": {
+    "engine": "childrens-coloring-book",
+    "description": "Willems toddler — a rabbit floating with one big balloon.",
+    "subject": "one small chunky rabbit holding the string of a single large round balloon floating gently above the ground, two simple stars in the sky",
+    "config": {"style.tradition": "mo-willems-minimal", "style.age_range": "toddler-3-5", "subject.character_archetype": "brave-rabbit", "subject.emotion": "surprised-delighted", "subject.props": "balloon", "scene.setting": "magical-meadow", "scene.time_of_day": "midday", "scene.environmental_density": "sparse", "narrative.moment": "big-leap", "composition.layout": "centered-portrait", "composition.framing": "wide", "composition.character_count": 1},
+    "seed": 67
+  },
+
+  "coloring-kids-anml-baker-mouse": {
+    "engine": "childrens-coloring-book",
+    "description": "Potter kids — a baker mouse in an apron rolling out dough.",
+    "subject": "a mouse wearing a small apron and chef hat standing on a wooden table rolling out dough with a tiny rolling pin; a finished pie cooling beside her; one small finch perched on the windowsill watching",
+    "config": {"style.tradition": "beatrix-potter-naturalistic", "style.age_range": "kids-6-9", "subject.character_archetype": "mischievous-mouse", "subject.emotion": "gentle", "subject.props": "no-prop", "scene.setting": "cozy-cottage-interior", "scene.time_of_day": "morning", "scene.environmental_density": "balanced", "narrative.moment": "quiet-rest", "composition.layout": "two-figure-balance", "composition.framing": "medium", "composition.character_count": 2},
+    "seed": 71
+  },
+  "coloring-kids-anml-hedgehog-mushrooms": {
+    "engine": "childrens-coloring-book",
+    "description": "Potter kids — a hedgehog walking among woodland mushrooms.",
+    "subject": "a small hedgehog with prickly back walking along a forest floor between three large rounded mushrooms; one snail visible on a moss patch; a few simple ferns to the side",
+    "config": {"style.tradition": "beatrix-potter-naturalistic", "style.age_range": "kids-6-9", "subject.character_archetype": "curious-bear-cub", "subject.emotion": "curious", "subject.props": "no-prop", "scene.setting": "enchanted-forest", "scene.time_of_day": "morning", "scene.environmental_density": "balanced", "narrative.moment": "problem-discovered", "composition.layout": "environmental-wide", "composition.framing": "medium", "composition.character_count": 2},
+    "seed": 73
+  },
+  "coloring-kids-anml-otters-stream": {
+    "engine": "childrens-coloring-book",
+    "description": "Potter kids — two river otters floating together on a calm stream.",
+    "subject": "two river otters floating on their backs side by side on a gentle stream holding hands so they do not drift apart; a few reeds at the edge of the water and one small fish visible below the surface",
+    "config": {"style.tradition": "beatrix-potter-naturalistic", "style.age_range": "kids-6-9", "subject.character_archetype": "whimsical-fox", "subject.emotion": "gentle", "subject.props": "no-prop", "scene.setting": "by-the-pond", "scene.time_of_day": "morning", "scene.environmental_density": "balanced", "narrative.moment": "quiet-rest", "composition.layout": "two-figure-balance", "composition.framing": "wide", "composition.character_count": 2},
+    "seed": 75
+  },
+  "coloring-kids-anml-cat-window": {
+    "engine": "childrens-coloring-book",
+    "description": "HB kids — a cat watching birds from a windowsill.",
+    "subject": "one cat sitting on a windowsill looking through the glass at three small birds on a branch outside; a simple potted plant beside the cat; a wooden floor visible below",
+    "config": {"style.tradition": "hanna-barbera-flat-cartoon", "style.age_range": "kids-6-9", "subject.character_archetype": "curious-bear-cub", "subject.emotion": "curious", "subject.props": "no-prop", "scene.setting": "cozy-cottage-interior", "scene.time_of_day": "morning", "scene.environmental_density": "balanced", "narrative.moment": "wildlife-visit", "composition.layout": "environmental-wide", "composition.framing": "medium", "composition.character_count": 1},
+    "seed": 77
+  },
+  "coloring-kids-anml-horse-fence": {
+    "engine": "childrens-coloring-book",
+    "description": "HB kids — a friendly horse over a wooden fence eating an apple from a child's hand.",
+    "subject": "one friendly horse with its head over a wooden plank fence eating an apple from a child's outstretched hand; a barn and a tree in the background; a few wildflowers along the fence",
+    "config": {"style.tradition": "hanna-barbera-flat-cartoon", "style.age_range": "kids-6-9", "subject.character_archetype": "adventurous-child", "subject.emotion": "gentle", "subject.props": "no-prop", "scene.setting": "village-square", "scene.time_of_day": "golden-hour", "scene.environmental_density": "balanced", "narrative.moment": "wildlife-visit", "composition.layout": "two-figure-balance", "composition.framing": "medium", "composition.character_count": 2},
+    "seed": 79
+  },
+  "coloring-kids-life-classroom-art": {
+    "engine": "childrens-coloring-book",
+    "description": "HB kids — a child at a school desk painting at an easel.",
+    "subject": "one child seated at a small wooden desk in front of a simple easel painting a picture; a jar of paintbrushes and a small palette on the desk; a sunny classroom window in the background",
+    "config": {"style.tradition": "hanna-barbera-flat-cartoon", "style.age_range": "kids-6-9", "subject.character_archetype": "adventurous-child", "subject.emotion": "determined", "subject.props": "no-prop", "scene.setting": "cozy-cottage-interior", "scene.time_of_day": "morning", "scene.environmental_density": "balanced", "narrative.moment": "decision-to-help", "composition.layout": "centered-portrait", "composition.framing": "medium", "composition.character_count": 1},
+    "seed": 81
+  },
+  "coloring-kids-life-bedroom-readbook": {
+    "engine": "childrens-coloring-book",
+    "description": "Potter kids — a child reading a storybook in bed by lamplight.",
+    "subject": "one child sitting up in a wooden bed reading an open storybook by the light of a small bedside lamp; a stuffed teddy bear beside them; a cat curled at the foot of the bed; a simple rug below",
+    "config": {"style.tradition": "beatrix-potter-naturalistic", "style.age_range": "kids-6-9", "subject.character_archetype": "adventurous-child", "subject.emotion": "gentle", "subject.props": "storybook-open", "scene.setting": "cozy-cottage-interior", "scene.time_of_day": "night-moonlit", "scene.environmental_density": "balanced", "narrative.moment": "quiet-rest", "composition.layout": "centered-portrait", "composition.framing": "medium", "composition.character_count": 2},
+    "seed": 83
+  },
+  "coloring-kids-life-grandfather-garden": {
+    "engine": "childrens-coloring-book",
+    "description": "HB kids — a grandfather and grandchild planting flowers together.",
+    "subject": "an elderly grandfather kneeling beside his young grandchild as both plant a small flower in a garden bed; a small watering can between them; three potted plants nearby waiting to be planted",
+    "config": {"style.tradition": "hanna-barbera-flat-cartoon", "style.age_range": "kids-6-9", "subject.character_archetype": "elderly-marathi-couple", "subject.emotion": "gentle", "subject.props": "no-prop", "scene.setting": "texas-backyard-patio", "scene.time_of_day": "morning", "scene.environmental_density": "balanced", "narrative.moment": "shared-secret", "composition.layout": "two-figure-balance", "composition.framing": "medium", "composition.character_count": 2},
+    "seed": 85
+  },
+  "coloring-kids-seas-autumn-leaves-rake": {
+    "engine": "childrens-coloring-book",
+    "description": "Potter kids — a child raking autumn leaves into a pile with a squirrel watching.",
+    "subject": "one child holding a wooden rake gathering fallen autumn leaves into a small pile; one curious squirrel sitting on a nearby tree branch watching; a tree with a few remaining leaves above",
+    "config": {"style.tradition": "beatrix-potter-naturalistic", "style.age_range": "kids-6-9", "subject.character_archetype": "adventurous-child", "subject.emotion": "joyful", "subject.props": "no-prop", "scene.setting": "magical-meadow", "scene.time_of_day": "golden-hour", "scene.environmental_density": "balanced", "narrative.moment": "wildlife-visit", "composition.layout": "two-figure-balance", "composition.framing": "wide", "composition.character_count": 2},
+    "seed": 87
+  },
+  "coloring-kids-seas-spring-butterflies": {
+    "engine": "childrens-coloring-book",
+    "description": "Potter kids — a rabbit in a meadow surrounded by three large butterflies in spring.",
+    "subject": "one rabbit sitting upright in a spring meadow surrounded by three large butterflies in flight around it; a few simple flowers underfoot and a tree in soft background",
+    "config": {"style.tradition": "beatrix-potter-naturalistic", "style.age_range": "kids-6-9", "subject.character_archetype": "brave-rabbit", "subject.emotion": "surprised-delighted", "subject.props": "no-prop", "scene.setting": "magical-meadow", "scene.time_of_day": "morning", "scene.environmental_density": "balanced", "narrative.moment": "wildlife-visit", "composition.layout": "centered-portrait", "composition.framing": "wide", "composition.character_count": 1},
+    "seed": 89
+  },
+  "coloring-kids-seas-winter-cocoa": {
+    "engine": "childrens-coloring-book",
+    "description": "HB kids — a child holding a steaming mug of cocoa by a frosty window.",
+    "subject": "one child sitting in a chair holding a steaming round mug of cocoa with both hands, looking out at a frosty windowpane with snow falling outside; a simple striped scarf around their neck",
+    "config": {"style.tradition": "hanna-barbera-flat-cartoon", "style.age_range": "kids-6-9", "subject.character_archetype": "adventurous-child", "subject.emotion": "sleepy-content", "subject.props": "chai-cup-and-saucer", "scene.setting": "cozy-cottage-interior", "scene.time_of_day": "morning", "scene.environmental_density": "balanced", "narrative.moment": "quiet-rest", "composition.layout": "centered-portrait", "composition.framing": "medium", "composition.character_count": 1},
+    "seed": 91
+  },
+  "coloring-kids-fest-christmas-tree": {
+    "engine": "childrens-coloring-book",
+    "description": "HB kids — two children decorating a Christmas tree together.",
+    "subject": "two children standing in front of a tall Christmas tree placing simple round ornaments on its branches; a small box of ornaments at their feet; one wrapped present below the tree and a fireplace mantel in the soft background",
+    "config": {"style.tradition": "hanna-barbera-flat-cartoon", "style.age_range": "kids-6-9", "subject.character_archetype": "adventurous-child", "subject.emotion": "joyful", "subject.props": "no-prop", "scene.setting": "cozy-cottage-interior", "scene.time_of_day": "night-moonlit", "scene.environmental_density": "balanced", "narrative.moment": "shared-secret", "composition.layout": "two-figure-balance", "composition.framing": "medium", "composition.character_count": 2},
+    "seed": 93
+  },
+  "coloring-kids-fest-eid-crescent-moon": {
+    "engine": "childrens-coloring-book",
+    "description": "HB kids — a family looking up at a crescent moon for Eid.",
+    "subject": "two children standing in a doorway looking up at a thin crescent moon and a single star in the sky; one child pointing upward; simple lanterns hanging from the doorframe above them",
+    "config": {"style.tradition": "hanna-barbera-flat-cartoon", "style.age_range": "kids-6-9", "subject.character_archetype": "adventurous-child", "subject.emotion": "surprised-delighted", "subject.props": "lantern-glowing", "scene.setting": "cozy-cottage-interior", "scene.time_of_day": "night-moonlit", "scene.environmental_density": "balanced", "narrative.moment": "wildlife-visit", "composition.layout": "two-figure-balance", "composition.framing": "medium", "composition.character_count": 2},
+    "seed": 95
+  },
+  "coloring-kids-fest-birthday-cake": {
+    "engine": "childrens-coloring-book",
+    "description": "Carle kids — a child blowing out the candles on a layered birthday cake.",
+    "subject": "one child leaning over a tall layered birthday cake with seven simple candle flames; cheeks puffed to blow them out; a streamer and one balloon above; a wrapped gift on the table beside",
+    "config": {"style.tradition": "eric-carle-bold", "style.age_range": "kids-6-9", "subject.character_archetype": "adventurous-child", "subject.emotion": "joyful", "subject.props": "no-prop", "scene.setting": "cozy-cottage-interior", "scene.time_of_day": "midday", "scene.environmental_density": "balanced", "narrative.moment": "triumph-celebration", "composition.layout": "centered-portrait", "composition.framing": "medium", "composition.character_count": 1},
+    "seed": 97
+  },
+  "coloring-kids-natr-tidepool-shells": {
+    "engine": "childrens-coloring-book",
+    "description": "Carle kids — a child crouched at a tidepool examining shells and a starfish.",
+    "subject": "one child crouched at the edge of a small tidepool with a simple net, looking at one large starfish, two seashells, and a tiny crab visible in the shallow water; pebbles and a small piece of seaweed around the edge",
+    "config": {"style.tradition": "eric-carle-bold", "style.age_range": "kids-6-9", "subject.character_archetype": "adventurous-child", "subject.emotion": "curious", "subject.props": "no-prop", "scene.setting": "by-the-pond", "scene.time_of_day": "morning", "scene.environmental_density": "balanced", "narrative.moment": "problem-discovered", "composition.layout": "environmental-wide", "composition.framing": "wide", "composition.character_count": 1},
+    "seed": 99
+  },
+  "coloring-kids-natr-meadow-picnic": {
+    "engine": "childrens-coloring-book",
+    "description": "Potter kids — two children sharing a picnic basket in a meadow.",
+    "subject": "two children sitting on a checkered blanket in a sunny meadow with an open picnic basket between them; one child holding an apple, the other a sandwich; a few daisies around the blanket and a single butterfly nearby",
+    "config": {"style.tradition": "beatrix-potter-naturalistic", "style.age_range": "kids-6-9", "subject.character_archetype": "adventurous-child", "subject.emotion": "gentle", "subject.props": "picnic-basket", "scene.setting": "magical-meadow", "scene.time_of_day": "midday", "scene.environmental_density": "balanced", "narrative.moment": "shared-secret", "composition.layout": "two-figure-balance", "composition.framing": "wide", "composition.character_count": 2},
+    "seed": 101
+  },
+  "coloring-kids-natr-treehouse-friends": {
+    "engine": "childrens-coloring-book",
+    "description": "HB kids — two children in a treehouse waving at a friend below.",
+    "subject": "two children sitting on the wooden platform of a tree-house in a tall oak tree waving down to a third child climbing the rope-ladder; a small flag flying from the treehouse roof; leaves around the platform",
+    "config": {"style.tradition": "hanna-barbera-flat-cartoon", "style.age_range": "kids-6-9", "subject.character_archetype": "adventurous-child", "subject.emotion": "joyful", "subject.props": "no-prop", "scene.setting": "treehouse-platform", "scene.time_of_day": "golden-hour", "scene.environmental_density": "balanced", "narrative.moment": "first-meeting", "composition.layout": "environmental-wide", "composition.framing": "wide", "composition.character_count": 3},
+    "seed": 103
+  },
+  "coloring-kids-fant-pirate-treasure": {
+    "engine": "childrens-coloring-book",
+    "description": "HB kids — a young pirate finding a treasure chest on the beach.",
+    "subject": "one young child dressed as a simple pirate with a hat and eyepatch kneeling beside an open treasure chest on a sandy beach; a few large gold coins spilling out; a wooden ship visible far in the water",
+    "config": {"style.tradition": "hanna-barbera-flat-cartoon", "style.age_range": "kids-6-9", "subject.character_archetype": "adventurous-child", "subject.emotion": "surprised-delighted", "subject.props": "no-prop", "scene.setting": "by-the-pond", "scene.time_of_day": "golden-hour", "scene.environmental_density": "balanced", "narrative.moment": "triumph-celebration", "composition.layout": "centered-portrait", "composition.framing": "wide", "composition.character_count": 1},
+    "seed": 105
+  },
+  "coloring-kids-fant-castle-knight": {
+    "engine": "childrens-coloring-book",
+    "description": "HB kids — a young knight with a wooden sword in front of a stone castle.",
+    "subject": "one young child dressed as a knight with a simple helmet and wooden sword standing proudly in front of a small stone castle gate; a friendly dragon peeking out from the castle window; a small banner waving above the gate",
+    "config": {"style.tradition": "hanna-barbera-flat-cartoon", "style.age_range": "kids-6-9", "subject.character_archetype": "adventurous-child", "subject.emotion": "determined", "subject.props": "no-prop", "scene.setting": "village-square", "scene.time_of_day": "golden-hour", "scene.environmental_density": "balanced", "narrative.moment": "decision-to-help", "composition.layout": "two-figure-balance", "composition.framing": "wide", "composition.character_count": 2},
+    "seed": 107
+  },
+  "coloring-kids-fant-wizard-apprentice": {
+    "engine": "childrens-coloring-book",
+    "description": "Miyazaki kids — a young apprentice and a wise wizard cat looking at a glowing book.",
+    "subject": "one young child sitting beside a wise cat wearing a tiny wizard hat both peering at an open book on a wooden table; a small lantern glowing beside them; shelves of jars and books in the soft background",
+    "config": {"style.tradition": "miyazaki-storyboard", "style.age_range": "kids-6-9", "subject.character_archetype": "adventurous-child", "subject.emotion": "curious", "subject.props": "storybook-open", "scene.setting": "cozy-cottage-interior", "scene.time_of_day": "dusk", "scene.environmental_density": "balanced", "narrative.moment": "shared-secret", "composition.layout": "two-figure-balance", "composition.framing": "medium", "composition.character_count": 2},
+    "seed": 109
+  },
+
+  "coloring-pretn-natr-rainforest-canopy": {
+    "engine": "childrens-coloring-book",
+    "description": "Miyazaki pre-teen — a child exploring a rainforest canopy with a friendly monkey companion.",
+    "subject": "one child crossing a rope bridge high in a rainforest canopy with a friendly small monkey leading the way; large hanging vines and broad leaves around them; one toucan perched on a branch; sun rays angled through the foliage",
+    "config": {"style.tradition": "miyazaki-storyboard", "style.age_range": "pre-teen-10-12", "subject.character_archetype": "adventurous-child", "subject.emotion": "surprised-delighted", "subject.props": "no-prop", "scene.setting": "enchanted-forest", "scene.time_of_day": "golden-hour", "scene.environmental_density": "rich", "narrative.moment": "big-leap", "composition.layout": "environmental-wide", "composition.framing": "wide", "composition.character_count": 3},
+    "seed": 113
+  },
+  "coloring-pretn-natr-tidepool-creatures": {
+    "engine": "childrens-coloring-book",
+    "description": "Miyazaki pre-teen — a dense tidepool scene with many small creatures.",
+    "subject": "a detailed tidepool with a starfish a sea anemone two small crabs three different seashells a tiny octopus peeking out from a rock and one small fish; pebbles and seaweed strands carefully drawn; ripples on the water surface",
+    "config": {"style.tradition": "miyazaki-storyboard", "style.age_range": "pre-teen-10-12", "subject.character_archetype": "curious-bear-cub", "subject.emotion": "curious", "subject.props": "no-prop", "scene.setting": "by-the-pond", "scene.time_of_day": "midday", "scene.environmental_density": "rich", "narrative.moment": "problem-discovered", "composition.layout": "environmental-wide", "composition.framing": "wide", "composition.character_count": 1},
+    "seed": 115
+  },
+  "coloring-pretn-fant-dragon-mountain": {
+    "engine": "childrens-coloring-book",
+    "description": "Miyazaki pre-teen — a friendly dragon perched on a mountain peak watching the sunrise.",
+    "subject": "a friendly long-necked dragon with folded soft wings perched on a high mountain peak watching a rising sun; rolling clouds below; one small lantern hanging from its claws; rocky details on the peak and a single pine tree",
+    "config": {"style.tradition": "miyazaki-storyboard", "style.age_range": "pre-teen-10-12", "subject.character_archetype": "friendly-dragon", "subject.emotion": "gentle", "subject.props": "lantern-glowing", "scene.setting": "mountain-cave", "scene.time_of_day": "morning", "scene.environmental_density": "rich", "narrative.moment": "quiet-rest", "composition.layout": "environmental-wide", "composition.framing": "extreme-wide", "composition.character_count": 1},
+    "seed": 117
+  },
+  "coloring-pretn-fant-witch-cottage": {
+    "engine": "childrens-coloring-book",
+    "description": "Miyazaki pre-teen — a young witch and her cat in a cluttered cottage interior.",
+    "subject": "one young witch in a simple cloak and pointed hat stirring a small pot at a wooden stove inside a cottage; her black cat sitting on a stack of books beside her; shelves of jars potion bottles and a broomstick leaning against the wall; one window showing stars outside",
+    "config": {"style.tradition": "miyazaki-storyboard", "style.age_range": "pre-teen-10-12", "subject.character_archetype": "adventurous-child", "subject.emotion": "determined", "subject.props": "no-prop", "scene.setting": "cozy-cottage-interior", "scene.time_of_day": "night-moonlit", "scene.environmental_density": "rich", "narrative.moment": "decision-to-help", "composition.layout": "environmental-wide", "composition.framing": "wide", "composition.character_count": 2},
+    "seed": 119
+  },
+  "coloring-pretn-fest-diwali-rangoli-aaji": {
+    "engine": "childrens-coloring-book",
+    "description": "Miyazaki pre-teen — Aaji and her grandchild creating a detailed rangoli pattern with diyas.",
+    "subject": "an elderly Marathi grandmother kneeling on the floor with her young grandchild together placing rangoli petals around a circular pattern; a ring of lit clay diya lamps surrounding the rangoli; intricate floor pattern detail; stars visible through the doorway",
+    "config": {"style.tradition": "miyazaki-storyboard", "style.age_range": "pre-teen-10-12", "subject.character_archetype": "elderly-marathi-couple", "subject.emotion": "gentle", "subject.props": "lantern-glowing", "scene.setting": "cozy-cottage-interior", "scene.time_of_day": "night-moonlit", "scene.environmental_density": "rich", "narrative.moment": "shared-secret", "composition.layout": "two-figure-balance", "composition.framing": "medium", "composition.character_count": 2},
+    "seed": 121
+  },
+  "coloring-pretn-natr-coral-reef": {
+    "engine": "childrens-coloring-book",
+    "description": "Miyazaki pre-teen — a snorkeler exploring a coral reef with many fish and sea creatures.",
+    "subject": "one child snorkeler with mask and fins underwater surrounded by a dense coral reef; six different fish a sea turtle one octopus one starfish and waving sea fans; bubbles rising; sunlight rays from above",
+    "config": {"style.tradition": "miyazaki-storyboard", "style.age_range": "pre-teen-10-12", "subject.character_archetype": "adventurous-child", "subject.emotion": "surprised-delighted", "subject.props": "no-prop", "scene.setting": "by-the-pond", "scene.time_of_day": "midday", "scene.environmental_density": "rich", "narrative.moment": "wildlife-visit", "composition.layout": "environmental-wide", "composition.framing": "extreme-wide", "composition.character_count": 1},
+    "seed": 123
+  },
+  "coloring-pretn-fant-spirit-bridge": {
+    "engine": "childrens-coloring-book",
+    "description": "Miyazaki pre-teen — a child crossing an old wooden bridge with two small forest spirits accompanying.",
+    "subject": "one child walking across an old curved wooden bridge over a stream with two small rounded forest spirits floating beside them; tall trees on both banks; lanterns hanging from the bridge posts; one fish jumping in the stream below",
+    "config": {"style.tradition": "miyazaki-storyboard", "style.age_range": "pre-teen-10-12", "subject.character_archetype": "adventurous-child", "subject.emotion": "curious", "subject.props": "lantern-glowing", "scene.setting": "enchanted-forest", "scene.time_of_day": "dusk", "scene.environmental_density": "rich", "narrative.moment": "first-meeting", "composition.layout": "environmental-wide", "composition.framing": "wide", "composition.character_count": 3},
+    "seed": 125
+  },
+  "coloring-pretn-anml-owl-library": {
+    "engine": "childrens-coloring-book",
+    "description": "Miyazaki pre-teen — a wise owl in a library of tall bookshelves reading to small mice.",
+    "subject": "one wise owl perched on a tall stack of books holding an open volume reading aloud to three small mice seated on a wooden table; rows of tall bookshelves in the background; one candle in a holder; a quill and inkwell on the table",
+    "config": {"style.tradition": "miyazaki-storyboard", "style.age_range": "pre-teen-10-12", "subject.character_archetype": "wise-owl", "subject.emotion": "gentle", "subject.props": "storybook-open", "scene.setting": "cozy-cottage-interior", "scene.time_of_day": "dusk", "scene.environmental_density": "rich", "narrative.moment": "shared-secret", "composition.layout": "environmental-wide", "composition.framing": "wide", "composition.character_count": 4},
+    "seed": 127
+  },
+
   "mandala-whale-zentangle": {
     "engine": "mandala-art",
-    "description": "A humpback whale silhouette filled with zentangle micro-patterns; bilateral symmetry. Classic Johanna Basford 'Lost Ocean' register.",
-    "subject": "a humpback whale in side profile",
+    "description": "An elegant ornamental whale: head + dorsal + tail carry zentangle patterns; belly stays mostly white as breathing space; eye is clean and ancient. Follows the 60/30/10 ornamental design primer.",
+    "subject": "a humpback whale in side profile swimming gracefully — its HEAD and FOREHEAD carry hero-detail zentangle patterns (the dense focal zone); its UPPER FLANK and DORSAL area carry medium-detail flowing ribbons and scale-motifs that follow the body curves; its BELLY and LOWER UNDERSIDE are MOSTLY WHITE breathing space (only one or two sparse flowing flow-lines suggest belly grooves); its TAIL FIN and PECTORAL FIN carry hero ornamental detail at the tips; one clean readable eye on the head with NO patterns crowding it; the surrounding canvas is white paper",
     "config": {
       "subject.treatment": "subject-silhouette-filled",
       "style.tradition": "zentangle-organic",
-      "style.complexity": "high-meditation",
+      "style.complexity": "medium-adult",
       "style.symmetry": "bilateral",
       "composition.border": "freeform-bleed"
     },
