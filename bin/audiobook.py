@@ -68,9 +68,9 @@ LANG_ENGINE = {
 # Sarvam Bulbul speakers. v3 has 30+; default to `aditya` (Hindi-strong) but
 # Marathi sounds better on `manan` based on A/B listening test, so per-lang
 # overrides are available.
-SARVAM_SPEAKER = os.environ.get("FORGE_SARVAM_SPEAKER", "aditya")
+SARVAM_SPEAKER = os.environ.get("FORGE_SARVAM_SPEAKER", "anushka")
 SARVAM_SPEAKER_BY_LANG: dict[str, str] = {
-    "mr": os.environ.get("FORGE_SARVAM_SPEAKER_MR", "manan"),
+    "mr": os.environ.get("FORGE_SARVAM_SPEAKER_MR", "vidya"),
 }
 SARVAM_MODEL = os.environ.get("FORGE_SARVAM_MODEL", "bulbul:v3")
 SARVAM_LANG_CODE = {
@@ -849,13 +849,26 @@ def tts_sarvam(text: str, *, lang: str, speaker: str | None = None, model: str |
         die(f"Sarvam does not support lang={lang!r}; map it in SARVAM_LANG_CODE or switch engines.")
 
     chosen_speaker = speaker or SARVAM_SPEAKER_BY_LANG.get(lang) or SARVAM_SPEAKER
+    # bulbul:v3 supports the rich-prosody parameters; bulbul:v2 supports
+    # pitch/loudness instead. We send what v3 wants — Sarvam ignores unknown
+    # fields in newer models, so v2 fallback only loses temperature, not function.
     body = json.dumps({
         "text": text,
         "target_language_code": lang_code,
         "model": model or SARVAM_MODEL,
         "speaker": chosen_speaker.lower(),
-        "pace": 1.0,
-        "speech_sample_rate": 24000,
+        "pace": float(os.environ.get("FORGE_SARVAM_PACE", "1.0")),
+        # 48 kHz on v3 — Sarvam validates this against their "high listener
+        # preference at 48 kHz" benchmark. Was hard-coded at 24 kHz, which
+        # is half the resolution.
+        "speech_sample_rate": int(os.environ.get("FORGE_SARVAM_SAMPLE_RATE", "48000")),
+        # temperature on v3 controls prosody variation (0.01 monotone → 1.0
+        # very expressive). 0.65 lands a touch above the default for warmer,
+        # less robotic narration without going erratic.
+        "temperature": float(os.environ.get("FORGE_SARVAM_TEMPERATURE", "0.65")),
+        # Preprocessing expands abbreviations, numbers, common shortenings —
+        # needed for natural reading of book text with dates, dialogue, etc.
+        "enable_preprocessing": True,
         "output_audio_codec": "wav",
     }).encode("utf-8")
 

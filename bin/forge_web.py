@@ -499,6 +499,19 @@ def build_command(action: str, payload: dict[str, Any]) -> tuple[list[str], list
             translate.append("mr")
         if translate:
             cmd.extend(["--translate", ",".join(translate)])
+        # Sarvam speaker overrides — pushed via env vars (the audiobook code
+        # reads FORGE_SARVAM_SPEAKER and FORGE_SARVAM_SPEAKER_MR). Prepended as
+        # `/usr/bin/env VAR=val python3 forge.py ...` so the subprocess inherits
+        # them without touching the parent shell.
+        hi_speaker = str(payload.get("sarvam_hi_speaker") or "").strip()
+        mr_speaker = str(payload.get("sarvam_mr_speaker") or "").strip()
+        env_overrides = []
+        if hi_speaker:
+            env_overrides.append(f"FORGE_SARVAM_SPEAKER={hi_speaker}")
+        if mr_speaker:
+            env_overrides.append(f"FORGE_SARVAM_SPEAKER_MR={mr_speaker}")
+        if env_overrides:
+            cmd[:0] = ["/usr/bin/env"] + env_overrides
         # Output folder — default per-book if blank
         out = str(payload.get("out") or "").strip()
         if not out:
@@ -989,6 +1002,22 @@ def config_payload() -> dict[str, Any]:
         "child_themes": ["all", *child_themes],
         "folk_themes": folk_themes,
         "complexity": complexity,
+        # Sarvam Bulbul v3 speakers — see https://docs.sarvam.ai/...
+        # Grouped male first then female so the dropdown reads naturally.
+        # Defaults for narration: anushka (Hindi) and vidya (Marathi) — warm
+        # female voices that listener tests favour over the basic 'aditya' /
+        # 'manan' that were our older defaults.
+        "sarvam_speakers": [
+            # Male voices
+            "shubh", "aditya", "rahul", "rohan", "amit", "dev", "ratan",
+            "varun", "manan", "sumit", "kabir", "aayan", "ashutosh",
+            "advait", "anand", "tarun", "sunny", "mani", "gokul", "vijay",
+            "mohit", "rehan", "soham",
+            # Female voices
+            "anushka", "ritu", "priya", "neha", "pooja", "simran", "kavya",
+            "ishita", "shreya", "roopa", "tanya", "shruti", "suhani",
+            "kavitha", "rupali", "manisha", "vidya", "arya",
+        ],
         "roots": _roots(),
     }
 
@@ -2160,8 +2189,10 @@ const specs = {
       {name:"book", label:"Book file (.txt / .rtf / .pdf)", type:"path", required:true},
       {name:"title", label:"Title (blank = use filename)", type:"text"},
 
-      {name:"_s2", label:"VOICE", type:"section", hint:"English narration uses Kokoro neural TTS (best quality). Hindi + Marathi use Sarvam Bulbul cloud TTS. The voice preset only affects English narration; Hindi/Marathi voices are picked automatically."},
+      {name:"_s2", label:"VOICES", type:"section", hint:"English uses Kokoro neural TTS. Hindi + Marathi use Sarvam Bulbul v3 cloud TTS (40+ speakers). Pick whichever sounds most natural for narration — recommended defaults: Anushka (Hindi female narrator) and Vidya (Marathi female narrator). For male narration, try Shubh (Hindi) or Rohan (Marathi)."},
       {name:"voice", label:"English voice preset", type:"select", options:"voices"},
+      {name:"sarvam_hi_speaker", label:"Hindi speaker (Sarvam)", type:"select", options:"sarvam_speakers"},
+      {name:"sarvam_mr_speaker", label:"Marathi speaker (Sarvam)", type:"select", options:"sarvam_speakers"},
 
       {name:"_s3", label:"LANGUAGES", type:"section", hint:"All three are on by default. Uncheck any you don't want. English is always produced (it's the source narration); turning off the others just skips translation."},
       {name:"do_en", label:"English (Kokoro)", type:"checkbox", checked:true},
@@ -2208,8 +2239,8 @@ const specs = {
       {name:"langs", label:"Languages", type:"text", value:"en,hi,mr"},
       {name:"english_engine", label:"English TTS engine", type:"select", options:"audiobook_engines", value:"kokoro"},
       {name:"mode", label:"Voice pacing mode", type:"select", options:"audiobook_modes", value:"asmr"},
-      {name:"sarvam_speaker", label:"Sarvam Hindi speaker (blank = default)", type:"text"},
-      {name:"sarvam_speaker_mr", label:"Sarvam Marathi speaker (blank = manan)", type:"text"},
+      {name:"sarvam_speaker", label:"Hindi speaker (Sarvam)", type:"select", options:"sarvam_speakers"},
+      {name:"sarvam_speaker_mr", label:"Marathi speaker (Sarvam)", type:"select", options:"sarvam_speakers"},
 
       {name:"_s4", label:"ASMR MASTERING", type:"section", hint:"Pacing pauses and ambient bed. Defaults are tuned for sleep-friendly narration."},
       {name:"bed", label:"Ambient bed", type:"select", options:"audiobook_beds", value:"vinyl-crackle"},
@@ -2457,8 +2488,10 @@ const FIELD_HELP = {
   thumb_preset: "Brand preset for the overlaid text on thumbnails. thumbnail-bold is tuned specifically for video-thumbnail use (96px title, 34px sub, 1/3-screen dim band).",
   thumb_seed: "Seed for the thumbnail FLUX render (only used if no video is provided — otherwise we grab a frame from the video, no FLUX involved).",
   thumb_frame_at: "When grabbing a frame from the video for the thumbnail, which second to grab. Blank = use the middle of the video.",
-  sarvam_speaker: "Hindi speaker voice for Sarvam Bulbul cloud TTS. Blank = use the API default. Sarvam supports several speakers — see Sarvam's docs for IDs.",
-  sarvam_speaker_mr: "Marathi speaker. Defaults to 'manan' which is the most production-tested for Forge. Override only if you have a specific other speaker ID from Sarvam.",
+  sarvam_speaker: "Hindi speaker voice for Sarvam Bulbul v3 cloud TTS. 41 speakers available. Recommended for audiobook narration: Anushka (warm female, current default) or Shubh (clear male). Avoid Aditya for long-form — it's neutral but sounds robotic over a full chapter.",
+  sarvam_speaker_mr: "Marathi speaker. Recommended for narration: Vidya (warm female, current default) or Rohan (warmer male). Old default was Manan which is correct Marathi but sounds neutral/flat for long-form.",
+  sarvam_hi_speaker: "Hindi narrator voice. 41 Sarvam Bulbul v3 speakers available. For audiobook warmth pick Anushka (female), Priya, Tanya, or Shubh (male). For news/factual register pick Shubh, Aditya, or Vidya. Default Anushka.",
+  sarvam_mr_speaker: "Marathi narrator voice. Same Sarvam speaker pool as Hindi (Sarvam supports same speaker set across all Indic langs). For audiobook narration: Vidya, Shreya, Anushka (female) or Rohan, Soham (male). Default Vidya.",
   sent_pause_ms: "Silent pause between sentences, in milliseconds. ASMR default 600ms makes the narration breathe; normal mode trims this to ~300ms.",
   para_pause_ms: "Silent pause between paragraphs (slightly longer than sentence pauses). ASMR default 1200ms gives proper section breathing room.",
   // Indian folk art — friendly form fields

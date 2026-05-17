@@ -1413,6 +1413,16 @@ def _env_voice_for_lang(lang: str) -> str | None:
     return os.environ.get(key)
 
 
+_SARVAM_INDIC_LANGS = {"hi", "mr", "bn", "ta", "te", "gu", "kn", "ml", "pa", "od"}
+
+
+def _sarvam_key_available() -> bool:
+    if os.environ.get("SARVAM_TTS_KEY"):
+        return True
+    key_file = Path.home() / ".sarvam" / "key"
+    return key_file.is_file() and key_file.stat().st_size > 10
+
+
 def localized_tts_plan(lang: str, voice: dict) -> dict[str, Any]:
     lang = lang.lower()
     if lang == "en":
@@ -1423,6 +1433,18 @@ def localized_tts_plan(lang: str, voice: dict) -> dict[str, Any]:
             "native_voice": True,
             "pronunciation_risk": False,
             "note": "English voice preset",
+        }
+    # For Indian languages, prefer Sarvam Bulbul (cloud, production-grade) over
+    # macOS `say` (which is robotic for Indic). Falls back to say only when no
+    # Sarvam API key is configured.
+    if lang in _SARVAM_INDIC_LANGS and _sarvam_key_available():
+        return {
+            "lang": lang,
+            "engine": "sarvam",
+            "say_voice": None,
+            "native_voice": True,
+            "pronunciation_risk": False,
+            "note": f"Sarvam Bulbul v3 native voice for {language_name(lang)}",
         }
     configured = _env_voice_for_lang(lang)
     candidate = configured or LANGUAGE_SAY_DEFAULTS.get(lang)
@@ -1446,13 +1468,33 @@ def localized_tts_plan(lang: str, voice: dict) -> dict[str, Any]:
         "say_voice": voice.get("say_voice"),
         "native_voice": False,
         "pronunciation_risk": True,
-        "note": f"no configured native voice for {language_name(lang)}",
+        "note": f"no configured native voice for {language_name(lang)} — run setup-voices or add SARVAM_TTS_KEY",
     }
 
 
 def synthesize_voice_for_language(voice: dict, text: str, out_path: Path, lang: str) -> dict[str, Any]:
     plan = localized_tts_plan(lang, voice)
-    if plan["engine"] == "say" and plan.get("say_voice"):
+    if plan["engine"] == "sarvam":
+        # Cloud TTS via Sarvam Bulbul v3 — shared helper with bin/audiobook.py
+        # so prosody / sample rate / speaker defaults stay consistent across
+        # both audiobook pipelines.
+        try:
+            sys.path.insert(0, str(Path(__file__).resolve().parent))
+            from audiobook import tts_sarvam  # type: ignore
+            import soundfile as sf  # type: ignore
+            audio, sr = tts_sarvam(text, lang=lang)
+            out_path.parent.mkdir(parents=True, exist_ok=True)
+            sf.write(out_path, audio, sr)
+        except Exception as e:
+            print(red(f"  · Sarvam TTS failed for {lang}: {e}; falling back to macOS say"))
+            # Best-effort fallback to keep the pipeline running
+            fallback_voice = LANGUAGE_SAY_DEFAULTS.get(lang)
+            if fallback_voice and _say_voice_installed(fallback_voice):
+                with ResourceLock("tts") as lock:
+                    _synthesize_say(fallback_voice, voice.get("say_rate", 175), text, out_path)
+            else:
+                synthesize_voice(voice, text, out_path)
+    elif plan["engine"] == "say" and plan.get("say_voice"):
         with ResourceLock("tts") as lock:
             if lock.wait_seconds > 0.1:
                 print(dim(f"  · waited {lock.wait_seconds:.1f}s for TTS lock"))

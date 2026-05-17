@@ -535,10 +535,14 @@ def validate_png(path: Path, *, width: int | None = None, height: int | None = N
             actual_w, actual_h = img.size
     except Exception as e:  # pragma: no cover - exercised in integration
         raise ValueError(f"PNG failed to decode: {path}: {e}") from e
-    if width is not None and actual_w != width:
-        raise ValueError(f"PNG width mismatch: {path} got {actual_w}, expected {width}")
-    if height is not None and actual_h != height:
-        raise ValueError(f"PNG height mismatch: {path} got {actual_h}, expected {height}")
+    # mflux/FLUX VAE rounds output dimensions to multiples of 16 (the
+    # 8× VAE × 2× patch downsample). 1080→1072, 1152→1152, 720→720, etc.
+    # Allow a ±16-px tolerance on either dimension so non-aligned requests
+    # don't fail validation just because the model rounded.
+    if width is not None and abs(actual_w - width) > 16:
+        raise ValueError(f"PNG width mismatch: {path} got {actual_w}, expected ~{width}")
+    if height is not None and abs(actual_h - height) > 16:
+        raise ValueError(f"PNG height mismatch: {path} got {actual_h}, expected ~{height}")
     return {"path": str(path), "bytes": size, "width": actual_w, "height": actual_h}
 
 
