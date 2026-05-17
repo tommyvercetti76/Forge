@@ -2212,7 +2212,7 @@ class MandalaArtEngine(Engine):
         "secondary": {"hex": "#000000", "role": "black ink line — fine, precise, closed continuous outlines"},
         "accent":    {"hex": "#000000", "role": "no chromatic accent (line art); accent via colorist's hand"},
     }
-    default_runtime = {"model": "dev", "steps": 36, "guidance": 7.5}
+    default_runtime = {"model": "dev", "steps": 28, "guidance": 7.5}
     engine_negatives: ClassVar[tuple[str, ...]] = (
         # Color / shading killers
         "color", "colored", "color illustration", "RGB fill", "saturated tone",

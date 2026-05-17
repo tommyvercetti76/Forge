@@ -77,6 +77,39 @@ THUMB_W, THUMB_H = 1280, 720
 DEFAULT_SUBPROCESS_TIMEOUT_SEC = float(os.environ.get("FORGE_SUBPROCESS_TIMEOUT_SEC", "1800"))
 MFLUX_TIMEOUT_SEC = float(os.environ.get("FORGE_MFLUX_TIMEOUT_SEC", str(DEFAULT_SUBPROCESS_TIMEOUT_SEC)))
 MFLUX_HEARTBEAT_SEC = float(os.environ.get("FORGE_MFLUX_HEARTBEAT_SEC", "30"))
+
+# M5 Max optimization — mflux supports on-the-fly model quantization via --quantize {3,4,5,6,8}.
+# fp16 (the implicit default if we never pass --quantize) is the slow path: it uses ~24 GB and is
+# ~25-50 % slower than int8 / int4 with near-zero quality loss for FLUX-dev. We default to int8
+# (FORGE_FLUX_QUANTIZE=8) — indistinguishable from fp16, ~25 % faster, ~12 GB. Set 4 for fast
+# iteration (~50 % faster, mild faces softening), 0 / "none" to force fp16.
+def _resolve_quantize(override: int | None = None) -> int | None:
+    """Return the int to pass to mflux --quantize, or None to skip the flag (= fp16)."""
+    if override is not None:
+        return None if override == 0 else int(override)
+    raw = os.environ.get("FORGE_FLUX_QUANTIZE", "8").strip().lower()
+    if raw in {"", "0", "none", "fp16", "off"}:
+        return None
+    try:
+        v = int(raw)
+        if v in {3, 4, 5, 6, 8}:
+            return v
+    except ValueError:
+        pass
+    return 8  # safe fallback when the env var is malformed
+
+MLX_CACHE_LIMIT_GB = int(os.environ.get("FORGE_MLX_CACHE_LIMIT_GB", "32"))
+
+def _mflux_runtime_args(quantize: int | None = None) -> list[str]:
+    """Return the mflux runtime flags shared across every mflux invocation."""
+    args: list[str] = []
+    q = _resolve_quantize(quantize)
+    if q is not None:
+        args.extend(["--quantize", str(q)])
+    if MLX_CACHE_LIMIT_GB > 0:
+        args.extend(["--mlx-cache-limit-gb", str(MLX_CACHE_LIMIT_GB)])
+    return args
+
 VOICE_TIMEOUT_SEC = float(os.environ.get("FORGE_VOICE_TIMEOUT_SEC", "600"))
 # Cooldown between consecutive heavy mflux gens — lets the Metal GPU/SoC dissipate heat
 # rather than running pinned at 100%. 0 = off. 10–30 s is reasonable on a hot chassis.
@@ -990,6 +1023,7 @@ def flux_generate(
     width: int | None = None,
     height: int | None = None,
     guidance_override: float | None = None,
+    quantize: int | None = None,
 ) -> None:
     flux = preset["flux"]
     model, step_count, guidance = _resolve_flux_runtime(
@@ -1049,6 +1083,7 @@ def flux_generate(
     eff_h = int(height) if height else THUMB_H
     cmd = [
         "mflux-generate",
+        *_mflux_runtime_args(quantize),
         "--model", model, "--prompt", full_prompt,
         "--width", str(eff_w), "--height", str(eff_h),
         "--steps", str(step_count), "--guidance", str(guidance),
@@ -1061,7 +1096,9 @@ def flux_generate(
     mode_tag = profile.upper() if profile else ("DRAFT" if draft else "FINAL")
     series_tag = f" series={series['id']}" if series and series.get("id") else ""
     lora_tag = f" loras={len(eff_loras)}" if eff_loras else ""
-    print(dim(f"  $ mflux-generate [{mode_tag}] model={model} steps={step_count} guidance={guidance} seed={seed}{series_tag}{lora_tag}"))
+    q_resolved = _resolve_quantize(quantize)
+    q_tag = f" q{q_resolved}" if q_resolved else " fp16"
+    print(dim(f"  $ mflux-generate [{mode_tag}]{q_tag} model={model} steps={step_count} guidance={guidance} seed={seed}{series_tag}{lora_tag}"))
     if not draft and not profile and steps is not None and step_count < int(flux["steps"]):
         print(dim("  · lower steps reduce sustained Metal/GPU load and heat; quality may drop a bit"))
     try:
@@ -2365,6 +2402,7 @@ def _engine_img2img(src_path: Path, prompt: str, dst_path: Path, *,
     if kontext_ready and shutil.which("mflux-generate-kontext"):
         cmd = [
             "mflux-generate-kontext",
+            *_mflux_runtime_args(),
             "--base-model", "dev",
             "--prompt", kontext_prompt,
             "--image-path", str(src_path),
@@ -2377,6 +2415,7 @@ def _engine_img2img(src_path: Path, prompt: str, dst_path: Path, *,
     elif kontext_ready:
         cmd = [
             "mflux-generate",
+            *_mflux_runtime_args(),
             "--model", "dev-kontext",
             "--prompt", kontext_prompt,
             "--init-image-path", str(src_path),
@@ -2389,6 +2428,7 @@ def _engine_img2img(src_path: Path, prompt: str, dst_path: Path, *,
     elif dev_ready:
         cmd = [
             "mflux-generate",
+            *_mflux_runtime_args(),
             "--model", "dev",
             "--prompt", prompt,
             "--image-path", str(src_path),
@@ -2434,6 +2474,7 @@ def _img2img_refine(src_path: Path, prompt: str, dst_path: Path, *,
     # `--image-path` + `--image-strength` (NOT the older `--init-image-*`).
     cmd = [
         "mflux-generate",
+        *_mflux_runtime_args(),
         "--model", "dev",
         "--prompt", prompt,
         "--image-path", str(src_path),
@@ -2851,6 +2892,7 @@ def cmd_engine_render(args) -> int:
                 steps=args.profile and PROFILES.get(args.profile, {}).get("flux_steps"),
                 series=None, draft=args.draft, profile=args.profile,
                 width=eff_w, height=eff_h, guidance_override=guidance_override,
+                quantize=getattr(args, "quantize", None),
             )
 
         # Second pass — img2img refinement at low denoise (txt2img path only)
@@ -3516,6 +3558,7 @@ def cmd_edit(args) -> int:
         # defaults, and emit pure latent noise (no denoising applied to the source image).
         cmd = [
             "mflux-generate-kontext",
+            *_mflux_runtime_args(),
             "--base-model", "dev",
             "--prompt", prompt_text,
             "--image-path", str(src),
@@ -3527,6 +3570,7 @@ def cmd_edit(args) -> int:
     elif mode == "kontext":
         cmd = [
             "mflux-generate",
+            *_mflux_runtime_args(),
             "--model", "dev-kontext",
             "--prompt", prompt_text,
             "--init-image-path", str(src),
@@ -3538,6 +3582,7 @@ def cmd_edit(args) -> int:
     else:  # img2img on FLUX.1-dev
         cmd = [
             "mflux-generate",
+            *_mflux_runtime_args(),
             "--model", "dev",
             "--prompt", prompt_text,
             "--init-image-path", str(src),
@@ -4888,6 +4933,8 @@ def main() -> int:
                             help="disable the engine's curated default LoRA stack (see brand/loras/README.md). Useful for A/B comparison or when iterating on a new prompt without LoRA bias.")
     eng_render.add_argument("--draft", action="store_true", help="schnell @ 4 steps (cool/fast)")
     eng_render.add_argument("--profile", choices=list(PROFILES), default=None)
+    eng_render.add_argument("--quantize", type=int, choices=[0, 3, 4, 5, 6, 8], default=None, dest="quantize",
+                            help="mflux quantization (3/4/5/6/8 bits). 8=indistinguishable from fp16 +25%% speed (default), 4=~50%% faster with mild quality drop, 0=force fp16. Env: FORGE_FLUX_QUANTIZE.")
     eng_render.set_defaults(func=cmd_engine_render)
 
     p_th = sub.add_parser("thumbnail", help="render one thumbnail")
