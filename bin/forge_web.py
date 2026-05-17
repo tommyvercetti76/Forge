@@ -1221,6 +1221,71 @@ form { padding: 18px; display: grid; gap: 14px; }
   color: var(--muted);
   text-transform: uppercase;
 }
+.label-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.label-row label { flex: 1; min-width: 0; }
+.info-icon {
+  font: 9px/1 var(--font-pixel);
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  border: 2px solid var(--line);
+  background: var(--surface-2);
+  color: var(--gold);
+  border-radius: 0;
+  cursor: help;
+  letter-spacing: 0;
+  text-transform: none;
+  box-shadow: var(--shadow-press);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.info-icon:hover {
+  background: var(--gold);
+  color: var(--bg-deep);
+  border-color: var(--gold);
+  transform: none;
+}
+.info-icon:active { transform: translateY(1px); box-shadow: none; }
+.check .info-icon { margin-left: 4px; }
+
+/* Help modal — same pixel-frame as picker, narrower */
+.help-card {
+  width: min(560px, 92vw);
+  max-height: 78vh;
+  background: var(--surface);
+  border: 2px solid var(--line-hi);
+  border-radius: 0;
+  box-shadow: var(--shadow), 0 0 0 4px var(--bg-deep);
+  display: grid;
+  grid-template-rows: auto 1fr;
+}
+.help-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 18px;
+  border-bottom: 2px solid var(--line);
+  background: var(--surface-2);
+}
+.help-head strong {
+  font: 11px/1 var(--font-pixel);
+  letter-spacing: 1.5px;
+  color: var(--gold);
+}
+.help-head strong::before { content: "? "; color: var(--green); }
+.help-body {
+  padding: 18px;
+  font: 14px/1.55 var(--font-ui);
+  color: var(--ink);
+  overflow: auto;
+  white-space: pre-wrap;
+}
 .field input, .field select, .field textarea {
   width: 100%;
   border: 2px solid var(--line);
@@ -1579,6 +1644,15 @@ form { padding: 18px; display: grid; gap: 14px; }
     <div id="entries" class="entries"></div>
   </div>
 </div>
+<div id="helpModal" class="modal" aria-hidden="true">
+  <div class="help-card">
+    <div class="help-head">
+      <strong id="helpTitle">Field info</strong>
+      <button id="closeHelp" type="button">Close</button>
+    </div>
+    <div id="helpBody" class="help-body"></div>
+  </div>
+</div>
 <script>
 const state = { config: null, action: "thumbnail", activeJob: null, pickerField: null, pickerPath: "" };
 
@@ -1862,6 +1936,85 @@ const specs = {
   bench: { title:"Bench", fields: [{name:"real", label:"Real microbenchmarks", type:"checkbox"}] }
 };
 
+// Field help text — shown when the ? icon next to a label is clicked.
+// Keyed by field.name (matches the specs object above).
+const FIELD_HELP = {
+  preset: "Visual brand preset. Locks the palette, typography, and FLUX positive prefix. Try cinematic, batman-noir, darksiders, tartakovsky, editorial, documentary, thumbnail-bold.",
+  series: "Optional series ID to lock the look (palette + typography + character cast) across multiple renders. Leave blank if you don't have a series defined.",
+  concept: "Free-form description of what you want drawn. This becomes the FLUX prompt. Use [name] to inline a series cast member (e.g. '[keeper] at the harbor wall').",
+  subject: "Free-form description of what's in the image. Goes in as the SUBJECT block — keep it specific and concrete, e.g. 'a humpback whale in side profile' beats 'an animal'.",
+  headline: "Big text drawn on top of the thumbnail. ≤6 words. Will be auto-capitalized.",
+  sub: "Smaller subtitle text below the headline. Optional — leave blank to skip.",
+  bg: "If you have an existing background image, pick its path to reuse it instead of generating new. Otherwise FLUX renders fresh from the preset + prompt.",
+  seed: "Random seed for FLUX. Same prompt + same seed = same image, every time. Bump to get a new variation. Engines pick a 'good' default seed per recipe.",
+  steps: "FLUX denoising steps. Higher = more detail + slower. 25-32 is the sweet spot on dev. Schnell wants 2-4. Past 36 rarely helps.",
+  steps_override: "Override the engine's default step count. Leave blank to use the recipe defaults (32 for childrens-coloring-book, 36 for mandala-art).",
+  frame_offset: "When a series is set, each integer here gives a unique-but-consistent seed. Use it to render frame 0, 1, 2... of the same series with locked style.",
+  profile: "Speed profile: cool = schnell @ 4 steps (fastest, lowest quality), balanced = dev @ 18, max = dev @ 25. Leave as preset-default to use the engine's own runtime.",
+  draft: "Use the schnell model @ 4 steps. Cool/fast preview mode. Output quality lower — use to scout compositions before final render.",
+  lora: "LoRA file paths (one per line). Each LoRA adjusts FLUX's weights toward a particular trained style.",
+  lora_paths: "LoRA file paths (one per line). Each LoRA adjusts FLUX's weights toward a particular trained style.",
+  lora_scale: "Strength per LoRA, one number per line, in same order as paths. 0.4-0.6 subtle nudge, 0.7-0.9 strong adherence, 1.0+ rarely improves anything.",
+  lora_scales: "Strength per LoRA, one number per line, in same order as paths. 0.4-0.6 subtle, 0.7-0.9 strong, 1.0+ rarely improves.",
+  out: "Where to save the output file. Leave blank to use the default (~/Desktop/forge-test/...).",
+  output_path: "Where to save the output file. Leave blank to use the default (~/Desktop/forge-test/...).",
+  engine: "Domain-expert style engine. noir-cinema, wildlife-photo, impressionist, indian-classical, childrens-coloring-book, mandala-art. Each has its own vocabulary — see Engine details.",
+  recipe: "Pre-vetted preset combo from brand/prompts/library.json. Browse all via the 'Engine recipes' action. Recipes pre-fill subject, config, seed.",
+  config: "Engine knob overrides as comma-separated key=value (e.g. 'subject.character_archetype=brave-rabbit,style.tradition=mo-willems-minimal'). See Engine details for valid knobs.",
+  seeds: "Render N variants with consecutive seeds (seed, seed+1, ...) into a gallery folder with an HTML contact sheet for picking the best.",
+  refine: "Two-pass refinement: after base composition lands, low-denoise img2img refines for micro-detail. Adds ~30s per image.",
+  refine_strength: "Refinement denoising strength. 0.05 barely touches, 0.25 default, 0.40 significant rework. Keep low to preserve composition.",
+  hi_res: "Render at 1920×1080 (~2x compute vs default 1280×720). Use for final/output-grade images.",
+  ultra_res: "Render at 2048×1152 (~3x compute, max detail). Pair with --refine for best results. Slow.",
+  width: "Output width in pixels. Overrides resolution presets.",
+  height: "Output height in pixels. Overrides resolution presets.",
+  guidance: "FLUX guidance scale (how strictly to follow the prompt). 3.0-3.8 photorealism, 3.5-6.0 paintings/line-art, 6.0-8.0 strict adherence, 8+ may burn highlights.",
+  negative: "Comma-separated extra negative terms. FLUX largely ignores these (flow-matching, CFG=1) — better to phrase positively in the subject. Kept here for compatibility.",
+  extra_negatives: "Comma-separated extra negative terms. FLUX largely ignores these — see the science doc.",
+  from_image: "Source image to restyle with the engine's directive (img2img via FLUX-Kontext). Turns your photo into the engine's style — e.g. a photo of a bird into a coloring-book illustration.",
+  from_image_strength: "How aggressively to restyle. 0.3 = minor edit, 0.85 = major rework (default), 0.95 = near-replace.",
+  voice: "Voice preset. Uses Kokoro-TTS (neural, ~80MB) if installed; falls back to macOS `say`. Run 'Setup voices' to install Kokoro.",
+  preset_voice: "Voice preset. Uses Kokoro-TTS if installed; falls back to macOS `say`.",
+  text: "Text to synthesize as speech. Plain text only.",
+  translate: "Comma-separated language codes to translate into before synthesizing (e.g. 'hi,mr' for Hindi + Marathi). Uses the locally-installed Sarvam-translate model.",
+  image: "Source image path to edit/restyle.",
+  instruction: "Free-form edit instruction (e.g. 'swap background to teal alpine lake', 'add snow on roof'). Sent verbatim to FLUX-Kontext.",
+  strength: "How much to transform: 0.3 = minor edit, 0.6 = moderate rework, 0.9 = major restyle. img2img mode only.",
+  kenburns: "Apply Ken-Burns zoom/pan motion to the still image.",
+  zoom_max: "Max zoom factor for Ken-Burns: 1.0 = no zoom, 1.15 = subtle, 1.3 = strong.",
+  fade_out: "Fade-out duration at end of video, in seconds.",
+  pages: "Number of pages to generate.",
+  symmetry: "Radial symmetry order (4/6/8/12/16/24). 12 is the classic mandala count.",
+  rings: "Number of concentric motif rings. Typical 3-9. More rings = denser mandala.",
+  complexity: "Pattern density. simple < balanced < elaborate < max. Pick max for adult-coloring-grade work.",
+  palette: "Color theme. ink = B&W (best for coloring), soft = pastel, royal = jewel tones.",
+  style: "Geometric register. coloring / floral / sacred / luxury / playful / geometric — each picks a different motif vocabulary.",
+  size: "Output square size in pixels. 2400 is a good default for printable mandalas.",
+  theme: "Children's-book theme. Determines the motif vocabulary (e.g. rabbits-garden, crows-texas, blue-jay).",
+  topic: "Topic sentence for the episode brief. The LLM expands this into 3 thumbnails + an intro.",
+  video: "Video file to mux audio onto, or to use as the loop track for an audiobook.",
+  rtf: "Source RTF or text file for the audiobook pipeline.",
+  langs: "Comma-separated language codes (e.g. 'en,hi,mr' for English + Hindi + Marathi).",
+  audio: "Audio file to mux onto the image to produce a Ken-Burns video.",
+  bed: "Ambient sound bed under the narration. vinyl-static gives that ASMR podcast feel.",
+  mode: "ASMR pacing mode. asmr = slower with longer pauses, normal = standard reading pace.",
+  english_engine: "English TTS engine. kokoro = neural (best quality), say = macOS built-in (zero-install).",
+  caption: "Subtitle / caption format to emit alongside the audio.",
+  captions: "Subtitle / caption format to emit alongside the audio.",
+  subtitle_mode: "Subtitle output format. srt = classic, vtt = modern web standard, none = skip.",
+  force: "Re-render even if cached output exists.",
+  offline_skip_check: "Skip the model-readiness check (offline mode only).",
+  real: "Run real GPU microbenchmarks (slower).",
+  full: "Include the per-model breakdown (slower).",
+  dry_run: "Preview-only — show what would happen without doing it.",
+  yes: "Skip per-file confirmations.",
+  remove: "Repos to remove entirely, one per line (e.g. 'org/repo').",
+  delete_source: "Delete the source file after adopting it into ~/Models/.",
+  as: "Where in ~/Models/ to adopt the file: flux-bfl, kokoro, huggingface, ollama.",
+  path: "File path on disk.",
+  id: "Identifier (kebab-case).",
+};
+
 function optionsFor(field) {
   const cfg = state.config || {};
   if (field.choices) return field.choices.map(v => ({ value:v, label:v }));
@@ -1899,10 +2052,24 @@ function renderActions() {
 function fieldElement(field) {
   const wrap = document.createElement("div");
   wrap.className = "field";
+  // Label + optional ? info icon in a flex row.
+  const labelRow = document.createElement("div");
+  labelRow.className = "label-row";
   const label = document.createElement("label");
   label.htmlFor = `field-${field.name}`;
   label.textContent = field.label;
-  wrap.appendChild(label);
+  labelRow.appendChild(label);
+  const help = FIELD_HELP[field.name];
+  if (help) {
+    const info = document.createElement("button");
+    info.type = "button";
+    info.className = "info-icon";
+    info.textContent = "?";
+    info.title = "What's this?";
+    info.onclick = (e) => { e.preventDefault(); showHelpModal(field.label, help); };
+    labelRow.appendChild(info);
+  }
+  wrap.appendChild(labelRow);
   if (field.type === "textarea") {
     const el = document.createElement("textarea");
     el.id = `field-${field.name}`;
@@ -2249,6 +2416,27 @@ document.getElementById("jobForm").addEventListener("submit", startJob);
 document.getElementById("refreshConfig").onclick = loadConfig;
 document.getElementById("stopJob").onclick = () => state.activeJob && fetch(`/api/jobs/${state.activeJob}/stop`, {method:"POST"});
 document.getElementById("closePicker").onclick = closePicker;
+
+function showHelpModal(title, body) {
+  document.getElementById("helpTitle").textContent = title || "Field info";
+  document.getElementById("helpBody").textContent = body || "";
+  document.getElementById("helpModal").classList.add("open");
+  document.getElementById("helpModal").setAttribute("aria-hidden", "false");
+}
+function closeHelpModal() {
+  document.getElementById("helpModal").classList.remove("open");
+  document.getElementById("helpModal").setAttribute("aria-hidden", "true");
+}
+document.getElementById("closeHelp").onclick = closeHelpModal;
+document.getElementById("helpModal").addEventListener("click", (e) => {
+  if (e.target.id === "helpModal") closeHelpModal();
+});
+window.addEventListener("keydown", (e) => {
+  if (e.key === "Escape") {
+    if (document.getElementById("helpModal").classList.contains("open")) closeHelpModal();
+    else if (document.getElementById("pickerModal").classList.contains("open")) closePicker();
+  }
+});
 document.getElementById("goPath").onclick = () => browse(document.getElementById("pickerPath").value);
 document.getElementById("pickerPath").addEventListener("keydown", event => { if (event.key === "Enter") browse(event.target.value); });
 setInterval(pollNow, 1500);
