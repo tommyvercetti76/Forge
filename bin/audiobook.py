@@ -68,9 +68,9 @@ LANG_ENGINE = {
 # Sarvam Bulbul speakers. v3 has 30+; default to `aditya` (Hindi-strong) but
 # Marathi sounds better on `manan` based on A/B listening test, so per-lang
 # overrides are available.
-SARVAM_SPEAKER = os.environ.get("FORGE_SARVAM_SPEAKER", "anushka")
+SARVAM_SPEAKER = os.environ.get("FORGE_SARVAM_SPEAKER", "priya")
 SARVAM_SPEAKER_BY_LANG: dict[str, str] = {
-    "mr": os.environ.get("FORGE_SARVAM_SPEAKER_MR", "vidya"),
+    "mr": os.environ.get("FORGE_SARVAM_SPEAKER_MR", "shreya"),
 }
 SARVAM_MODEL = os.environ.get("FORGE_SARVAM_MODEL", "bulbul:v3")
 SARVAM_LANG_CODE = {

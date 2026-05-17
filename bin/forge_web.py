@@ -1002,21 +1002,21 @@ def config_payload() -> dict[str, Any]:
         "child_themes": ["all", *child_themes],
         "folk_themes": folk_themes,
         "complexity": complexity,
-        # Sarvam Bulbul v3 speakers — see https://docs.sarvam.ai/...
-        # Grouped male first then female so the dropdown reads naturally.
-        # Defaults for narration: anushka (Hindi) and vidya (Marathi) — warm
-        # female voices that listener tests favour over the basic 'aditya' /
-        # 'manan' that were our older defaults.
+        # Sarvam Bulbul v3 speakers — validated against the live API on
+        # 2026-05-17 by reading a 400-error response listing the supported
+        # set (some older docs / pipecat references list speakers like
+        # anushka / vidya / soham that are NOT in v3 — those names belong
+        # to other Sarvam products). Trust this list, not the marketing.
+        # Defaults: priya (Hindi female narrator) + shreya (Marathi
+        # female narrator) — both confirmed in the validated set.
         "sarvam_speakers": [
-            # Male voices
-            "shubh", "aditya", "rahul", "rohan", "amit", "dev", "ratan",
-            "varun", "manan", "sumit", "kabir", "aayan", "ashutosh",
-            "advait", "anand", "tarun", "sunny", "mani", "gokul", "vijay",
-            "mohit", "rehan", "soham",
-            # Female voices
-            "anushka", "ritu", "priya", "neha", "pooja", "simran", "kavya",
-            "ishita", "shreya", "roopa", "tanya", "shruti", "suhani",
-            "kavitha", "rupali", "manisha", "vidya", "arya",
+            # Male voices (12)
+            "shubh", "aditya", "rahul", "rohan", "amit", "dev",
+            "ratan", "varun", "manan", "sumit", "kabir", "aayan",
+            "ashutosh", "advait", "anand", "tarun",
+            # Female voices (10)
+            "priya", "neha", "pooja", "simran", "kavya", "ishita",
+            "shreya", "roopa", "ritu", "tanya",
         ],
         "roots": _roots(),
     }
@@ -2488,10 +2488,10 @@ const FIELD_HELP = {
   thumb_preset: "Brand preset for the overlaid text on thumbnails. thumbnail-bold is tuned specifically for video-thumbnail use (96px title, 34px sub, 1/3-screen dim band).",
   thumb_seed: "Seed for the thumbnail FLUX render (only used if no video is provided — otherwise we grab a frame from the video, no FLUX involved).",
   thumb_frame_at: "When grabbing a frame from the video for the thumbnail, which second to grab. Blank = use the middle of the video.",
-  sarvam_speaker: "Hindi speaker voice for Sarvam Bulbul v3 cloud TTS. 41 speakers available. Recommended for audiobook narration: Anushka (warm female, current default) or Shubh (clear male). Avoid Aditya for long-form — it's neutral but sounds robotic over a full chapter.",
-  sarvam_speaker_mr: "Marathi speaker. Recommended for narration: Vidya (warm female, current default) or Rohan (warmer male). Old default was Manan which is correct Marathi but sounds neutral/flat for long-form.",
-  sarvam_hi_speaker: "Hindi narrator voice. 41 Sarvam Bulbul v3 speakers available. For audiobook warmth pick Anushka (female), Priya, Tanya, or Shubh (male). For news/factual register pick Shubh, Aditya, or Vidya. Default Anushka.",
-  sarvam_mr_speaker: "Marathi narrator voice. Same Sarvam speaker pool as Hindi (Sarvam supports same speaker set across all Indic langs). For audiobook narration: Vidya, Shreya, Anushka (female) or Rohan, Soham (male). Default Vidya.",
+  sarvam_speaker: "Hindi speaker voice for Sarvam Bulbul v3 cloud TTS. 22 speakers in v3 (validated against the live API). Recommended for audiobook narration: Priya (warm female, current default), Shreya, or Neha. For male narration: Shubh (Sarvam's neutral default) or Rohan (warmer). Aditya / Manan are correct but flat for long-form.",
+  sarvam_speaker_mr: "Marathi speaker. Defaults to Shreya (warm female narrator). Other good Marathi narration options: Priya, Neha, Rohan. Manan was the older default — correct but neutral/flat for long-form.",
+  sarvam_hi_speaker: "Hindi narrator voice. 22 Sarvam Bulbul v3 speakers validated against the live API. For audiobook warmth: Priya (female, default), Shreya, Neha, Pooja. Clear male narration: Shubh, Rohan. Default Priya.",
+  sarvam_mr_speaker: "Marathi narrator voice. Same Sarvam v3 speaker pool. For audiobook narration: Shreya (female, default), Priya, Neha (female) or Rohan, Sumit (male). Default Shreya.",
   sent_pause_ms: "Silent pause between sentences, in milliseconds. ASMR default 600ms makes the narration breathe; normal mode trims this to ~300ms.",
   para_pause_ms: "Silent pause between paragraphs (slightly longer than sentence pauses). ASMR default 1200ms gives proper section breathing room.",
   // Indian folk art — friendly form fields
