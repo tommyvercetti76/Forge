@@ -1349,6 +1349,28 @@ form { padding: 18px; display: grid; gap: 14px; }
 .info-icon:active { transform: translateY(1px); box-shadow: none; }
 .check .info-icon { margin-left: 4px; }
 
+/* Section header inside a form — full-width row, gold pixel-font marker */
+.form-section {
+  margin: 14px 0 4px;
+  padding: 8px 12px;
+  background: var(--bg-deep);
+  border: 2px solid var(--line);
+  border-left: 4px solid var(--gold);
+  font: 11px/1 var(--font-pixel);
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--gold);
+  box-shadow: var(--shadow-press);
+}
+.form-section:first-child { margin-top: 0; }
+.form-section-hint {
+  font: 13px/1.5 var(--font-ui);
+  color: var(--muted);
+  letter-spacing: 0;
+  text-transform: none;
+  margin-top: 6px;
+}
+
 /* Help modal — same pixel-frame as picker, narrower */
 .help-card {
   width: min(560px, 92vw);
@@ -2037,45 +2059,64 @@ const specs = {
     ]
   },
   audiobook: {
-    title: "Audiobook",
+    title: "Audiobook — audio only (single voice)",
     fields: [
-      {name:"book", label:"Book path", type:"path"},
-      {name:"text", label:"Text", type:"textarea"},
-      {name:"title", label:"Title", type:"text"},
-      {name:"voice", label:"Voice", type:"select", options:"voices"},
-      {name:"translate", label:"Translate", type:"text", value:"hi,mr"},
-      {name:"chunk_chars", label:"Chunk chars", type:"number", value:"1400"},
-      {name:"max_chunks", label:"Max chunks", type:"number"},
-      {name:"out", label:"Output dir", type:"path", value:"~/Desktop/forge-test/audiobook"}
+      {name:"_s1", label:"INPUT", type:"section", hint:"Provide either a book file or paste raw text. One of the two is required."},
+      {name:"book", label:"Book file (.rtf / .txt)", type:"path"},
+      {name:"title", label:"Title (used in filename)", type:"text", value:"Untitled"},
+      {name:"text", label:"OR — paste raw text instead", type:"textarea"},
+
+      {name:"_s2", label:"VOICE & LANGUAGE", type:"section", hint:"Voice preset picks engine + speaker. Translate languages will produce additional audio files in those tongues."},
+      {name:"voice", label:"Voice preset", type:"select", options:"voices"},
+      {name:"translate", label:"Translate to (comma-separated)", type:"text", value:""},
+
+      {name:"_s3", label:"CHUNKING", type:"section", hint:"Long books are split into chunks for TTS. Defaults work for most books — only adjust if you hit memory limits or want shorter previews."},
+      {name:"chunk_chars", label:"Chars per chunk", type:"number", value:"1400"},
+      {name:"max_chunks", label:"Max chunks (blank = all)", type:"number"},
+
+      {name:"_s4", label:"OUTPUT", type:"section", hint:"Folder where audio files land. Each language gets its own .wav/.m4a."},
+      {name:"out", label:"Output folder", type:"path", value:"~/Desktop/forge-test/audiobook"}
     ]
   },
   "audiobook-asmr": {
-    title: "ASMR Audiobook",
+    title: "ASMR Audiobook — multilingual + optional video mux",
     fields: [
-      {name:"folder", label:"Input folder", type:"path"},
-      {name:"rtf", label:"Transcript path", type:"path"},
-      {name:"video", label:"Loop video", type:"path"},
-      {name:"out_dir", label:"Output dir", type:"path", value:"~/Desktop/forge-test/asmr-audiobook"},
+      {name:"_s1", label:"INPUT", type:"section", hint:"Pick a folder containing the transcript (and optionally a loop video) — OR set the transcript path directly. Folder mode auto-detects RTF + video."},
+      {name:"folder", label:"Input folder (auto-detects transcript + video)", type:"path"},
+      {name:"rtf", label:"OR — transcript file path directly", type:"path"},
+      {name:"out_dir", label:"Output folder", type:"path", value:"~/Desktop/forge-test/asmr-audiobook"},
+
+      {name:"_s2", label:"OPTIONAL VIDEO MUX", type:"section", hint:"Leave Loop video blank for audio-only output. Set a video path to produce one .mp4 per language with the audio overlaid (loops if shorter than audio)."},
+      {name:"video", label:"Loop video (blank = audio only)", type:"path"},
+
+      {name:"_s3", label:"LANGUAGES & VOICES", type:"section", hint:"Comma-separated language codes: en (English / Kokoro), hi (Hindi / Sarvam), mr (Marathi / Sarvam). Each becomes a separate audio + video output."},
       {name:"langs", label:"Languages", type:"text", value:"en,hi,mr"},
-      {name:"max_chars", label:"Sentence char cap", type:"number", value:"500"},
-      {name:"max_words", label:"Excerpt max words", type:"number"},
-      {name:"batch_pages", label:"Batch pages", type:"number", value:"10"},
-      {name:"page_words", label:"Page words", type:"number", value:"250"},
-      {name:"spoken_words", label:"Spoken words", type:"number", value:"150"},
-      {name:"batches", label:"Batches", type:"text"},
+      {name:"english_engine", label:"English TTS engine", type:"select", options:"audiobook_engines", value:"kokoro"},
+      {name:"mode", label:"Voice pacing mode", type:"select", options:"audiobook_modes", value:"asmr"},
+      {name:"sarvam_speaker", label:"Sarvam Hindi speaker (blank = default)", type:"text"},
+      {name:"sarvam_speaker_mr", label:"Sarvam Marathi speaker (blank = manan)", type:"text"},
+
+      {name:"_s4", label:"ASMR MASTERING", type:"section", hint:"Pacing pauses and ambient bed. Defaults are tuned for sleep-friendly narration."},
       {name:"bed", label:"Ambient bed", type:"select", options:"audiobook_beds", value:"vinyl-crackle"},
-      {name:"mode", label:"Voice mode", type:"select", options:"audiobook_modes", value:"normal"},
-      {name:"english_engine", label:"English engine", type:"select", options:"audiobook_engines", value:"kokoro"},
-      {name:"subtitles", label:"Subtitles", type:"select", options:"subtitle_modes", value:"srt"},
-      {name:"thumbnail", label:"Generate thumbnails", type:"checkbox", checked:true},
+      {name:"sent_pause_ms", label:"Pause between sentences (ms)", type:"number", value:"600"},
+      {name:"para_pause_ms", label:"Pause between paragraphs (ms)", type:"number", value:"1200"},
+
+      {name:"_s5", label:"PAGES / BATCHES", type:"section", hint:"Audiobooks are chunked into ~10-page batches to fit in TTS memory and produce manageable file sizes. Defaults: 10 pages × 250 words → ~150 spoken words per page, ~one-minute clips."},
+      {name:"batch_pages", label:"Pages per batch", type:"number", value:"10"},
+      {name:"page_words", label:"Words per page (source)", type:"number", value:"250"},
+      {name:"spoken_words", label:"Target spoken words / page", type:"number", value:"150"},
+      {name:"max_words", label:"Total spoken words cap (blank = all)", type:"number"},
+      {name:"max_chars", label:"Sentence character cap", type:"number", value:"500"},
+      {name:"batches", label:"Only run specific batches (e.g. '1,3-5')", type:"text"},
+
+      {name:"_s6", label:"THUMBNAILS & SUBTITLES (only for video mode)", type:"section", hint:"When a loop video is set, each .mp4 can get its own thumbnail (extracted from the video frame + overlaid headline + body text) and a subtitle file."},
       {name:"thumb_preset", label:"Thumbnail preset", type:"select", options:"presets", value:"thumbnail-bold"},
       {name:"thumb_seed", label:"Thumbnail seed", type:"number", value:"42"},
-      {name:"thumb_frame_at", label:"Frame at seconds", type:"number"},
-      {name:"sarvam_speaker", label:"Sarvam speaker", type:"text"},
-      {name:"sarvam_speaker_mr", label:"Marathi speaker", type:"text"},
-      {name:"sent_pause_ms", label:"Sentence pause ms", type:"number"},
-      {name:"para_pause_ms", label:"Paragraph pause ms", type:"number"},
-      {name:"dry_run", label:"Dry run", type:"checkbox"}
+      {name:"thumb_frame_at", label:"Frame to grab at (seconds; blank = middle)", type:"number"},
+      {name:"subtitles", label:"Subtitle format", type:"select", options:"subtitle_modes", value:"srt"},
+
+      {name:"thumbnail", label:"Generate thumbnails per language", type:"checkbox", checked:true},
+      {name:"dry_run", label:"Dry run (preview only — no audio synthesized)", type:"checkbox"}
     ]
   },
   voice: {
@@ -2276,6 +2317,35 @@ const FIELD_HELP = {
   ma_symmetry: "Symmetry order. bilateral = left-right mirror (animals). 4/6/8/12/16-fold-rotational = repeats around center every 90/60/45/30/22.5°. kaleidoscope = full dihedral.",
   ma_complexity: "Pattern density. medium-adult (~50 regions, 30-60min coloring), high-meditation (~100-150 regions, 2-4 hrs), extreme-zentangle (200+ regions, evening-long page).",
   ma_border: "Outer frame. concentric-rings (multiple bands), outer-frame-square (square around the circle), freeform-bleed (no formal border), hexagonal-frame (sacred-geometry style).",
+  // Audiobook common
+  book: "Path to source book file. Supported: .rtf, .txt. Use the Browse button to pick from your filesystem.",
+  title: "Used in the output filename. Keep it short and filesystem-friendly (no slashes). Defaults to 'Untitled' if blank.",
+  chunk_chars: "How many characters per TTS chunk. 1400 is the safe default — bigger chunks risk running out of memory on long passages, smaller chunks produce more concatenation artifacts. Only change if you hit OOM or want chunked previews.",
+  max_chunks: "Cap on number of chunks to render. Blank = render the whole book. Useful for quick previews — set to 1 or 2 to hear the first minute before committing to a full run.",
+  // Audiobook-ASMR specific
+  folder: "Pick a folder that contains a transcript file (.rtf or .txt) and optionally a loop video (.mp4, .mov). The pipeline will auto-detect those and place outputs in <folder>/output/. The fastest way to start: drop a transcript and a 1-minute video into a folder, point this here, hit Run.",
+  rtf: "Transcript file path. RTF or plain text. Only needed if you're not using the Folder mode above. The pipeline parses paragraphs from this file as the audio script.",
+  out_dir: "Where outputs land. Each language gets its own <lang>.wav (or .mp4 if video is set), plus thumbnails and a manifest.json with timings. If you used Folder mode, this is auto-set to <folder>/output/.",
+  video: "Optional loop video (.mp4 / .mov / .m4v). When set, the rendered audio is overlaid onto this video — looped seamlessly if the video is shorter than the audio. Leave blank for pure-audio output (no video).",
+  langs: "Comma-separated language codes. en = English (Kokoro neural or macOS say). hi = Hindi (Sarvam Bulbul). mr = Marathi (Sarvam Bulbul, default speaker 'manan'). Each language produces a complete separate output.",
+  max_chars: "Maximum characters per spoken sentence. Long sentences get broken at this limit (with re-punctuation) so the TTS doesn't choke. 500 works well for most books; lower to 300 if you hear glitches.",
+  max_words: "Total spoken-word cap for the WHOLE audiobook (across all batches). Blank = render every word. Set to e.g. 200 if you want a quick preview.",
+  batch_pages: "How many source pages per render batch. The full audiobook is rendered batch-by-batch and stitched together. Default 10 pages × 250 words = ~one minute of audio per batch.",
+  page_words: "Approximate words per source page. Used only for splitting batches; doesn't change how the text is spoken.",
+  spoken_words: "Target spoken words per page in the OUTPUT (after translation and ASMR pacing). Slightly less than source page-words because ASMR mode adds pauses.",
+  batches: "Render only specific batch numbers. e.g. '1' for just the first batch, '2-4' for batches 2 through 4, '1,3,5' for non-contiguous. Useful when re-rendering specific sections without redoing the whole book.",
+  bed: "Ambient sound bed layered under the narration. vinyl-crackle = warm record-player static (sleep-friendly). silence = no bed. Other choices reflect the AUDIOBOOK_BEDS options compiled into bin/audiobook.py.",
+  mode: "Voice pacing. asmr = slower with longer sentence + paragraph pauses (good for sleep / meditation). normal = standard reading pace. The mode shifts the default pause-lengths but you can still override them below.",
+  english_engine: "English TTS backend. kokoro = neural (best quality, ~80MB model). say = macOS built-in (zero-install, lower quality). Auto-falls-back to say if Kokoro isn't installed — run 'Setup voices' to install it once.",
+  subtitles: "Subtitle/caption format produced alongside the audio. srt = classic format (works in VLC + most players). vtt = WebVTT (modern web video standard). none = skip subtitles.",
+  thumbnail: "Generate one thumbnail per language. Each is a single frame grabbed from the video (or rendered fresh if no video) + the headline/subhead text overlaid. Defaults on — uncheck if you'll add your own.",
+  thumb_preset: "Brand preset for the overlaid text on thumbnails. thumbnail-bold is tuned specifically for video-thumbnail use (96px title, 34px sub, 1/3-screen dim band).",
+  thumb_seed: "Seed for the thumbnail FLUX render (only used if no video is provided — otherwise we grab a frame from the video, no FLUX involved).",
+  thumb_frame_at: "When grabbing a frame from the video for the thumbnail, which second to grab. Blank = use the middle of the video.",
+  sarvam_speaker: "Hindi speaker voice for Sarvam Bulbul cloud TTS. Blank = use the API default. Sarvam supports several speakers — see Sarvam's docs for IDs.",
+  sarvam_speaker_mr: "Marathi speaker. Defaults to 'manan' which is the most production-tested for Forge. Override only if you have a specific other speaker ID from Sarvam.",
+  sent_pause_ms: "Silent pause between sentences, in milliseconds. ASMR default 600ms makes the narration breathe; normal mode trims this to ~300ms.",
+  para_pause_ms: "Silent pause between paragraphs (slightly longer than sentence pauses). ASMR default 1200ms gives proper section breathing room.",
 };
 
 function optionsFor(field) {
@@ -2330,6 +2400,18 @@ function renderActions() {
 }
 
 function fieldElement(field) {
+  if (field.type === "section") {
+    const sec = document.createElement("div");
+    sec.className = "form-section";
+    sec.textContent = field.label;
+    if (field.hint) {
+      const hint = document.createElement("div");
+      hint.className = "form-section-hint";
+      hint.textContent = field.hint;
+      sec.appendChild(hint);
+    }
+    return sec;
+  }
   const wrap = document.createElement("div");
   wrap.className = "field";
   // Label + optional ? info icon in a flex row.
@@ -2415,15 +2497,36 @@ function renderForm() {
   document.getElementById("formTitle").textContent = spec.title;
   const form = document.getElementById("jobForm");
   form.innerHTML = "";
-  const normal = spec.fields.filter(f => f.type !== "checkbox");
+  // Walk fields in order. Sections + textareas span full width; other fields
+  // pair into a 2-column grid until interrupted by a section/textarea.
+  const fields = spec.fields.filter(f => f.type !== "checkbox");
   const checks = spec.fields.filter(f => f.type === "checkbox");
-  for (let i = 0; i < normal.length; i += 2) {
-    const row = document.createElement("div");
-    row.className = "grid-2";
-    row.appendChild(fieldElement(normal[i]));
-    if (normal[i + 1]) row.appendChild(fieldElement(normal[i + 1]));
-    form.appendChild(row);
+  let buffer = []; // pending two-col fields
+  const flush = () => {
+    if (buffer.length === 0) return;
+    if (buffer.length === 1) {
+      // single dangling field — render full-width
+      form.appendChild(fieldElement(buffer[0]));
+    } else {
+      for (let i = 0; i < buffer.length; i += 2) {
+        const row = document.createElement("div");
+        row.className = "grid-2";
+        row.appendChild(fieldElement(buffer[i]));
+        if (buffer[i + 1]) row.appendChild(fieldElement(buffer[i + 1]));
+        form.appendChild(row);
+      }
+    }
+    buffer = [];
+  };
+  for (const f of fields) {
+    if (f.type === "section" || f.type === "textarea") {
+      flush();
+      form.appendChild(fieldElement(f));
+    } else {
+      buffer.push(f);
+    }
   }
+  flush();
   if (checks.length) {
     const row = document.createElement("div");
     row.className = "checks";
