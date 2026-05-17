@@ -83,6 +83,31 @@ MFLUX_HEARTBEAT_SEC = float(os.environ.get("FORGE_MFLUX_HEARTBEAT_SEC", "30"))
 # ~25-50 % slower than int8 / int4 with near-zero quality loss for FLUX-dev. We default to int8
 # (FORGE_FLUX_QUANTIZE=8) — indistinguishable from fp16, ~25 % faster, ~12 GB. Set 4 for fast
 # iteration (~50 % faster, mild faces softening), 0 / "none" to force fp16.
+_MFLUX_MIN_FREE_GB = float(os.environ.get("FORGE_MFLUX_MIN_FREE_GB", "20"))
+
+def _preflight_memory(label: str = "mflux") -> None:
+    """Refuse to launch a heavy Metal job if free RAM is too low.
+
+    On M5 Max with 64-80 GB unified memory, a single FLUX-dev mflux render
+    needs ~6-12 GB activations + 12 GB weights (q8). Kontext doubles that.
+    If the system is already memory-pressured, the launch will Metal-page-
+    fault and freeze WindowServer. Better to bail with a clear message.
+    """
+    try:
+        import psutil  # type: ignore
+    except ImportError:
+        return  # psutil not installed — skip silently
+    vm = psutil.virtual_memory()
+    free_gb = vm.available / (1024 ** 3)
+    if free_gb < _MFLUX_MIN_FREE_GB:
+        used_pct = vm.percent
+        sys.exit(red(
+            f"refusing to launch {label}: only {free_gb:.1f} GB RAM free "
+            f"(threshold {_MFLUX_MIN_FREE_GB:.0f} GB, system at {used_pct:.0f}% used).\n"
+            + dim(f"  close memory-heavy apps (Chrome / Xcode / VS Code) and retry.\n"
+                  f"  override: FORGE_MFLUX_MIN_FREE_GB=10 forge engine render …  (risky)")
+        ))
+
 def _resolve_quantize(override: int | None = None) -> int | None:
     """Return the int to pass to mflux --quantize, or None to skip the flag (= fp16)."""
     if override is not None:
@@ -1109,6 +1134,7 @@ def flux_generate(
     if not draft and not profile and steps is not None and step_count < int(flux["steps"]):
         print(dim("  · lower steps reduce sustained Metal/GPU load and heat; quality may drop a bit"))
     try:
+        _preflight_memory(label=f"mflux {model}/{step_count} steps")
         with ResourceLock("metal-heavy") as lock:
             if lock.wait_seconds > 0.1:
                 print(dim(f"  · waited {lock.wait_seconds:.1f}s for Metal lock"))
@@ -2454,6 +2480,7 @@ def _engine_img2img(src_path: Path, prompt: str, dst_path: Path, *,
         ))
 
     print(dim(f"    · {mode_label} · steps={steps} seed={seed}"))
+    _preflight_memory(label=f"{cmd[0]} ({mode_label})")
     with ResourceLock("metal-heavy") as lock:
         if lock.wait_seconds > 0.1:
             print(dim(f"    · waited {lock.wait_seconds:.1f}s for Metal lock"))
@@ -2491,6 +2518,7 @@ def _img2img_refine(src_path: Path, prompt: str, dst_path: Path, *,
         "--seed", str(seed),
         "--output", str(tmp),
     ]
+    _preflight_memory(label="mflux img2img refine")
     with ResourceLock("metal-heavy") as lock:
         if lock.wait_seconds > 0.1:
             print(dim(f"    · waited {lock.wait_seconds:.1f}s for Metal lock"))
@@ -2855,7 +2883,22 @@ def cmd_engine_render(args) -> int:
             sys.exit(red(f"--from-image not found: {src_image_path}"))
         if src_image_path.stat().st_size < 1024:
             sys.exit(red(f"--from-image too small ({src_image_path.stat().st_size} bytes): {src_image_path}"))
-        print(dim(f"  · from-image: {src_image_path}  strength: {from_image_strength}"))
+        # Kontext dual-conditioning paths roughly double activation memory vs
+        # plain FLUX-dev. Combined with hi-/ultra-res, Metal OOMs (GPU page
+        # fault → WindowServer freeze) on M5 Max with 64-80 GB unified memory.
+        # Cap img2img to default 1280x720 — use --upscale 4x/8x for final
+        # resolution instead. See AUDIT.md / RES.md for the math.
+        if (eff_w and eff_w > 1280) or (eff_h and eff_h > 720):
+            sys.exit(red(
+                f"--from-image is incompatible with hi-res / ultra-res / custom "
+                f"width>1280 or height>720 (would over-subscribe Metal memory).\n"
+                + dim(f"  requested: {eff_w}x{eff_h}\n"
+                      f"  fix: drop --hi-res / --ultra-res, OR add --upscale 4x / 8x\n"
+                      f"       (renders Kontext at 1280x720, then upscales via RealESRGAN)")
+            ))
+        # Force the safe Kontext baseline (overrides any stray --width / --height).
+        eff_w, eff_h = 1280, 720
+        print(dim(f"  · from-image: {src_image_path}  strength: {from_image_strength}  res: 1280x720 (Kontext safe baseline)"))
 
     variants: list[dict[str, Any]] = []
     base_seed = directive.seed
@@ -3604,6 +3647,7 @@ def cmd_edit(args) -> int:
     if args.steps < 25:
         print(dim("  · lower steps reduce sustained Metal/GPU load and heat; quality may drop a bit"))
     try:
+        _preflight_memory(label=f"{cmd[0]} edit/{mode}")
         with ResourceLock("metal-heavy") as lock:
             if lock.wait_seconds > 0.1:
                 print(dim(f"  · waited {lock.wait_seconds:.1f}s for Metal lock"))
