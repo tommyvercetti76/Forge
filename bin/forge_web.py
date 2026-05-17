@@ -205,6 +205,22 @@ def _add_repeatable(cmd: list[str], flag: str, value: Any) -> None:
             cmd.extend([flag, item])
 
 
+def _join_kv_pairs(pairs: list[tuple[str, Any]]) -> str:
+    """Build a comma-separated 'k1=v1,k2=v2' string from a list of (key, value)
+    tuples, skipping entries whose value is None/blank. Used by the
+    coloring-page and mandala-art-page actions to synthesize --config from
+    the friendly dropdowns."""
+    parts: list[str] = []
+    for k, v in pairs:
+        if v is None:
+            continue
+        s = str(v).strip()
+        if not s:
+            continue
+        parts.append(f"{k}={s}")
+    return ",".join(parts)
+
+
 def _payload_paths(payload: dict[str, Any], *keys: str) -> list[str]:
     paths: list[str] = []
     for key in keys:
@@ -223,9 +239,9 @@ def _watch_dirs_for(action: str, payload: dict[str, Any]) -> list[str]:
             paths.append(str(out.with_name(out.stem + "-bg.png")))
     elif action in {"edit", "voice", "video", "mandala", "folk-art"}:
         paths += _payload_paths(payload, "out")
-    elif action in {"brief", "episode", "audiobook", "childrens-book", "engine"}:
+    elif action in {"brief", "episode", "audiobook", "childrens-book", "engine", "coloring-page", "mandala-art-page"}:
         paths += _payload_paths(payload, "out")
-        if action == "engine" and not str(payload.get("out") or "").strip():
+        if action in {"engine", "coloring-page", "mandala-art-page"} and not str(payload.get("out") or "").strip():
             paths.append(str(DEFAULT_OUTPUT_ROOT / "engine-renders"))
     elif action == "audiobook-asmr":
         paths += _payload_paths(payload, "folder", "out_dir")
@@ -310,6 +326,51 @@ def build_command(action: str, payload: dict[str, Any]) -> tuple[list[str], list
         engine_name = str(payload.get("name") or "").strip()
         if engine_name:
             cmd.append(engine_name)
+    elif action == "coloring-page":
+        cmd.extend(["engine", "render", "childrens-coloring-book"])
+        _add(cmd, "--recipe", payload.get("recipe"))
+        _add(cmd, "--subject", payload.get("subject"))
+        # Synthesize --config from the friendly dropdowns. Recipes (if set)
+        # already supply these; CLI overrides win, so dropdowns layered on a
+        # recipe behave as overrides.
+        cb_config = _join_kv_pairs([
+            ("style.tradition",                payload.get("cb_tradition")),
+            ("style.age_range",                payload.get("cb_age_range")),
+            ("scene.environmental_density",    payload.get("cb_density")),
+            ("subject.character_archetype",    payload.get("cb_archetype")),
+            ("scene.setting",                  payload.get("cb_setting")),
+            ("narrative.moment",               payload.get("cb_moment")),
+            ("subject.emotion",                payload.get("cb_emotion")),
+            ("subject.props",                  payload.get("cb_props")),
+            ("composition.character_count",    payload.get("cb_character_count")),
+        ])
+        _add(cmd, "--config", cb_config)
+        _add(cmd, "--seeds", payload.get("seeds"))
+        _add(cmd, "--seed", payload.get("seed"))
+        _add(cmd, "--guidance", payload.get("guidance"))
+        _add_bool(cmd, "--refine", payload.get("refine"))
+        _add_bool(cmd, "--hi-res", payload.get("hi_res"))
+        _add_bool(cmd, "--ultra-res", payload.get("ultra_res"))
+        _add(cmd, "--out", payload.get("out"))
+    elif action == "mandala-art-page":
+        cmd.extend(["engine", "render", "mandala-art"])
+        _add(cmd, "--recipe", payload.get("recipe"))
+        _add(cmd, "--subject", payload.get("subject"))
+        ma_config = _join_kv_pairs([
+            ("style.tradition",       payload.get("ma_tradition")),
+            ("subject.treatment",     payload.get("ma_treatment")),
+            ("style.symmetry",        payload.get("ma_symmetry")),
+            ("style.complexity",      payload.get("ma_complexity")),
+            ("composition.border",    payload.get("ma_border")),
+        ])
+        _add(cmd, "--config", ma_config)
+        _add(cmd, "--seeds", payload.get("seeds"))
+        _add(cmd, "--seed", payload.get("seed"))
+        _add(cmd, "--guidance", payload.get("guidance"))
+        _add_bool(cmd, "--refine", payload.get("refine"))
+        _add_bool(cmd, "--hi-res", payload.get("hi_res"))
+        _add_bool(cmd, "--ultra-res", payload.get("ultra_res"))
+        _add(cmd, "--out", payload.get("out"))
     elif action == "edit":
         cmd.append("edit")
         _add(cmd, "--image", payload.get("image"))
@@ -1799,7 +1860,9 @@ const state = { config: null, action: "thumbnail", activeJob: null, pickerField:
 const groups = [
   ["TEXT TO IMAGE", [
     ["thumbnail", "Thumbnail"],
-    ["engine", "Branded image"],
+    ["coloring-page", "Children's coloring page"],
+    ["mandala-art-page", "Mandala art"],
+    ["engine", "Branded image (other)"],
     ["edit", "Edit image"],
     ["engine-list", "Engines"],
     ["engine-recipes", "Engine recipes"],
@@ -1876,6 +1939,50 @@ const specs = {
       {name:"guidance", label:"Guidance", type:"number"},
       {name:"refine", label:"Refine", type:"checkbox"},
       {name:"refine_strength", label:"Refine strength", type:"number", value:"0.25"},
+      {name:"hi_res", label:"Hi-res", type:"checkbox"},
+      {name:"ultra_res", label:"Ultra-res", type:"checkbox"},
+      {name:"out", label:"Output path", type:"path"}
+    ]
+  },
+
+  "coloring-page": {
+    title: "Children's Coloring Page",
+    fields: [
+      {name:"subject", label:"Prompt — what to draw", type:"textarea", required:true, value:"a curious bear cub holding a balloon in a meadow"},
+      {name:"recipe", label:"Recipe (optional shortcut)", type:"select", options:"recipesColoring"},
+      {name:"cb_tradition", label:"Tradition", type:"select", options:"cbTraditions", value:"mo-willems-minimal"},
+      {name:"cb_age_range", label:"Age range", type:"select", options:"cbAgeRanges", value:"kids-6-9"},
+      {name:"cb_density", label:"Density", type:"select", options:"cbDensity", value:"balanced"},
+      {name:"cb_archetype", label:"Character", type:"select", options:"cbArchetypes", value:"curious-bear-cub"},
+      {name:"cb_setting", label:"Setting", type:"select", options:"cbSettings", value:"magical-meadow"},
+      {name:"cb_moment", label:"Narrative moment", type:"select", options:"cbMoments", value:"quiet-rest"},
+      {name:"cb_emotion", label:"Emotion", type:"select", options:"cbEmotions", value:"gentle"},
+      {name:"cb_props", label:"Prop", type:"select", options:"cbProps", value:"no-prop"},
+      {name:"cb_character_count", label:"Characters in scene", type:"number", value:"1"},
+      {name:"seeds", label:"Variants", type:"number", value:"1"},
+      {name:"seed", label:"Seed", type:"number", value:"1"},
+      {name:"guidance", label:"Guidance", type:"number", value:"6.5"},
+      {name:"refine", label:"Refine", type:"checkbox"},
+      {name:"hi_res", label:"Hi-res", type:"checkbox"},
+      {name:"ultra_res", label:"Ultra-res", type:"checkbox"},
+      {name:"out", label:"Output path", type:"path"}
+    ]
+  },
+
+  "mandala-art-page": {
+    title: "Mandala Art (FLUX)",
+    fields: [
+      {name:"subject", label:"Prompt — what to mandalize", type:"textarea", required:true, value:"a humpback whale"},
+      {name:"recipe", label:"Recipe (optional shortcut)", type:"select", options:"recipesMandala"},
+      {name:"ma_tradition", label:"Tradition", type:"select", options:"maTraditions", value:"zentangle-organic"},
+      {name:"ma_treatment", label:"Treatment", type:"select", options:"maTreatments", value:"subject-silhouette-filled"},
+      {name:"ma_symmetry", label:"Symmetry", type:"select", options:"maSymmetries", value:"bilateral"},
+      {name:"ma_complexity", label:"Complexity", type:"select", options:"maComplexity", value:"medium-adult"},
+      {name:"ma_border", label:"Border", type:"select", options:"maBorders", value:"freeform-bleed"},
+      {name:"seeds", label:"Variants", type:"number", value:"1"},
+      {name:"seed", label:"Seed", type:"number", value:"1"},
+      {name:"guidance", label:"Guidance", type:"number", value:"7.5"},
+      {name:"refine", label:"Refine", type:"checkbox"},
       {name:"hi_res", label:"Hi-res", type:"checkbox"},
       {name:"ultra_res", label:"Ultra-res", type:"checkbox"},
       {name:"out", label:"Output path", type:"path"}
@@ -2153,6 +2260,22 @@ const FIELD_HELP = {
   as: "Where in ~/Models/ to adopt the file: flux-bfl, kokoro, huggingface, ollama.",
   path: "File path on disk.",
   id: "Identifier (kebab-case).",
+  // Children's coloring book — friendly form fields
+  cb_tradition: "Illustrator tradition. mo-willems-minimal (12-20 strokes, two-dot eyes), sandra-boynton-whimsical (chunky rounded animals), eric-carle-bold (thick outlines, large fillable shapes), beatrix-potter-naturalistic (pen-and-ink small mammals), miyazaki-storyboard (confident pen line, environmental detail), hanna-barbera-flat-cartoon (geometric forms, white-sclera dot-pupil eyes).",
+  cb_age_range: "Target age. toddler-3-5 (min region 30mm, ≤5 elements, thick outlines), kids-6-9 (min 8mm, ≤10 elements, medium line), pre-teen-10-12 (min 4mm, ≤20 elements, fine detail).",
+  cb_density: "Scene density. sparse = 3-5 named elements (toddler-grade), balanced = 7-12 (kids), rich = 15+ (pre-teen). Pulled from the npj 2020 streamlining research — fewer elements = better comprehension.",
+  cb_archetype: "Central character template. The engine injects the archetype's description (e.g. curious-bear-cub = rounded body, small ears, ALWAYS gentle — never showing teeth). Pick the closest match to your prompt's subject.",
+  cb_setting: "Where the scene takes place. Each setting has its own descriptive expansion in the prompt (e.g. enchanted-forest = 3-5 stylized trees + mushrooms + ferns; texas-backyard-patio = live oak + plank fence + bluebonnets).",
+  cb_moment: "The single narrative beat the page captures. first-meeting / shared-secret / bedtime-blessing require ≥2 characters. The engine baking in 'one moment per page' is the +32.86% comprehension boost from the npj research.",
+  cb_emotion: "What the central character is feeling. Surfaces as specific facial-expression directives (e.g. gentle = eyes half-lidded, small closed smile, body relaxed).",
+  cb_props: "What the character is holding or with. Pick no-prop for character-only focus. Engine-defined props include balloon, picnic-basket, lantern-glowing, steel-thali-of-seed (Marathi feeding-birds), chai-cup-and-saucer, etc.",
+  cb_character_count: "Exact count of named figures in the scene. 1-6. Some narrative moments (first-meeting, shared-secret) require ≥2 and will fail validation if set lower.",
+  // Mandala art — friendly form fields
+  ma_tradition: "Decorative tradition. zentangle-organic (Thomas + Roberts 2003: micro-pattern fills per region), sacred-geometry (Sri Yantra, Flower of Life — needs rotational symmetry), henna-mehndi (paisley + lotus + vine, bridal-grade density), madhubani-mandala (Mithila folk tradition with double-line borders), floral-art-nouveau (Mucha-style botanical framing).",
+  ma_treatment: "How the subject relates to the mandala. subject-silhouette-filled (whale outline filled with patterns), subject-at-center-rings (lotus at center, rings build outward), subject-radial-composed (butterflies tiled radially — needs rotational symmetry), subject-emerging-mandala (tree roots ARE the mandala).",
+  ma_symmetry: "Symmetry order. bilateral = left-right mirror (animals). 4/6/8/12/16-fold-rotational = repeats around center every 90/60/45/30/22.5°. kaleidoscope = full dihedral.",
+  ma_complexity: "Pattern density. medium-adult (~50 regions, 30-60min coloring), high-meditation (~100-150 regions, 2-4 hrs), extreme-zentangle (200+ regions, evening-long page).",
+  ma_border: "Outer frame. concentric-rings (multiple bands), outer-frame-square (square around the circle), freeform-bleed (no formal border), hexagonal-frame (sacred-geometry style).",
 };
 
 function optionsFor(field) {
@@ -2163,7 +2286,24 @@ function optionsFor(field) {
   if (field.options === "presetsOptional") return [{value:"", label:"none"}, ...(cfg.presets || []).map(v => ({value:v, label:v}))];
   if (field.options === "enginesOptional") return [{value:"", label:"all"}, ...(cfg.engines || []).map(v => ({value:v, label:v}))];
   if (field.options === "recipesOptional") return [{value:"", label:"none"}, ...(cfg.recipes || []).map(v => ({value:v.id, label:v.engine ? `${v.id} · ${v.engine}` : v.id}))];
+  if (field.options === "recipesColoring") return [{value:"", label:"(write your own prompt)"}, ...((cfg.recipes || []).filter(r => r.engine === "childrens-coloring-book").map(r => ({value:r.id, label:r.id})))];
+  if (field.options === "recipesMandala") return [{value:"", label:"(write your own prompt)"}, ...((cfg.recipes || []).filter(r => r.engine === "mandala-art").map(r => ({value:r.id, label:r.id})))];
   if (field.options === "voices") return (cfg.voices || []).map(v => ({value:v.id, label:v.label || v.id}));
+  // Children's coloring book enums (mirror bin/style_engines.py)
+  if (field.options === "cbTraditions") return ["mo-willems-minimal", "sandra-boynton-whimsical", "eric-carle-bold", "beatrix-potter-naturalistic", "miyazaki-storyboard", "hanna-barbera-flat-cartoon"].map(v => ({value:v, label:v}));
+  if (field.options === "cbAgeRanges") return ["toddler-3-5", "kids-6-9", "pre-teen-10-12"].map(v => ({value:v, label:v}));
+  if (field.options === "cbDensity") return ["sparse", "balanced", "rich"].map(v => ({value:v, label:v}));
+  if (field.options === "cbArchetypes") return ["friendly-dragon", "curious-bear-cub", "brave-rabbit", "wise-owl", "whimsical-fox", "gentle-giant", "adventurous-child", "helpful-elephant", "mischievous-mouse", "elderly-marathi-couple", "songbird-flock", "blue-jay-with-finches", "cottontail-rabbit-and-kit"].map(v => ({value:v, label:v}));
+  if (field.options === "cbSettings") return ["enchanted-forest", "cozy-cottage-interior", "magical-meadow", "by-the-pond", "treehouse-platform", "starry-night-rooftop", "village-square", "mountain-cave", "texas-backyard-patio"].map(v => ({value:v, label:v}));
+  if (field.options === "cbMoments") return ["first-meeting", "shared-secret", "problem-discovered", "decision-to-help", "big-leap", "triumph-celebration", "quiet-rest", "bedtime-blessing", "wildlife-visit"].map(v => ({value:v, label:v}));
+  if (field.options === "cbEmotions") return ["curious", "joyful", "worried-but-brave", "gentle", "triumphant", "sleepy-content", "determined", "surprised-delighted"].map(v => ({value:v, label:v}));
+  if (field.options === "cbProps") return ["no-prop", "balloon", "teacup-and-saucer", "picnic-basket", "storybook-open", "paper-boat", "flower-bouquet", "lantern-glowing", "kite-and-string", "steel-thali-of-seed", "bird-feeder-tube", "chai-cup-and-saucer", "rocking-chair-side"].map(v => ({value:v, label:v}));
+  // Mandala-art enums (mirror bin/style_engines.py)
+  if (field.options === "maTraditions") return ["zentangle-organic", "sacred-geometry", "henna-mehndi", "madhubani-mandala", "floral-art-nouveau"].map(v => ({value:v, label:v}));
+  if (field.options === "maTreatments") return ["subject-silhouette-filled", "subject-at-center-rings", "subject-radial-composed", "subject-emerging-mandala"].map(v => ({value:v, label:v}));
+  if (field.options === "maSymmetries") return ["bilateral", "4-fold-rotational", "6-fold-rotational", "8-fold-rotational", "12-fold-rotational", "16-fold-rotational", "kaleidoscope"].map(v => ({value:v, label:v}));
+  if (field.options === "maComplexity") return ["medium-adult", "high-meditation", "extreme-zentangle"].map(v => ({value:v, label:v}));
+  if (field.options === "maBorders") return ["concentric-rings", "outer-frame-square", "freeform-bleed", "hexagonal-frame"].map(v => ({value:v, label:v}));
   return (cfg[field.options] || []).map(v => ({value:v, label:v}));
 }
 
