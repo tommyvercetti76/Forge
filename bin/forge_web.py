@@ -1711,6 +1711,111 @@ form { padding: 18px; display: grid; gap: 14px; }
 .help-card:has(.detail-grid) {
   width: min(1100px, 96vw);
 }
+
+/* A/B select indicator on each thumbnail — small clickable corner badge */
+.gallery-thumb { position: relative; }
+.gallery-select {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 22px;
+  height: 22px;
+  border: 2px solid var(--ink-bright);
+  background: rgba(5, 11, 9, 0.55);
+  cursor: pointer;
+  transition: background 80ms, border-color 80ms;
+}
+.gallery-select:hover {
+  background: var(--green-dim);
+  border-color: var(--green);
+}
+.gallery-card.selected .gallery-select {
+  background: var(--gold);
+  border-color: var(--gold);
+}
+.gallery-card.selected .gallery-select::after {
+  content: "✓";
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  font: 13px/1 var(--font-pixel);
+  color: var(--bg-deep);
+}
+.gallery-card.selected {
+  outline: 3px solid var(--gold);
+  outline-offset: -3px;
+}
+
+/* Compare modal — two columns of image + metadata, diff fields highlighted */
+.compare-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px;
+}
+.compare-side {
+  display: grid;
+  gap: 12px;
+}
+.compare-head {
+  font: 11px/1 var(--font-pixel);
+  letter-spacing: 1.5px;
+  color: var(--gold);
+  padding: 6px 0;
+  border-bottom: 2px solid var(--line);
+}
+.compare-side img {
+  width: 100%;
+  height: auto;
+  border: 2px solid var(--line);
+  background: var(--bg-deep);
+  display: block;
+}
+.compare-meta {
+  display: grid;
+  gap: 6px;
+  font: 13px/1.4 var(--font-ui);
+  color: var(--ink);
+}
+.compare-meta strong {
+  color: var(--muted);
+  font: 9px/1 var(--font-pixel);
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  display: inline-block;
+  min-width: 80px;
+}
+.compare-meta hr {
+  border: 0;
+  border-top: 1px dashed var(--line);
+  margin: 4px 0;
+}
+.compare-meta .diff {
+  background: var(--surface-3);
+  border-left: 3px solid var(--gold);
+  padding-left: 6px;
+}
+.compare-meta .diff strong {
+  color: var(--gold);
+}
+.compare-subject {
+  font: 12px/1.5 var(--font-mono);
+  background: var(--bg-deep);
+  border: 1px solid var(--line);
+  padding: 8px;
+  max-height: 200px;
+  overflow: auto;
+  white-space: pre-wrap;
+  color: var(--muted);
+}
+.compare-subject.diff {
+  color: var(--ink-bright);
+  border-color: var(--gold);
+}
+
+.help-card:has(.compare-grid) {
+  width: min(1280px, 96vw);
+}
 .form-section-hint {
   font: 13px/1.5 var(--font-ui);
   color: var(--muted);
@@ -2962,7 +3067,7 @@ function applySuggestion(s) {
 // form panel as a 3-up grid; cards show thumbnail + metadata + 4 rating
 // buttons (👎 — 👍 ⭐). Click a card to open the detail modal.
 
-const state_gallery = { engine: "all", rating: "all", order: "ts_desc" };
+const state_gallery = { engine: "all", rating: "all", order: "ts_desc", selected: new Set() };
 
 async function renderGalleryPanel() {
   document.getElementById("formTitle").textContent = "Gallery";
@@ -2970,7 +3075,7 @@ async function renderGalleryPanel() {
   const form = document.getElementById("jobForm");
   form.innerHTML = "";
 
-  // Filter row
+  // Filter row + A/B compare control
   const filters = document.createElement("div");
   filters.className = "gallery-filters";
   filters.innerHTML = `
@@ -2993,6 +3098,8 @@ async function renderGalleryPanel() {
         <option value="rating_desc">highest-rated first</option>
       </select>
     </label>
+    <button type="button" id="galCompare" class="primary" disabled>Compare (0)</button>
+    <button type="button" id="galClearSel">Clear</button>
     <div id="galStats" class="gallery-stats"></div>
   `;
   form.appendChild(filters);
@@ -3015,8 +3122,22 @@ async function renderGalleryPanel() {
   engineSel.onchange = (e) => { state_gallery.engine = e.target.value; loadGallery(); };
   document.getElementById("galRating").onchange = (e) => { state_gallery.rating = e.target.value; loadGallery(); };
   document.getElementById("galOrder").onchange = (e) => { state_gallery.order = e.target.value; loadGallery(); };
+  document.getElementById("galCompare").onclick = openCompareModal;
+  document.getElementById("galClearSel").onclick = () => {
+    state_gallery.selected.clear();
+    updateCompareButton();
+    document.querySelectorAll(".gallery-card.selected").forEach(c => c.classList.remove("selected"));
+  };
 
   await loadGallery();
+}
+
+function updateCompareButton() {
+  const btn = document.getElementById("galCompare");
+  if (!btn) return;
+  const n = state_gallery.selected.size;
+  btn.textContent = `Compare (${n})`;
+  btn.disabled = (n !== 2);
 }
 
 async function loadGallery() {
@@ -3051,13 +3172,16 @@ function renderGalleryGrid(renders) {
   grid.innerHTML = "";
   for (const r of renders) {
     const card = document.createElement("div");
-    card.className = "gallery-card rating-" + r.rating;
+    const isSelected = state_gallery.selected.has(r.id);
+    card.className = "gallery-card rating-" + r.rating + (isSelected ? " selected" : "");
+    card.dataset.renderId = r.id;
     const fileUrl = `/api/file?path=${encodeURIComponent(r.png_path)}`;
     const seedTxt = r.seed != null ? `seed ${r.seed}` : "";
     const recipeTxt = r.recipe ? `· ${r.recipe}` : "";
     card.innerHTML = `
       <a class="gallery-thumb" href="${fileUrl}" target="_blank" rel="noreferrer">
         <img src="${fileUrl}" loading="lazy" alt="${escapeAttr(r.subject || '')}">
+        <span class="gallery-select" title="Click to select for A/B compare"></span>
       </a>
       <div class="gallery-meta">
         <div class="gallery-engine">${r.engine}</div>
@@ -3071,8 +3195,15 @@ function renderGalleryGrid(renders) {
         <button class="rate-btn rate-detail" data-detail="${r.id}" title="Details">⋯</button>
       </div>
     `;
+    // Click the small select-spot to toggle A/B selection
+    card.querySelector(".gallery-select").onclick = (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      toggleCompareSelect(r.id, card);
+    };
     grid.appendChild(card);
   }
+  updateCompareButton();
   // Wire rating buttons
   grid.querySelectorAll(".rate-btn[data-rating]").forEach(btn => {
     btn.onclick = async (e) => {
@@ -3094,6 +3225,90 @@ function renderGalleryGrid(renders) {
   grid.querySelectorAll(".rate-detail").forEach(btn => {
     btn.onclick = () => openRenderDetail(parseInt(btn.dataset.detail));
   });
+}
+
+function toggleCompareSelect(renderId, cardEl) {
+  if (state_gallery.selected.has(renderId)) {
+    state_gallery.selected.delete(renderId);
+    cardEl.classList.remove("selected");
+  } else {
+    if (state_gallery.selected.size >= 2) {
+      // Drop the oldest selection
+      const oldest = state_gallery.selected.values().next().value;
+      state_gallery.selected.delete(oldest);
+      const oldCard = document.querySelector(`.gallery-card[data-render-id="${oldest}"]`);
+      if (oldCard) oldCard.classList.remove("selected");
+    }
+    state_gallery.selected.add(renderId);
+    cardEl.classList.add("selected");
+  }
+  updateCompareButton();
+}
+
+async function openCompareModal() {
+  const ids = [...state_gallery.selected];
+  if (ids.length !== 2) return;
+  const [a, b] = await Promise.all([
+    fetch(`/api/gallery/${ids[0]}`).then(r => r.json()),
+    fetch(`/api/gallery/${ids[1]}`).then(r => r.json()),
+  ]);
+  const aUrl = `/api/file?path=${encodeURIComponent(a.png_path)}`;
+  const bUrl = `/api/file?path=${encodeURIComponent(b.png_path)}`;
+  // Compute config-diff highlighting
+  const diff = compareConfigs(a, b);
+  const body = `<div class="compare-grid">
+      <div class="compare-side">
+        <div class="compare-head">A · #${a.id} · ${escapeHtml(a.engine)}</div>
+        <a href="${aUrl}" target="_blank"><img src="${aUrl}"></a>
+        <div class="compare-meta">${renderCompareMeta(a, diff, "a")}</div>
+      </div>
+      <div class="compare-side">
+        <div class="compare-head">B · #${b.id} · ${escapeHtml(b.engine)}</div>
+        <a href="${bUrl}" target="_blank"><img src="${bUrl}"></a>
+        <div class="compare-meta">${renderCompareMeta(b, diff, "b")}</div>
+      </div>
+    </div>`;
+  showHelpModal(`Compare · #${a.id} vs #${b.id}`, "");
+  const bodyEl = document.getElementById("helpBody");
+  bodyEl.innerHTML = body;
+}
+
+function compareConfigs(a, b) {
+  // Return a Set of field keys whose values differ between A and B
+  const diff = new Set();
+  const fields = ["engine", "recipe", "seed", "guidance", "refine", "hi_res", "ultra_res", "width", "height"];
+  for (const f of fields) {
+    if (a[f] !== b[f]) diff.add(f);
+  }
+  // LoRA stack — compare normalized
+  const aLora = JSON.stringify(a.lora_stack || []);
+  const bLora = JSON.stringify(b.lora_stack || []);
+  if (aLora !== bLora) diff.add("lora_stack");
+  // Subject text
+  if ((a.subject || "") !== (b.subject || "")) diff.add("subject");
+  // Rating
+  if ((a.rating || 0) !== (b.rating || 0)) diff.add("rating");
+  return diff;
+}
+
+function renderCompareMeta(r, diff, side) {
+  const lora = (r.lora_stack || []).map(l => `${(l.path || '').split('/').pop()}@${l.scale}`).join(", ") || "—";
+  const flags = [r.refine && "refine", r.hi_res && "hi-res", r.ultra_res && "ultra-res"].filter(Boolean).join(" · ") || "(default)";
+  const ratingLabel = {0: "—", 1: "👍 like", 2: "⭐ favorite", "-1": "👎 dislike"}[String(r.rating || 0)] || "—";
+  const dim = (key) => diff.has(key) ? "diff" : "";
+  return `
+    <div class="${dim('engine')}"><strong>Engine</strong> ${escapeHtml(r.engine)}</div>
+    <div class="${dim('recipe')}"><strong>Recipe</strong> ${escapeHtml(r.recipe || '—')}</div>
+    <div class="${dim('seed')}"><strong>Seed</strong> ${r.seed ?? '—'}</div>
+    <div class="${dim('guidance')}"><strong>Guidance</strong> ${r.guidance ?? 'default'}</div>
+    <div class="${dim('refine') || dim('hi_res') || dim('ultra_res')}"><strong>Flags</strong> ${flags}</div>
+    <div class="${dim('width') || dim('height')}"><strong>Size</strong> ${r.width || '?'}×${r.height || '?'}</div>
+    <div class="${dim('lora_stack')}"><strong>LoRAs</strong> ${escapeHtml(lora)}</div>
+    <div class="${dim('rating')}"><strong>Rating</strong> ${ratingLabel}</div>
+    <hr>
+    <div class="${dim('subject')}"><strong>Subject</strong></div>
+    <pre class="compare-subject ${dim('subject')}">${escapeHtml(r.subject || '')}</pre>
+  `;
 }
 
 function ratingButton(rid, value, current, emoji) {
