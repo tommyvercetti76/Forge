@@ -376,6 +376,132 @@
     "seed": 23
   },
 
+  "coloring-toddler-cow-and-moon": {
+    "engine": "childrens-coloring-book",
+    "description": "Sandra Boynton toddler — a sleepy round cow standing in a field under a big crescent moon. Maximum simplicity; rhyme-book feel.",
+    "subject": "a chunky round cow standing in a small grassy field looking up at a big crescent moon in the night sky with a few simple stars",
+    "config": {
+      "style.tradition": "sandra-boynton-whimsical",
+      "style.age_range": "toddler-3-5",
+      "subject.character_archetype": "helpful-elephant",
+      "subject.emotion": "sleepy-content",
+      "subject.props": "no-prop",
+      "scene.setting": "magical-meadow",
+      "scene.time_of_day": "night-moonlit",
+      "scene.environmental_density": "sparse",
+      "narrative.moment": "quiet-rest",
+      "narrative.story_beat": "The cow has stayed up past bedtime to say goodnight to the moon.",
+      "composition.layout": "centered-portrait",
+      "composition.framing": "wide",
+      "composition.character_count": 1
+    },
+    "seed": 31
+  },
+  "coloring-kids-owl-storytime-branch": {
+    "engine": "childrens-coloring-book",
+    "description": "Mo Willems minimal — a wise owl perched on a branch reading aloud from an open book to a small sparrow and a mouse who lean in to listen.",
+    "subject": "a wise owl perched on a thick branch holding an open storybook in its wings reading aloud; a small sparrow and a tiny mouse are perched beside the owl leaning in to listen",
+    "config": {
+      "style.tradition": "mo-willems-minimal",
+      "style.age_range": "kids-6-9",
+      "subject.character_archetype": "wise-owl",
+      "subject.emotion": "gentle",
+      "subject.props": "storybook-open",
+      "scene.setting": "enchanted-forest",
+      "scene.time_of_day": "dusk",
+      "scene.environmental_density": "balanced",
+      "narrative.moment": "shared-secret",
+      "narrative.story_beat": "The owl has just reached the most exciting page; the sparrow and mouse have stopped fidgeting to listen.",
+      "composition.layout": "two-figure-balance",
+      "composition.framing": "medium",
+      "composition.character_count": 3
+    },
+    "seed": 33
+  },
+  "coloring-kids-aaji-roti-kitchen": {
+    "engine": "childrens-coloring-book",
+    "description": "Hanna-Barbera — Aaji rolling roti at the kitchen counter while her young granddaughter stands on a small stool watching. Continues the Aaji-Aajoba series indoors.",
+    "subject": "an elderly Marathi grandmother (Aaji) in a cotton sari rolling out a roti on a wooden board at a kitchen counter with a small wooden rolling pin; her young granddaughter aged about 7 stands on a low wooden stool beside her in a simple frock watching closely; a steel tawa and a stack of finished rotis sit on the counter",
+    "config": {
+      "style.tradition": "hanna-barbera-flat-cartoon",
+      "style.age_range": "kids-6-9",
+      "subject.character_archetype": "elderly-marathi-couple",
+      "subject.emotion": "gentle",
+      "subject.props": "no-prop",
+      "scene.setting": "cozy-cottage-interior",
+      "scene.time_of_day": "morning",
+      "scene.environmental_density": "balanced",
+      "narrative.moment": "shared-secret",
+      "narrative.story_beat": "Aaji is teaching her granddaughter the family roti recipe; the girl is paying close attention to the wrist motion.",
+      "composition.layout": "two-figure-balance",
+      "composition.framing": "medium",
+      "composition.character_count": 2
+    },
+    "seed": 35
+  },
+  "coloring-kids-fox-kits-blackberries": {
+    "engine": "childrens-coloring-book",
+    "description": "Beatrix Potter — a mother fox in a waistcoat picking blackberries from a hedgerow bush with her two small kits reaching up beside her.",
+    "subject": "a mother fox in a small waistcoat standing on her hind legs picking blackberries from a tall hedgerow bush; two small fox kits sit beside her on the grass looking up; a wicker basket on the ground holds the berries already picked",
+    "config": {
+      "style.tradition": "beatrix-potter-naturalistic",
+      "style.age_range": "kids-6-9",
+      "subject.character_archetype": "whimsical-fox",
+      "subject.emotion": "gentle",
+      "subject.props": "picnic-basket",
+      "scene.setting": "magical-meadow",
+      "scene.time_of_day": "morning",
+      "scene.environmental_density": "balanced",
+      "narrative.moment": "quiet-rest",
+      "narrative.story_beat": "Late-summer berry-picking; the mother fox passes a single berry down to the smaller kit.",
+      "composition.layout": "two-figure-balance",
+      "composition.framing": "wide",
+      "composition.character_count": 3
+    },
+    "seed": 37
+  },
+  "coloring-kids-diwali-diya-lighting": {
+    "engine": "childrens-coloring-book",
+    "description": "Eric Carle bold — two children lighting small clay diya lamps around a simple rangoli pattern on the floor for Diwali night.",
+    "subject": "two young children (a brother and sister) kneeling on the floor lighting small clay diya oil lamps arranged in a circle around a simple rangoli pattern; the rangoli has flower petals and dots; a small box of matches sits beside them; deep night sky outside the window with a few stars",
+    "config": {
+      "style.tradition": "eric-carle-bold",
+      "style.age_range": "kids-6-9",
+      "subject.character_archetype": "adventurous-child",
+      "subject.emotion": "gentle",
+      "subject.props": "lantern-glowing",
+      "scene.setting": "cozy-cottage-interior",
+      "scene.time_of_day": "night-moonlit",
+      "scene.environmental_density": "balanced",
+      "narrative.moment": "decision-to-help",
+      "narrative.story_beat": "It is Diwali night; the children have been trusted with lighting the diyas for the first time.",
+      "composition.layout": "two-figure-balance",
+      "composition.framing": "medium",
+      "composition.character_count": 2
+    },
+    "seed": 39
+  },
+  "coloring-preteen-dragon-over-village": {
+    "engine": "childrens-coloring-book",
+    "description": "Miyazaki storyboard — a friendly long-necked dragon gliding over a small thatched-roof village at dusk; villagers below wave up. Pre-teen complexity.",
+    "subject": "a friendly long-necked dragon with soft folded wings gliding low over a small thatched-roof village at dusk; the village has three or four houses with simple square windows and triangular roofs; a winding cobble path runs between them; two or three small villagers in the street are waving up at the dragon; distant rolling hills behind",
+    "config": {
+      "style.tradition": "miyazaki-storyboard",
+      "style.age_range": "pre-teen-10-12",
+      "subject.character_archetype": "friendly-dragon",
+      "subject.emotion": "joyful",
+      "subject.props": "no-prop",
+      "scene.setting": "village-square",
+      "scene.time_of_day": "dusk",
+      "scene.environmental_density": "rich",
+      "narrative.moment": "triumph-celebration",
+      "narrative.story_beat": "The dragon has just helped the village all afternoon; now it makes its evening farewell flight before disappearing over the hills.",
+      "composition.layout": "environmental-wide",
+      "composition.framing": "extreme-wide",
+      "composition.character_count": 4
+    },
+    "seed": 41
+  },
   "coloring-aaji-aajoba-page4-rabbit-and-kit": {
     "engine": "childrens-coloring-book",
     "description": "Page 4 — A cottontail mother and her baby kit appear at the edge of the patio; Aaji crouches with a piece of carrot, Aajoba pointing in wonder. The closing page of the series.",
