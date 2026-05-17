@@ -3012,7 +3012,7 @@ const FIELD_HELP = {
 function optionsFor(field) {
   const cfg = state.config || {};
   if (field.choices) return field.choices.map(v => ({ value:v, label:v }));
-  if (field.options === "profiles") return [{value:"", label:"preset default"}, {value:"cool", label:"cool"}, {value:"balanced", label:"balanced"}, {value:"max", label:"max"}];
+  if (field.options === "profiles") return [{value:"", label:"preset default"}, {value:"cool", label:"cool — schnell @ 4 steps (~25 s)"}, {value:"balanced", label:"balanced — dev @ 18 steps (~3 min)"}, {value:"max", label:"max — dev @ 25 steps (~5 min)"}, {value:"quality", label:"quality — dev @ 36 steps + fp16 (production grade, ~12 min)"}];
   if (field.options === "seriesOptional") return [{value:"", label:"none"}, ...(cfg.series || []).map(v => ({value:v, label:v}))];
   if (field.options === "presetsOptional") return [{value:"", label:"none"}, ...(cfg.presets || []).map(v => ({value:v, label:v}))];
   if (field.options === "enginesOptional") return [{value:"", label:"all"}, ...(cfg.engines || []).map(v => ({value:v, label:v}))];

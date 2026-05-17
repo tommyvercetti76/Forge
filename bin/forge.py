@@ -120,6 +120,10 @@ PROFILES = {
     "cool":     {"flux_model": "schnell", "flux_steps": 4,  "flux_guidance": 0.0, "cooldown": 20.0},
     "balanced": {"flux_model": "dev",     "flux_steps": 18, "flux_guidance": None, "cooldown": 5.0},
     "max":      {"flux_model": "dev",     "flux_steps": 25, "flux_guidance": None, "cooldown": 0.0},
+    # Production-grade: 36 steps + fp16 (no quantization) for line-art /
+    # iconographic work where every pixel matters. Pairs with --hi-res /
+    # --ultra-res. ~12-15 min per render at ultra-res.
+    "quality":  {"flux_model": "dev",     "flux_steps": 36, "flux_guidance": None, "cooldown": 0.0, "quantize": 0},
 }
 
 _TMP_PATHS: set[Path] = set()
@@ -1081,6 +1085,9 @@ def flux_generate(
     tmp_out = _register_tmp(_tmp_sibling(out_path))
     eff_w = int(width) if width else THUMB_W
     eff_h = int(height) if height else THUMB_H
+    # Profile can override quantize (e.g. "quality" profile forces fp16).
+    if quantize is None and profile and "quantize" in PROFILES.get(profile, {}):
+        quantize = PROFILES[profile]["quantize"]
     cmd = [
         "mflux-generate",
         *_mflux_runtime_args(quantize),

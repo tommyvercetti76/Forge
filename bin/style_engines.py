@@ -1187,13 +1187,30 @@ class IndianClassicalEngine(Engine):
         "secondary": {"hex": "#D4A04C", "role": "saffron/marigold/gold-leaf complement, jewelry + garment + halo"},
         "accent":    {"hex": "#9C2A2A", "role": "deep-red sindoor / kumkum / lotus / ceremonial cloth"},
     }
-    default_runtime = {"model": "dev", "steps": 30, "guidance": 4.0}
+    default_runtime = {"model": "dev", "steps": 32, "guidance": 5.0}
     engine_negatives: ClassVar[tuple[str, ...]] = (
+        # Wrong aesthetic / register
         "plastic-doll skin", "Disney-cute proportions", "anime stylization",
         "3D rendered look", "Western cartoon aesthetic", "chibi proportions",
         "modern brand poster style", "studio strobe lighting", "neon glow",
         "smooth digital airbrush", "rainbow chromatic aberration",
         "incorrect iconography", "non-period costume",
+        # FLUX-default noise / dreaminess (the same problem that hit mandala-art)
+        "AI glow", "halation glow", "soft focus haze", "milky highlight",
+        "halation bloom", "bloom around bright objects",
+        "dreamy gradient edges", "blurred contour", "anti-aliased fuzz",
+        "AI grain", "film grain", "JPEG artifact", "compression artifact",
+        "moire pattern", "halftone dots", "stipple shading",
+        "paper texture noise", "noisy speckled background",
+        # Anatomy + iconography failure modes
+        "anatomically wrong limbs", "extra fingers", "fused fingers",
+        "missing fingers", "six fingers", "deformed hands", "extra toes",
+        "asymmetric eyes", "mismatched eyes", "lazy eye", "fused eyes",
+        "wrong number of arms for the deity", "missing attribute object",
+        "wrong attribute object", "broken jewelry detail",
+        # Page-format killers
+        "watermark", "signature", "artist tag", "text overlay",
+        "page number", "stock photo logo", "subtitle bar",
     )
     # Closest curated match — no Pahari/Tanjore-specific FLUX LoRA exists yet.
     # Indo-Realism pulls toward Indian visual idiom even though it's not
@@ -1262,6 +1279,31 @@ class IndianClassicalEngine(Engine):
             "specific period-correct fold patterns). NO plastic-doll skin, NO "
             "Western cartoon cute eyes, NO 3D-render look. The image should feel "
             "like it could hang in a household puja room — sacred, not novelty.",
+
+            "ANATOMY GUARD: every figure has the CORRECT count of limbs, eyes, "
+            "fingers (5 per hand unless the deity's iconography demands "
+            "otherwise — e.g. Shiva's third eye, Brahma's four heads, Durga's "
+            "ten arms — those are SACRED and must be drawn cleanly). Hands are "
+            "expressive but anatomically sound. Eyes are bilaterally matched "
+            "(no lazy-eye, no asymmetric pupils). Faces never wander into the "
+            "uncanny valley.",
+
+            "RENDER FIDELITY: paint the image as if photographed from a hand-"
+            "made original — a Madhubani painting on cream cotton paper, a "
+            "Tanjore panel with raised gold-leaf and gem-inlay, a Pahari "
+            "miniature on hand-pressed wasli paper. NO AI dreaminess, NO "
+            "halation glow around figures, NO milky soft-focus across the "
+            "frame, NO halftone dots in the background, NO JPEG-style grain. "
+            "Brush + pigment strokes where the tradition implies them; flat "
+            "saturated colour fields where it does (Madhubani is flat, Ravi "
+            "Varma is shaded). Crisp edges between colour regions.",
+
+            "REFERENCE STANDARD: match the production quality of museum-grade "
+            "originals — Sita Devi's Madhubani panels at Mithila Museum "
+            "(Niigata), Tanjore gilt panels at the Saraswathi Mahal Library, "
+            "Pahari miniatures at the V&A, Raja Ravi Varma oleographs at the "
+            "Trivandrum Sri Chitra gallery. Every figure recognizable + "
+            "iconographically correct + period-appropriate.",
         ])
         prompt = "\n\n".join(prompt_parts)
 
