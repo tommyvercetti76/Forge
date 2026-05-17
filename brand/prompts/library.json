@@ -502,6 +502,100 @@
     },
     "seed": 41
   },
+  "_about_mandala_art": "MandalaArtEngine recipes — FLUX-driven subject mandalas for adult coloring. Different from `forge mandala` (which is exact procedural geometry without a subject).",
+
+  "mandala-whale-zentangle": {
+    "engine": "mandala-art",
+    "description": "A humpback whale silhouette filled with zentangle micro-patterns; bilateral symmetry. Classic Johanna Basford 'Lost Ocean' register.",
+    "subject": "a humpback whale in side profile",
+    "config": {
+      "subject.treatment": "subject-silhouette-filled",
+      "style.tradition": "zentangle-organic",
+      "style.complexity": "high-meditation",
+      "style.symmetry": "bilateral",
+      "composition.border": "freeform-bleed"
+    },
+    "seed": 7
+  },
+  "mandala-lion-head-zentangle": {
+    "engine": "mandala-art",
+    "description": "A noble lion's head facing forward, mane composed of intricate radial zentangle patterns. Strong front-facing portrait.",
+    "subject": "a noble lion head facing the viewer with a full radiating mane",
+    "config": {
+      "subject.treatment": "subject-silhouette-filled",
+      "style.tradition": "zentangle-organic",
+      "style.complexity": "high-meditation",
+      "style.symmetry": "bilateral",
+      "composition.border": "concentric-rings"
+    },
+    "seed": 11
+  },
+  "mandala-lotus-sacred-geometry": {
+    "engine": "mandala-art",
+    "description": "A lotus flower at the exact center; concentric sacred-geometry rings build outward (Flower-of-Life + Sri-Yantra cues). 12-fold rotational.",
+    "subject": "a fully-opened lotus flower seen from directly above",
+    "config": {
+      "subject.treatment": "subject-at-center-rings",
+      "style.tradition": "sacred-geometry",
+      "style.complexity": "high-meditation",
+      "style.symmetry": "12-fold-rotational",
+      "composition.border": "concentric-rings"
+    },
+    "seed": 13
+  },
+  "mandala-tree-of-life-art-nouveau": {
+    "engine": "mandala-art",
+    "description": "A Tree of Life — roots form the central mandala, branches form the outer rings; Mucha + Klimt influence. Subject and mandala are one organic whole.",
+    "subject": "a Tree of Life with deep symmetrical roots below and a spreading canopy of branches above",
+    "config": {
+      "subject.treatment": "subject-emerging-mandala",
+      "style.tradition": "floral-art-nouveau",
+      "style.complexity": "high-meditation",
+      "style.symmetry": "bilateral",
+      "composition.border": "outer-frame-square"
+    },
+    "seed": 17
+  },
+  "mandala-peacock-henna": {
+    "engine": "mandala-art",
+    "description": "A peacock with its tail fanned full circle — body at center, tail-feather eyes as the rotational motif. Henna-mehndi vocabulary; bridal-grade density.",
+    "subject": "a peacock with its tail feathers fanned in a full radial circle around its body",
+    "config": {
+      "subject.treatment": "subject-at-center-rings",
+      "style.tradition": "henna-mehndi",
+      "style.complexity": "extreme-zentangle",
+      "style.symmetry": "12-fold-rotational",
+      "composition.border": "concentric-rings"
+    },
+    "seed": 19
+  },
+  "mandala-owl-madhubani": {
+    "engine": "mandala-art",
+    "description": "A wise owl facing forward, body and wings filled with Madhubani folk patterns (double-line borders, geometric and floral fills). Mithila tradition.",
+    "subject": "a wise owl facing forward with wings spread slightly",
+    "config": {
+      "subject.treatment": "subject-silhouette-filled",
+      "style.tradition": "madhubani-mandala",
+      "style.complexity": "high-meditation",
+      "style.symmetry": "bilateral",
+      "composition.border": "outer-frame-square"
+    },
+    "seed": 23
+  },
+  "mandala-butterfly-kaleidoscope": {
+    "engine": "mandala-art",
+    "description": "Six butterflies arranged in a radial kaleidoscope; each butterfly is a tile of the mandala. Subject-as-motif.",
+    "subject": "a single butterfly motif (the same butterfly will be tiled radially around the center)",
+    "config": {
+      "subject.treatment": "subject-radial-composed",
+      "style.tradition": "zentangle-organic",
+      "style.complexity": "high-meditation",
+      "style.symmetry": "6-fold-rotational",
+      "composition.border": "concentric-rings"
+    },
+    "seed": 29
+  },
+
   "coloring-aaji-aajoba-page4-rabbit-and-kit": {
     "engine": "childrens-coloring-book",
     "description": "Page 4 — A cottontail mother and her baby kit appear at the edge of the patio; Aaji crouches with a piece of carrot, Aajoba pointing in wonder. The closing page of the series.",

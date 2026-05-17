@@ -1871,6 +1871,334 @@ class ChildrensColoringBookEngine(Engine):
 
 
 # ════════════════════════════════════════════════════════════════════════════
+# MandalaArtEngine — FLUX-driven SUBJECT mandalas ("make a mandala whale")
+# ════════════════════════════════════════════════════════════════════════════
+#
+# Different from `forge mandala` (procedural polar geometry, no subject).
+# This engine lets you say `--subject "whale"` and get a coloring-book-grade
+# mandala where the subject is the central organizing element — its body
+# filled with intricate symmetric line-patterns, or its silhouette built
+# from radially-arranged motifs.
+
+
+_MA_TRADITION = EnumBank("tradition", [
+    EnumValue(
+        "zentangle-organic",
+        "Zentangle method (Maria Thomas + Rick Roberts, 2003-present): dense "
+        "organic micro-pattern fills inside every closed shape. Each region of "
+        "the subject is filled with a DIFFERENT repeating pattern — dots, "
+        "stripes, scales, swirls, leaf-veins, brickwork, fish-scales, "
+        "honeycomb, crosshatch. The pattern fills are CLOSED-LINE only "
+        "(decorative line work bounded inside outlines, NOT shaded fills).",
+        masters=("Maria Thomas + Rick Roberts — Zentangle (2003-)", "Johanna Basford — Secret Garden (2013), Lost Ocean (2015)"),
+    ),
+    EnumValue(
+        "sacred-geometry",
+        "Sacred-geometry tradition: precise compass-and-straightedge composition, "
+        "interlocking circles (Flower of Life, Seed of Life), interlocking "
+        "triangles (Sri Yantra style), hexagons + dodecagons, golden-ratio "
+        "spiral motifs, exact rotational symmetry, mathematical precision over "
+        "organic flow.",
+        masters=("Sri Yantra (ancient Vedic)", "Flower of Life (cross-cultural sacred-geometry tradition)", "Metatron's Cube"),
+    ),
+    EnumValue(
+        "henna-mehndi",
+        "Indian/Middle-Eastern henna-mehndi decorative vocabulary: paisley "
+        "(mango-shape) motifs, lotus rosettes, vine + leaf curls, peacock "
+        "feather fans, jali (lattice) infill, dense flowing organic line. "
+        "Bridal-grade complexity in places, breathing room elsewhere.",
+        masters=("traditional Rajasthani + Punjabi mehndi designs", "Moroccan + Persian henna traditions"),
+    ),
+    EnumValue(
+        "madhubani-mandala",
+        "Madhubani / Mithila folk tradition translated to mandala: double-line "
+        "border around every shape, geometric + floral fill patterns (cross-hatch, "
+        "dot-clusters, leaf-veins) inside the outlines, classic Madhubani motifs "
+        "(fish, lotus, sun, bird, snake) arranged symmetrically. Folk-art "
+        "naivete with technical density.",
+        masters=("Sita Devi (Padma Shri 1981)", "Ganga Devi", "Bharti Dayal"),
+    ),
+    EnumValue(
+        "floral-art-nouveau",
+        "Alphonse Mucha + Vienna Secession art-nouveau botanical: flowing "
+        "tendril-line decoration, hair-as-vine motifs, decorative botanical "
+        "framing (lily, rose, ivy, wisteria), Mucha-style halo behind the "
+        "subject, ornamental but never crowded. The subject is enthroned by "
+        "the decoration.",
+        masters=("Alphonse Mucha — Job (1896), The Seasons (1896)", "Gustav Klimt — Tree of Life (1909)"),
+    ),
+])
+
+_MA_TREATMENT = EnumBank("treatment", [
+    EnumValue(
+        "subject-silhouette-filled",
+        "The subject is a clear silhouette / outline, and the INTERIOR of that "
+        "outline is filled with intricate mandala patterns. Outside the subject's "
+        "outline: white space OR a simple radial background. Best for clear "
+        "animal subjects (whale, lion, elephant, owl).",
+    ),
+    EnumValue(
+        "subject-at-center-rings",
+        "The subject sits at the exact center of the canvas; concentric "
+        "decorative mandala rings build OUTWARD from it. The subject itself is "
+        "rendered cleanly (not pattern-filled); the mandala is the frame. Best "
+        "for symbolic singular subjects (lotus, eye, sun, tree).",
+    ),
+    EnumValue(
+        "subject-radial-composed",
+        "Multiple instances of the subject (or its motifs) arranged in a "
+        "rotationally-symmetric pattern around a central axis — like petals on "
+        "a flower. The subject becomes the unit-tile of the mandala. Best for "
+        "small repeatable motifs (butterfly, fish, leaf, bird).",
+    ),
+    EnumValue(
+        "subject-emerging-mandala",
+        "The subject GROWS OUT of the mandala — for example, a tree's roots are "
+        "the central mandala and its branches form the outer rings; or a "
+        "phoenix rises from a flame-mandala base. Subject and mandala are one "
+        "organic whole.",
+    ),
+])
+
+_MA_SYMMETRY = EnumBank("symmetry", [
+    EnumValue(
+        "bilateral",
+        "Bilateral (left-right mirror) symmetry only. Best when the subject is "
+        "an animal or figure that naturally reads bilaterally (whale, owl, "
+        "elephant, lion head, dragon).",
+    ),
+    EnumValue(
+        "4-fold-rotational",
+        "4-fold rotational symmetry — composition rotates around the center "
+        "every 90°. Common for cross-pattern mandalas and quadripartite designs.",
+    ),
+    EnumValue(
+        "6-fold-rotational",
+        "6-fold rotational symmetry (every 60°). Snowflake / star-of-david / "
+        "honeycomb logic.",
+    ),
+    EnumValue(
+        "8-fold-rotational",
+        "8-fold rotational symmetry (every 45°). The classical Indian + "
+        "Tibetan mandala count.",
+    ),
+    EnumValue(
+        "12-fold-rotational",
+        "12-fold rotational symmetry (every 30°). Common for floral mandalas "
+        "and clock-face arrangements.",
+    ),
+    EnumValue(
+        "16-fold-rotational",
+        "16-fold rotational symmetry (every 22.5°). High-density mandala "
+        "register.",
+    ),
+    EnumValue(
+        "kaleidoscope",
+        "Full dihedral kaleidoscope — radial PLUS reflective mirror symmetry. "
+        "The whole image folds onto itself any way you slice it.",
+    ),
+])
+
+_MA_COMPLEXITY = EnumBank("complexity", [
+    EnumValue(
+        "medium-adult",
+        "Medium complexity: ~30-60 distinct closed regions. Balance between "
+        "detail and colorability. Pleasant for an adult coloring session of "
+        "30-60 minutes.",
+    ),
+    EnumValue(
+        "high-meditation",
+        "High complexity: ~80-150 closed regions, dense pattern-fill. A "
+        "meditation-grade coloring page that takes 2-4 hours. Adult coloring "
+        "book bestseller density.",
+    ),
+    EnumValue(
+        "extreme-zentangle",
+        "Extreme zentangle complexity: 200+ closed regions, every interior "
+        "filled with a distinct micro-pattern. Professional adult coloring "
+        "book grade; takes a full evening to color one page.",
+    ),
+])
+
+_MA_BORDER = EnumBank("border", [
+    EnumValue(
+        "concentric-rings",
+        "Multiple concentric circular borders around the central mandala, each "
+        "ring carrying a different repeating motif (dot-band, vine-band, "
+        "geometric-band). The outermost ring is the largest decorative band.",
+    ),
+    EnumValue(
+        "outer-frame-square",
+        "A square outer frame around the circular mandala, with corner-motifs "
+        "filling the four corner spaces between circle and square (often "
+        "floral or geometric).",
+    ),
+    EnumValue(
+        "freeform-bleed",
+        "No formal outer border — the mandala bleeds toward the canvas edges "
+        "with motifs softening to white space at the periphery. Loose feel.",
+    ),
+    EnumValue(
+        "hexagonal-frame",
+        "A hexagonal outer frame (sacred-geometry style) containing the inner "
+        "circular composition.",
+    ),
+])
+
+
+@dataclass(frozen=True)
+class MASubjectConfig:
+    subject: str                              # e.g. "whale", "lion head", "lotus", "tree of life"
+    treatment: str = "subject-silhouette-filled"
+
+@dataclass(frozen=True)
+class MAStyleConfig:
+    tradition: str = "zentangle-organic"
+    complexity: str = "high-meditation"
+    symmetry: str = "bilateral"
+
+@dataclass(frozen=True)
+class MACompositionConfig:
+    border: str = "concentric-rings"
+
+@dataclass(frozen=True)
+class MandalaArtConfig:
+    subject: MASubjectConfig
+    style: MAStyleConfig = field(default_factory=MAStyleConfig)
+    composition: MACompositionConfig = field(default_factory=MACompositionConfig)
+    seed: int = 1
+
+
+class MandalaArtEngine(Engine):
+    name: ClassVar[str] = "mandala-art"
+    config_cls: ClassVar[type] = MandalaArtConfig
+    masters: ClassVar[tuple[str, ...]] = (
+        "Johanna Basford — Secret Garden (2013), Lost Ocean (2015): pioneered the modern subject-mandala adult coloring genre",
+        "Maria Thomas + Rick Roberts — Zentangle method (2003-): organic micro-pattern fill discipline",
+        "Sri Yantra (Vedic) + Flower of Life: sacred-geometry exact-symmetry tradition",
+        "Alphonse Mucha — Job (1896): art-nouveau floral framing of a central subject",
+        "Sita Devi (Madhubani / Mithila, Padma Shri 1981): folk-mandala narrative motif tradition",
+    )
+    palette_60_30_10 = {
+        "dominant":  {"hex": "#FFFFFF", "role": "pure white paper / fillable region — 90% of pixels"},
+        "secondary": {"hex": "#000000", "role": "black ink line — fine, precise, closed continuous outlines"},
+        "accent":    {"hex": "#000000", "role": "no chromatic accent (line art); accent via colorist's hand"},
+    }
+    default_runtime = {"model": "dev", "steps": 32, "guidance": 6.5}
+    engine_negatives: ClassVar[tuple[str, ...]] = (
+        "color", "colored", "color illustration", "RGB fill", "saturated tone",
+        "grey fill", "tonal shading", "gradient", "interior shading",
+        "photorealism", "photographic detail", "rendered shadow",
+        "3D rendered", "Disney plastic", "Pixar volumetric",
+        "anime stylization", "manga giant chibi eyes",
+        "AI glow", "halation glow", "soft focus haze", "milky highlight",
+        "watercolor wash", "ink wash bleed",
+        "watermark", "signature", "artist tag", "text overlay", "page number",
+        "asymmetric mistakes", "broken symmetry", "wandering loose lines",
+        "scribbled rough sketch", "messy uncertain line",
+        "menacing expression on subject", "predatory teeth", "scary",
+        "gore", "blood", "violence",
+    )
+    TRADITION = _MA_TRADITION
+    TREATMENT = _MA_TREATMENT
+    SYMMETRY = _MA_SYMMETRY
+    COMPLEXITY = _MA_COMPLEXITY
+    BORDER = _MA_BORDER
+
+    @classmethod
+    def build(cls, config: MandalaArtConfig) -> Directive:
+        sub = config.subject
+        st = config.style
+        cmp = config.composition
+
+        tradition = cls.TRADITION.validate(st.tradition)
+        treatment = cls.TREATMENT.validate(sub.treatment)
+        symmetry = cls.SYMMETRY.validate(st.symmetry)
+        complexity = cls.COMPLEXITY.validate(st.complexity)
+        border = cls.BORDER.validate(cmp.border)
+
+        # Invariant: subject-radial-composed needs rotational symmetry, not bilateral.
+        if sub.treatment == "subject-radial-composed" and st.symmetry == "bilateral":
+            raise ValueError(
+                "invariant: treatment=subject-radial-composed needs rotational symmetry "
+                "(4-/6-/8-/12-/16-fold-rotational or kaleidoscope). Bilateral mirrors "
+                "the subject left-right but doesn't repeat it around the center. "
+                "Pick a rotational symmetry, OR change treatment to "
+                "subject-silhouette-filled / subject-at-center-rings."
+            )
+        # Invariant: sacred-geometry tradition reads best with rotational symmetry, not bilateral.
+        if st.tradition == "sacred-geometry" and st.symmetry == "bilateral":
+            raise ValueError(
+                "invariant: sacred-geometry tradition is rotational by construction "
+                "(Sri Yantra, Flower of Life, etc.) — pair with 6-/8-/12-fold-rotational "
+                "or kaleidoscope, not bilateral."
+            )
+
+        clean_subject = normalize_subject(sub.subject, max_chars=120)
+
+        audit = {
+            "tradition": tradition.description,
+            "treatment": treatment.description,
+            "symmetry": symmetry.description,
+            "complexity": complexity.description,
+            "border": border.description,
+        }
+
+        # T5-XXL prompt budget — lead with B&W + mandala framing, then subject,
+        # then style detail. Subject + treatment land in the first ~1200 chars.
+        tradition_short = tradition.description
+        if len(tradition_short) > 380:
+            tradition_short = tradition_short[:380].rsplit(". ", 1)[0] + "."
+
+        prompt_parts = [
+            "COLORING BOOK MANDALA PAGE — black ink line art on a pure white page. "
+            "NO COLOR. NO shading, NO gradient, NO grey, NO interior shaded fill. "
+            "Decorative pattern fills are line-only (zentangle micro-patterns "
+            "bounded inside closed outlines). Every region is a closed shape a "
+            "colorist can fill. White background edge-to-edge.",
+
+            f"CENTRAL SUBJECT: {clean_subject}.",
+
+            f"TREATMENT: {treatment.description}",
+
+            f"SYMMETRY: {symmetry.description}",
+
+            f"COMPLEXITY: {complexity.description}",
+
+            f"DECORATIVE TRADITION: {tradition.key} — {tradition_short}",
+
+            f"BORDER / FRAME: {border.description}",
+
+            "ABSOLUTE RULES: (1) the symmetry directive above is EXACT — left "
+            "and right sides (or rotational sectors) must mirror precisely, no "
+            "drift. (2) every interior pattern-fill is LINE-WORK only, not "
+            "shaded grey. (3) line weight is fine + consistent (technical-pen "
+            "feel), no thick-and-thin modulation within a stroke. (4) the "
+            "subject's anatomy stays recognizable underneath the patterning — "
+            "a whale still reads as a whale. (5) NO photorealism, NO 3D render, "
+            "NO AI-glow halo, NO watercolor wash, NO grey-toned fill. "
+            "ABSOLUTELY MONOCHROME LINE ART.",
+
+            "PAGE FORMAT: white background edge-to-edge, ~8% margin, NO frame "
+            "outside the mandala's own border (above), NO watermark, NO text, "
+            "NO page number, NO signature.",
+        ]
+        prompt = "\n\n".join(prompt_parts)
+
+        return Directive(
+            engine=cls.name,
+            positive=prompt,
+            negatives=tuple(cls.engine_negatives),
+            palette_60_30_10=dict(cls.palette_60_30_10),
+            runtime=dict(cls.default_runtime),
+            seed=int(config.seed),
+            audit=audit,
+            config=_config_to_dict(config),
+            masters=cls.masters,
+        )
+
+
+# ════════════════════════════════════════════════════════════════════════════
 # Registry + entry points
 # ════════════════════════════════════════════════════════════════════════════
 
@@ -1889,6 +2217,7 @@ ENGINES: dict[str, type[Engine]] = {
     ImpressionistPaintingEngine.name: ImpressionistPaintingEngine,
     IndianClassicalEngine.name: IndianClassicalEngine,
     ChildrensColoringBookEngine.name: ChildrensColoringBookEngine,
+    MandalaArtEngine.name: MandalaArtEngine,
 }
 
 
