@@ -1120,8 +1120,27 @@ def recorded_runs(limit: int = 40) -> list[dict[str, Any]]:
         return runs
     for manifest in sorted(WEB_RUNS_DIR.glob("*/manifest.json"), reverse=True)[:limit]:
         data = _read_json(manifest, None)
-        if isinstance(data, dict):
-            runs.append(data)
+        if not isinstance(data, dict):
+            continue
+        # Reconcile stale "running" status — a manifest still claiming running
+        # at server boot can't be alive (the process was a child of a server
+        # that has since died). Mark abandoned + rewrite so it stays correct
+        # across reloads.
+        if data.get("status") == "running" and data.get("ended_at") is None:
+            now = time.time()
+            data["status"] = "abandoned"
+            data["ended_at"] = now
+            data["elapsed"] = round(now - data.get("started_at", now), 1)
+            issues = list(data.get("issues") or [])
+            note = "server shut down before this job finished"
+            if note not in issues:
+                issues.append(note)
+            data["issues"] = issues[-20:]
+            try:
+                _write_json(manifest, data)
+            except Exception:
+                pass
+        runs.append(data)
     return runs
 
 
@@ -2116,6 +2135,7 @@ form { padding: 18px; display: grid; gap: 14px; }
 .status.running { color: var(--blue); animation: pixelBlink 1.2s steps(2, end) infinite; }
 .status.ok { color: var(--green); }
 .status.failed { color: var(--rose); }
+.status.abandoned { color: var(--muted); }
 @keyframes pixelBlink {
   50% { opacity: 0.45; }
 }
