@@ -2212,7 +2212,7 @@ class MandalaArtEngine(Engine):
         "secondary": {"hex": "#000000", "role": "black ink line — fine, precise, closed continuous outlines"},
         "accent":    {"hex": "#000000", "role": "no chromatic accent (line art); accent via colorist's hand"},
     }
-    default_runtime = {"model": "dev", "steps": 28, "guidance": 7.5}
+    default_runtime = {"model": "dev", "steps": 32, "guidance": 8.5}
     engine_negatives: ClassVar[tuple[str, ...]] = (
         # Color / shading killers
         "color", "colored", "color illustration", "RGB fill", "saturated tone",
@@ -2222,6 +2222,15 @@ class MandalaArtEngine(Engine):
         "anime stylization", "manga giant chibi eyes",
         "AI glow", "halation glow", "soft focus haze", "milky highlight",
         "watercolor wash", "ink wash bleed",
+        # Line-quality killers (the noise the owl reference shows ZERO of)
+        "pencil sketch", "pencil grain", "graphite shading",
+        "sketchy line", "uncertain line", "wavering stroke", "wandering stroke",
+        "double-stroke", "parallel hatching", "cross-hatching", "scribbled fill",
+        "halftone dots", "stipple shading", "dotted noise", "speckled noise",
+        "paper texture noise", "grain texture", "AI grain", "film grain",
+        "JPEG artifact", "moire pattern", "compression artifact",
+        "off-white paper", "yellowed paper", "aged paper", "vignette",
+        "soft fuzzy edges", "blurred contour", "anti-aliased fuzz",
         # Page-format killers
         "watermark", "signature", "artist tag", "text overlay", "page number",
         "scribbled rough sketch", "messy uncertain line",
@@ -2241,6 +2250,9 @@ class MandalaArtEngine(Engine):
         "all regions the same size", "all tiny regions",
         "patterns ignoring anatomy direction", "patterns running cross-grain",
         "anxious busy chaotic feel",
+        # Subject-mandala integration failure modes
+        "subject floating disconnected from mandala", "mandala as wallpaper behind subject",
+        "subject and ornament living in separate plates",
     )
     TRADITION = _MA_TRADITION
     TREATMENT = _MA_TREATMENT
@@ -2362,15 +2374,33 @@ class MandalaArtEngine(Engine):
 
             *(["OUTER BORDER / FRAME: " + border.description] if border.key != "from-prompt" else []),
 
-            "LINE DISCIPLINE: VARIED line weights (thickest at silhouette, "
-            "finest at micro-detail). Technical-pen ink feel, clean closed "
-            "outlines, no broken or wandering strokes. NO photorealism, NO 3D "
-            "render, NO AI-glow halo, NO watercolor wash. Absolutely monochrome "
-            "black line on white paper.",
+            "LINE DISCIPLINE: every contour is a SINGLE confident technical-pen "
+            "ink stroke — NOT a pencil sketch, NOT multiple parallel try-lines, "
+            "NOT cross-hatched shading. Varied line WEIGHTS only (thickest at "
+            "silhouette, medium at major divisions, finest at micro-detail) — "
+            "but each individual stroke is crisp, unbroken, closed. The line is "
+            "vector-grade: a printer could lay this down as solid black ink at "
+            "any resolution. No grain, no jitter, no fuzz, no halation around "
+            "the line. NO photorealism, NO 3D render, NO AI-glow halo, NO "
+            "watercolor wash, NO pencil shading. Absolutely monochrome black "
+            "ink on PURE WHITE paper.",
+
+            "PAPER QUALITY: the white background is RGB pure-white (#FFFFFF) "
+            "edge-to-edge — NOT off-white, NOT cream, NOT yellowed, NOT textured "
+            "paper, NOT noisy/grainy, NOT halftone-dotted. Print-ready vector "
+            "feel: as if scanned at 600dpi from a clean inked original.",
 
             "PAGE FORMAT: pure white background edge-to-edge, ~8% margin, NO "
             "outer frame beyond the mandala's own border, NO watermark, NO "
             "text, NO page number, NO signature.",
+
+            "REFERENCE STANDARD: match the production quality of professional "
+            "adult-coloring-book pages (Johanna Basford 'Secret Garden' 2013, "
+            "the Dover Creative Haven mandala series, Daria Song 'Time Garden' "
+            "2014): every stroke deliberate, every region closed, breathing "
+            "zones honoured, subject anatomy preserved + recognizable at thumbnail "
+            "size, ornament emerging FROM the subject rather than overlaid as "
+            "a separate plate behind it.",
         ]
         prompt = "\n\n".join(prompt_parts)
 
