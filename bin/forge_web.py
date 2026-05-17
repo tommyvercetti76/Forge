@@ -30,6 +30,7 @@ except ImportError:
     psutil = None  # type: ignore
     _PSUTIL = False
 
+import forge_gallery
 from forge_runtime import FORGE_STATE_HOME, child_env
 
 
@@ -1120,6 +1121,42 @@ class Handler(BaseHTTPRequestHandler):
                     self._json(job.snapshot())
             elif parsed.path == "/api/browse":
                 self._json(browse_payload(query.get("path", [None])[0]))
+            elif parsed.path == "/api/gallery":
+                engine = query.get("engine", [None])[0] or None
+                recipe = query.get("recipe", [None])[0] or None
+                rating_raw = query.get("rating", [None])[0]
+                rating = int(rating_raw) if rating_raw not in (None, "", "all") else None
+                limit = int(query.get("limit", ["120"])[0])
+                offset = int(query.get("offset", ["0"])[0])
+                order_by = query.get("order_by", ["ts_desc"])[0]
+                self._json({
+                    "renders": forge_gallery.list_renders(
+                        engine=engine, recipe=recipe, rating=rating,
+                        limit=limit, offset=offset, order_by=order_by,
+                    ),
+                    "stats": forge_gallery.stats(),
+                })
+            elif parsed.path.startswith("/api/gallery/"):
+                tail = parsed.path[len("/api/gallery/"):]
+                if tail == "stats":
+                    self._json(forge_gallery.stats())
+                else:
+                    try:
+                        render_id = int(tail)
+                    except ValueError:
+                        self._json({"error": "invalid render id"}, HTTPStatus.BAD_REQUEST)
+                        return
+                    row = forge_gallery.get_render(render_id)
+                    if not row:
+                        self._json({"error": "render not found"}, HTTPStatus.NOT_FOUND)
+                    else:
+                        self._json(row)
+            elif parsed.path == "/api/suggestions":
+                engine = query.get("engine", [""])[0]
+                if not engine:
+                    self._json({"error": "engine query param required"}, HTTPStatus.BAD_REQUEST)
+                    return
+                self._json({"suggestion": forge_gallery.top_rated_config(engine)})
             elif parsed.path == "/api/file":
                 raw = query.get("path", [""])[0]
                 path = _expand(raw)
@@ -1159,6 +1196,16 @@ class Handler(BaseHTTPRequestHandler):
                 else:
                     job.stop()
                     self._json({"ok": True})
+            elif parsed.path == "/api/ratings":
+                body = self._read_body()
+                rid = body.get("render_id")
+                rating = body.get("rating")
+                notes = body.get("notes")
+                if rid is None or rating is None:
+                    self._json({"error": "render_id and rating required"}, HTTPStatus.BAD_REQUEST)
+                    return
+                forge_gallery.set_rating(int(rid), int(rating), notes if isinstance(notes, str) else None)
+                self._json({"ok": True, "render": forge_gallery.get_render(int(rid))})
             elif parsed.path == "/api/reveal":
                 body = self._read_body()
                 path = _expand(str(body.get("path") or ""))
@@ -1462,6 +1509,208 @@ form { padding: 18px; display: grid; gap: 14px; }
 .toast.error   { border-left-color: var(--rose);  color: var(--rose);  }
 .toast.success { border-left-color: var(--green); color: var(--green); }
 .toast.info    { border-left-color: var(--gold);  color: var(--gold);  }
+
+/* Smart-suggestion banner — shown above engine forms when prior ratings exist */
+.suggestion-banner {
+  margin: 0 18px 12px;
+  padding: 12px 14px;
+  border: 2px solid var(--green-dim);
+  border-left-width: 6px;
+  background: var(--surface-2);
+  display: grid;
+  gap: 8px;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  box-shadow: var(--shadow);
+}
+.suggestion-banner .suggestion-summary {
+  font: 13px/1.5 var(--font-ui);
+  color: var(--ink);
+}
+.suggestion-banner .suggestion-summary::before { content: "💡 "; }
+.suggestion-banner strong { color: var(--green); }
+.suggestion-banner button {
+  font-size: 10px;
+  padding: 8px 12px;
+}
+
+/* Gallery — render grid + filter row + rating buttons + detail modal layout */
+.gallery-filters {
+  display: flex;
+  gap: 14px;
+  align-items: center;
+  flex-wrap: wrap;
+  padding: 14px 18px;
+  background: var(--surface-2);
+  border: 2px solid var(--line);
+  margin-bottom: 16px;
+}
+.gallery-filters label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font: 9px/1 var(--font-pixel);
+  letter-spacing: 1.2px;
+  color: var(--muted);
+  text-transform: uppercase;
+}
+.gallery-filters select {
+  border: 2px solid var(--line);
+  background: var(--bg-deep);
+  color: var(--ink-bright);
+  padding: 6px 10px;
+  font: 13px var(--font-ui);
+  border-radius: 0;
+  appearance: none;
+  padding-right: 24px;
+  background-image: linear-gradient(45deg, transparent 50%, var(--green) 50%), linear-gradient(-45deg, transparent 50%, var(--green) 50%);
+  background-position: right 10px center, right 5px center;
+  background-size: 5px 5px;
+  background-repeat: no-repeat;
+}
+.gallery-stats {
+  margin-left: auto;
+  font: 12px/1 var(--font-mono);
+  color: var(--muted);
+}
+.gallery-stats strong { color: var(--gold); font-size: 14px; }
+
+.gallery-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 14px;
+  padding: 0 18px 18px;
+}
+.gallery-card {
+  background: var(--surface);
+  border: 2px solid var(--line);
+  box-shadow: var(--shadow);
+  display: grid;
+  grid-template-rows: auto auto auto;
+  overflow: hidden;
+}
+.gallery-card.rating-2  { border-color: var(--gold);   box-shadow: 0 4px 0 var(--bg-deep), 0 0 0 1px var(--gold)   inset; }
+.gallery-card.rating-1  { border-color: var(--green);  box-shadow: 0 4px 0 var(--bg-deep), 0 0 0 1px var(--green)  inset; }
+.gallery-card.rating--1 { border-color: var(--rose);   opacity: 0.55; }
+.gallery-thumb {
+  display: block;
+  background: var(--bg-deep);
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+}
+.gallery-thumb img {
+  width: 100%; height: 100%;
+  object-fit: cover;
+  display: block;
+  image-rendering: auto;
+}
+.gallery-meta {
+  padding: 10px 12px 4px;
+  display: grid;
+  gap: 3px;
+}
+.gallery-engine {
+  font: 9px/1 var(--font-pixel);
+  letter-spacing: 1.5px;
+  color: var(--gold);
+  text-transform: uppercase;
+}
+.gallery-sub {
+  font: 11px/1 var(--font-mono);
+  color: var(--muted);
+}
+.gallery-subject {
+  font: 12px/1.4 var(--font-ui);
+  color: var(--ink);
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  min-height: 32px;
+}
+.gallery-ratings {
+  display: flex;
+  gap: 4px;
+  padding: 8px 12px 10px;
+  border-top: 2px solid var(--line);
+  background: var(--surface-2);
+}
+.rate-btn {
+  flex: 1;
+  font: 14px/1 var(--font-ui);
+  padding: 6px;
+  border: 2px solid var(--line);
+  background: var(--surface);
+  color: var(--ink);
+  border-radius: 0;
+  letter-spacing: 0;
+  text-transform: none;
+  cursor: pointer;
+  box-shadow: var(--shadow-press);
+}
+.rate-btn:hover { background: var(--hover); border-color: var(--line-hi); transform: none; }
+.rate-btn.active.rate--1 { background: var(--rose);  color: var(--bg-deep); border-color: var(--rose);  }
+.rate-btn.active.rate-1  { background: var(--green); color: var(--bg-deep); border-color: var(--green); }
+.rate-btn.active.rate-2  { background: var(--gold);  color: var(--bg-deep); border-color: var(--gold);  }
+.rate-btn.rate-detail { flex: 0 0 32px; color: var(--muted); }
+
+.empty-state {
+  padding: 40px;
+  text-align: center;
+  color: var(--muted);
+  font: 14px var(--font-ui);
+}
+
+/* Detail modal — uses help-card scaffolding but wider for the image+meta layout */
+.detail-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px;
+}
+.detail-image img {
+  width: 100%; height: auto;
+  border: 2px solid var(--line);
+  background: var(--bg-deep);
+  display: block;
+}
+.detail-meta {
+  display: grid;
+  gap: 8px;
+  font: 13px/1.5 var(--font-ui);
+  color: var(--ink);
+}
+.detail-meta strong { color: var(--gold); font: 10px/1 var(--font-pixel); letter-spacing: 1px; text-transform: uppercase; }
+.detail-meta code { font-family: var(--font-mono); color: var(--ink-bright); font-size: 11px; word-break: break-all; }
+.detail-meta hr { border: 0; border-top: 1px dashed var(--line); margin: 4px 0; }
+.detail-meta textarea {
+  width: 100%;
+  border: 2px solid var(--line);
+  background: var(--bg-deep);
+  color: var(--ink-bright);
+  padding: 8px;
+  font: 13px var(--font-mono);
+  border-radius: 0;
+  resize: vertical;
+}
+.detail-rating-row {
+  display: flex;
+  gap: 6px;
+}
+.detail-rating-row .rate-btn { font-size: 12px; flex: 1; }
+.detail-subject {
+  font: 12px/1.5 var(--font-mono);
+  color: var(--muted);
+  background: var(--bg-deep);
+  border: 1px solid var(--line);
+  padding: 8px;
+  max-height: 180px;
+  overflow: auto;
+  white-space: pre-wrap;
+}
+/* Make the help-card wider when it holds the detail-grid */
+.help-card:has(.detail-grid) {
+  width: min(1100px, 96vw);
+}
 .form-section-hint {
   font: 13px/1.5 var(--font-ui);
   color: var(--muted);
@@ -1980,6 +2229,9 @@ form { padding: 18px; display: grid; gap: 14px; }
 const state = { config: null, action: "thumbnail", activeJob: null, pickerField: null, pickerPath: "", expandedRuns: new Set() };
 
 const groups = [
+  ["GALLERY", [
+    ["gallery", "All renders + ratings"],
+  ]],
   ["TEXT TO IMAGE", [
     ["thumbnail", "Thumbnail"],
     ["coloring-page", "Children's coloring page"],
@@ -2660,11 +2912,291 @@ function fieldElement(field) {
   return wrap;
 }
 
+async function fetchAndRenderSuggestion(engine, formEl) {
+  if (!engine) return;
+  try {
+    const res = await fetch(`/api/suggestions?engine=${encodeURIComponent(engine)}`);
+    if (!res.ok) return;
+    const data = await res.json();
+    const s = data.suggestion;
+    if (!s) return;  // not enough rated data yet
+    const banner = document.createElement("div");
+    banner.className = "suggestion-banner";
+    banner.innerHTML = `
+      <div class="suggestion-summary">${escapeHtml(s.summary)}</div>
+      <button type="button" id="applySuggestion">Apply</button>
+    `;
+    formEl.insertBefore(banner, formEl.firstChild);
+    document.getElementById("applySuggestion").onclick = () => applySuggestion(s);
+  } catch (e) {
+    // silent — suggestion is an enhancement, not a blocker
+  }
+}
+
+function applySuggestion(s) {
+  // Set form fields from the suggestion's modal/avg values where they apply.
+  // We only touch fields the user hasn't explicitly modified yet — but for
+  // simplicity here we just overwrite. User can always change after.
+  const setIfPresent = (name, val) => {
+    if (val == null) return;
+    const el = document.getElementById(`field-${name}`);
+    if (el) {
+      if (el.type === "checkbox") el.checked = !!val;
+      else el.value = val;
+      el.dispatchEvent(new Event("input", {bubbles: true}));
+    }
+  };
+  if (s.seed_modal != null) setIfPresent("seed", s.seed_modal);
+  if (s.guidance_avg != null) setIfPresent("guidance", s.guidance_avg);
+  if (s.refine_ratio >= 0.6) setIfPresent("refine", true);
+  if (s.hi_res_ratio >= 0.6) setIfPresent("hi_res", true);
+  if (s.ultra_res_ratio >= 0.6) setIfPresent("ultra_res", true);
+  if (s.top_recipes && s.top_recipes[0]) setIfPresent("recipe", s.top_recipes[0]);
+  showToast(`Applied top-rated config (${s.sample_size} rated renders)`, "success");
+}
+
+// ─── Gallery view ─────────────────────────────────────────────────────────
+// All historical renders, filterable, with inline ratings. Repurposes the
+// form panel as a 3-up grid; cards show thumbnail + metadata + 4 rating
+// buttons (👎 — 👍 ⭐). Click a card to open the detail modal.
+
+const state_gallery = { engine: "all", rating: "all", order: "ts_desc" };
+
+async function renderGalleryPanel() {
+  document.getElementById("formTitle").textContent = "Gallery";
+  document.getElementById("commandPreview").textContent = "";
+  const form = document.getElementById("jobForm");
+  form.innerHTML = "";
+
+  // Filter row
+  const filters = document.createElement("div");
+  filters.className = "gallery-filters";
+  filters.innerHTML = `
+    <label>Engine
+      <select id="galEngine"></select>
+    </label>
+    <label>Rating
+      <select id="galRating">
+        <option value="all">all</option>
+        <option value="2">⭐ favorites</option>
+        <option value="1">👍 likes</option>
+        <option value="0">— unrated</option>
+        <option value="-1">👎 dislikes</option>
+      </select>
+    </label>
+    <label>Sort
+      <select id="galOrder">
+        <option value="ts_desc">newest first</option>
+        <option value="ts_asc">oldest first</option>
+        <option value="rating_desc">highest-rated first</option>
+      </select>
+    </label>
+    <div id="galStats" class="gallery-stats"></div>
+  `;
+  form.appendChild(filters);
+
+  // Grid container
+  const grid = document.createElement("div");
+  grid.id = "galleryGrid";
+  grid.className = "gallery-grid";
+  form.appendChild(grid);
+
+  // Populate filter selects from cfg
+  const cfg = state.config || {};
+  const engineSel = document.getElementById("galEngine");
+  engineSel.innerHTML = `<option value="all">all</option>` +
+    (cfg.engines || []).map(e => `<option value="${e}">${e}</option>`).join("");
+  engineSel.value = state_gallery.engine;
+  document.getElementById("galRating").value = state_gallery.rating;
+  document.getElementById("galOrder").value = state_gallery.order;
+
+  engineSel.onchange = (e) => { state_gallery.engine = e.target.value; loadGallery(); };
+  document.getElementById("galRating").onchange = (e) => { state_gallery.rating = e.target.value; loadGallery(); };
+  document.getElementById("galOrder").onchange = (e) => { state_gallery.order = e.target.value; loadGallery(); };
+
+  await loadGallery();
+}
+
+async function loadGallery() {
+  const params = new URLSearchParams();
+  if (state_gallery.engine !== "all") params.set("engine", state_gallery.engine);
+  if (state_gallery.rating !== "all") params.set("rating", state_gallery.rating);
+  if (state_gallery.order !== "ts_desc") params.set("order_by", state_gallery.order);
+  params.set("limit", "120");
+  const res = await fetch(`/api/gallery?${params}`);
+  if (!res.ok) {
+    document.getElementById("galleryGrid").innerHTML = `<div class="empty-state">Failed to load gallery (HTTP ${res.status})</div>`;
+    return;
+  }
+  const data = await res.json();
+  renderGalleryStats(data.stats);
+  renderGalleryGrid(data.renders);
+}
+
+function renderGalleryStats(s) {
+  const el = document.getElementById("galStats");
+  if (!el) return;
+  const ratings = s.by_rating || {};
+  el.innerHTML = `<strong>${s.total}</strong> renders · ⭐ ${ratings.favorite || 0} · 👍 ${ratings.like || 0} · 👎 ${ratings.dislike || 0}`;
+}
+
+function renderGalleryGrid(renders) {
+  const grid = document.getElementById("galleryGrid");
+  if (!renders || renders.length === 0) {
+    grid.innerHTML = `<div class="empty-state">No renders match the current filters. Run something via the engine actions on the left, then come back here.</div>`;
+    return;
+  }
+  grid.innerHTML = "";
+  for (const r of renders) {
+    const card = document.createElement("div");
+    card.className = "gallery-card rating-" + r.rating;
+    const fileUrl = `/api/file?path=${encodeURIComponent(r.png_path)}`;
+    const seedTxt = r.seed != null ? `seed ${r.seed}` : "";
+    const recipeTxt = r.recipe ? `· ${r.recipe}` : "";
+    card.innerHTML = `
+      <a class="gallery-thumb" href="${fileUrl}" target="_blank" rel="noreferrer">
+        <img src="${fileUrl}" loading="lazy" alt="${escapeAttr(r.subject || '')}">
+      </a>
+      <div class="gallery-meta">
+        <div class="gallery-engine">${r.engine}</div>
+        <div class="gallery-sub">${seedTxt} ${recipeTxt}</div>
+        <div class="gallery-subject" title="${escapeAttr(r.subject || '')}">${escapeHtml((r.subject || "").slice(0, 90))}</div>
+      </div>
+      <div class="gallery-ratings" data-render-id="${r.id}">
+        ${ratingButton(r.id, -1, r.rating, '👎')}
+        ${ratingButton(r.id,  1, r.rating, '👍')}
+        ${ratingButton(r.id,  2, r.rating, '⭐')}
+        <button class="rate-btn rate-detail" data-detail="${r.id}" title="Details">⋯</button>
+      </div>
+    `;
+    grid.appendChild(card);
+  }
+  // Wire rating buttons
+  grid.querySelectorAll(".rate-btn[data-rating]").forEach(btn => {
+    btn.onclick = async (e) => {
+      e.preventDefault();
+      const rid = parseInt(btn.dataset.renderId);
+      const rating = parseInt(btn.dataset.rating);
+      // Toggle behavior: click the same rating → clear it (set to 0)
+      const cur = parseInt(btn.parentElement.dataset.currentRating || "0");
+      const newRating = (cur === rating) ? 0 : rating;
+      const res = await fetch("/api/ratings", {
+        method: "POST", headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({render_id: rid, rating: newRating}),
+      });
+      if (res.ok) loadGallery();
+      else showToast("Failed to save rating", "error");
+    };
+  });
+  // Detail buttons
+  grid.querySelectorAll(".rate-detail").forEach(btn => {
+    btn.onclick = () => openRenderDetail(parseInt(btn.dataset.detail));
+  });
+}
+
+function ratingButton(rid, value, current, emoji) {
+  const active = current === value ? " active" : "";
+  return `<button class="rate-btn rate-${value}${active}" data-render-id="${rid}" data-rating="${value}" title="${value === -1 ? 'Dislike' : value === 1 ? 'Like' : 'Favorite'}">${emoji}</button>`;
+}
+
+async function openRenderDetail(rid) {
+  const res = await fetch(`/api/gallery/${rid}`);
+  if (!res.ok) return;
+  const r = await res.json();
+  const cfg = r.config_json || {};
+  const lora = (r.lora_stack || []).map(l => `${(l.path || '').split('/').pop()}@${l.scale}`).join(", ") || "—";
+  const flags = [];
+  if (r.refine) flags.push("refine");
+  if (r.hi_res) flags.push("hi-res");
+  if (r.ultra_res) flags.push("ultra-res");
+  const fileUrl = `/api/file?path=${encodeURIComponent(r.png_path)}`;
+  const body = `<div class="detail-grid">
+      <div class="detail-image"><a href="${fileUrl}" target="_blank"><img src="${fileUrl}"></a></div>
+      <div class="detail-meta">
+        <div><strong>Engine:</strong> ${r.engine}</div>
+        <div><strong>Recipe:</strong> ${r.recipe || "—"}</div>
+        <div><strong>Seed:</strong> ${r.seed ?? "—"}</div>
+        <div><strong>Guidance:</strong> ${r.guidance ?? "default"}</div>
+        <div><strong>Size:</strong> ${r.width || "?"}×${r.height || "?"}</div>
+        <div><strong>Flags:</strong> ${flags.join(" · ") || "(default)"}</div>
+        <div><strong>LoRAs:</strong> ${escapeHtml(lora)}</div>
+        <div><strong>Path:</strong> <code>${escapeHtml(r.png_path)}</code></div>
+        <hr>
+        <div class="detail-rating-row">
+          ${ratingButton(r.id, -1, r.rating, '👎 dislike')}
+          ${ratingButton(r.id,  1, r.rating, '👍 like')}
+          ${ratingButton(r.id,  2, r.rating, '⭐ favorite')}
+        </div>
+        <div><strong>Notes</strong></div>
+        <textarea id="detailNotes" rows="3" placeholder="What's good/bad about this render?">${escapeHtml(r.notes || '')}</textarea>
+        <button id="detailSaveNotes" class="primary">Save notes</button>
+        <hr>
+        <div><strong>Subject</strong></div>
+        <pre class="detail-subject">${escapeHtml(r.subject || '')}</pre>
+      </div>
+    </div>`;
+  showHelpModal(`Render #${r.id}`, "");  // re-use the help modal infrastructure
+  // Override body — help modal expects textContent; we want innerHTML for this rich view
+  const bodyEl = document.getElementById("helpBody");
+  bodyEl.innerHTML = body;
+  // Re-wire rating buttons inside the modal
+  bodyEl.querySelectorAll(".rate-btn[data-rating]").forEach(btn => {
+    btn.onclick = async (e) => {
+      e.preventDefault();
+      const newRating = parseInt(btn.dataset.rating);
+      const res = await fetch("/api/ratings", {
+        method: "POST", headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({render_id: rid, rating: newRating}),
+      });
+      if (res.ok) {
+        closeHelpModal();
+        loadGallery();
+      }
+    };
+  });
+  document.getElementById("detailSaveNotes").onclick = async () => {
+    const notes = document.getElementById("detailNotes").value;
+    await fetch("/api/ratings", {
+      method: "POST", headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({render_id: rid, rating: r.rating || 0, notes}),
+    });
+    showToast("Notes saved", "success");
+  };
+}
+
 function renderForm() {
+  // Gallery view is a special case — no form, just a render-grid + filter
+  // controls. Repurposes the form panel for browsing instead of submitting.
+  if (state.action === "gallery") {
+    renderGalleryPanel();
+    return;
+  }
   const spec = specs[state.action];
+  if (!spec) {
+    // Unknown action — clear and bail
+    document.getElementById("formTitle").textContent = state.action;
+    document.getElementById("jobForm").innerHTML = "";
+    document.getElementById("commandPreview").textContent = "";
+    return;
+  }
   document.getElementById("formTitle").textContent = spec.title;
   const form = document.getElementById("jobForm");
   form.innerHTML = "";
+
+  // Smart-suggestion banner — fetch top-rated config for whichever engine
+  // this action maps to. Engine-driven actions surface the suggestion
+  // automatically; pure pipelines (audiobook / brief / etc) get nothing.
+  const engineForAction = {
+    "engine": null,  // user picks engine; we don't know yet
+    "coloring-page": "childrens-coloring-book",
+    "mandala-art-page": "mandala-art",
+    "indian-folk-page": "indian-classical",
+  };
+  const sugEngine = engineForAction[state.action];
+  if (sugEngine !== undefined) {
+    fetchAndRenderSuggestion(sugEngine || state.pendingEngineForSuggestion, form);
+  }
+
   // Walk fields in order. Sections + textareas span full width; other fields
   // pair into a 2-column grid until interrupted by a section/textarea.
   const fields = spec.fields.filter(f => f.type !== "checkbox");

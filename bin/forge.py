@@ -2844,6 +2844,27 @@ def cmd_engine_render(args) -> int:
 
         sidecar = png_path.with_suffix(png_path.suffix + ".directive.json")
         write_json(sidecar, per_dir.to_dict())
+        # Gallery auto-capture — every successful engine render writes a row
+        # so the user can rate it later and the system learns preferred configs.
+        try:
+            import forge_gallery  # type: ignore
+            forge_gallery.capture_directive(
+                per_dir, png_path,
+                recipe=recipe_id,
+                refine=refine, hi_res=getattr(args, "hi_res", False),
+                ultra_res=getattr(args, "ultra_res", False),
+                guidance_override=guidance_override,
+                width=eff_w, height=eff_h,
+                lora_stack=synth.get("flux", {}).get("lora_paths") and [
+                    {"path": p, "scale": s} for p, s in zip(
+                        synth["flux"].get("lora_paths", []),
+                        synth["flux"].get("lora_scales", []),
+                    )
+                ] or [],
+                directive_json=sidecar,
+            )
+        except Exception as e:
+            print(dim(f"  · gallery capture skipped: {e}"))
         variants.append({"seed": this_seed, "png_name": png_path.name, "png_path": str(png_path)})
         print(green(f"    ✓ {png_path}"))
 
