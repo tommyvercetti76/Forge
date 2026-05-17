@@ -2232,42 +2232,44 @@ const groups = [
   ["GALLERY", [
     ["gallery", "All renders + ratings"],
   ]],
-  ["TEXT TO IMAGE", [
-    ["thumbnail", "Thumbnail"],
-    ["coloring-page", "Children's coloring page"],
-    ["mandala-art-page", "Mandala art"],
-    ["indian-folk-page", "Indian folk art (Madhubani / Warli / Tanjore)"],
-    ["engine", "Branded image (other)"],
-    ["edit", "Edit image"],
-    ["engine-list", "Engines"],
-    ["engine-recipes", "Engine recipes"],
-    ["engine-describe", "Engine details"]
+  ["CREATE — TYPE A PROMPT", [
+    ["coloring-page",     "▸ Children's coloring book"],
+    ["mandala-art-page",  "▸ Mandala art (subject-centred)"],
+    ["indian-folk-page",  "▸ Indian folk art (Madhubani / Warli / Tanjore)"],
+    ["thumbnail",         "▸ Thumbnail (preset + prompt)"],
+    ["engine",            "▸ Other engine (advanced)"],
+    ["edit",              "▸ Edit / restyle an image"],
   ]],
-  ["CONTENT", [
+  ["CONTENT PIPELINES", [
     ["brief", "Episode kit"],
     ["episode", "Episode"],
-    ["audiobook-simple", "Audiobook (simple)"],
+    ["audiobook-simple", "Audiobook (book → en+hi+mr audio)"],
     ["audiobook", "Audiobook (advanced)"],
-    ["audiobook-asmr", "ASMR audiobook"],
+    ["audiobook-asmr", "ASMR audiobook (+ optional video)"],
     ["voice", "Voiceover"],
-    ["video", "Mux video"],
+    ["video", "Mux image+audio → mp4"],
     ["process-video-process", "Process video"],
     ["process-video-warmup", "Video warmup"]
   ]],
-  ["PROCEDURAL", [
-    ["mandala", "Mandala"],
-    ["childrens-book", "Children's pages"],
-    ["folk-art", "Folk art page"]
+  ["PROCEDURAL — NO PROMPT, PURE MATH", [
+    ["mandala", "Mandala (exact SVG)"],
+    ["childrens-book", "Children's pages (exact SVG)"],
+    ["folk-art", "Folk art page (exact SVG)"]
   ]],
-  ["SYSTEM", [
-    ["list", "List presets"],
+  ["BROWSE", [
+    ["engine-list", "Engines list"],
+    ["engine-recipes", "Engine recipes"],
+    ["engine-describe", "Engine details"],
+    ["list", "Presets + voices"],
     ["show", "Show preset"],
     ["series-list", "Series list"],
     ["series-show", "Series show"],
-    ["series-new", "Series new"],
+    ["series-new", "New series"],
+  ]],
+  ["SYSTEM", [
     ["doctor", "Doctor"],
     ["status", "Status"],
-    ["setup-voices", "Setup voices"],
+    ["setup-voices", "Install Kokoro voices"],
     ["models-list", "Models list"],
     ["models-scan", "Models scan"],
     ["models-clean", "Models clean"],
