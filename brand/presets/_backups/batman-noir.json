@@ -52,34 +52,18 @@
     }
   },
   "flux": {
-    "positive_prefix": "Batman-noir monochrome ink-and-mass illustration, 60% black shadow holding the frame, single hard rim light from one side, rough paper texture, ink-mass shadows with no smooth digital shading, single saturated red accent permitted on ONE focal element (bat-signal / blood / ribbon), Mike Mignola Hellboy register.",
-    "positive_suffix": "Monochrome black ink on cream paper with one optional red accent, single dramatic figure, deep ink-mass shadows, jagged angular silhouette edges.",
+    "positive_prefix": "Monochrome black-and-white comic-noir illustration, ink-and-paint craft, deep chiaroscuro lighting with a single hard rim light from one side, heavy black ink shadows occupying ~60% of frame, weathered surface micro-texture, gritty hand-drawn linework, comic-book panel feel, brooding atmosphere with particulate in the air.",
+    "positive_suffix": "Heavy black ink shadows, NO color saturation except optional single blood-red accent, NO plastic gloss, NO smooth cartoon shading. The image should look painted with ink on rough paper, not rendered.",
     "negatives": [
-      "watermark",
-      "signature",
-      "artist signature",
-      "stock photo logo",
-      "text overlay",
-      "subtitle bar",
-      "page number",
-      "frame number",
-      "extra fingers",
-      "fused fingers",
-      "six fingers",
-      "missing fingers",
-      "extra limbs",
-      "missing limbs",
-      "deformed hands",
-      "asymmetric eyes",
-      "jpeg compression artifacts",
-      "moire pattern",
-      "AI glow halo",
       "color photography",
       "vibrant saturated palette",
-      "anime stylization",
-      "Disney plastic look",
+      "cheerful daylight",
       "soft gradient shading",
-      "plastic sheen"
+      "plastic sheen",
+      "anime style",
+      "Disney style",
+      "stock photography lighting",
+      "even flat illumination"
     ],
     "guidance": 4.5,
     "steps": 28,
@@ -87,12 +71,10 @@
   },
   "prompt_rules": {
     "always_add": [
-      "60% black shadow mass holding the frame",
-      "single hard rim light from one direction",
-      "rough paper / ink texture, no smooth digital shading",
-      "monochrome black-and-cream with one optional red accent",
-      "Mike Mignola Hellboy ink-mass register",
-      "jagged angular silhouette stylization"
+      "single dominant subject, no crowds, asymmetric pose with weight on one foot",
+      "single hard key light from one side leaving the opposite half in deep shadow",
+      "particulate haze, dust motes, or rain catching the rim light",
+      "subject surface shows wear: scratches, weathered fabric, calloused skin"
     ]
   },
   "master_primer_policy": "style_safe"

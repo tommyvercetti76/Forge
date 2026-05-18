@@ -53,28 +53,16 @@
     }
   },
   "flux": {
-    "positive_prefix": "Documentary 3:2 photojournalism still, candid observational moment, plain available-light realism, neutral journalistic color with natural skin tones and real-world hues, factual subject context visible in the environment, newspaper-feature register (New York Times / Magnum-archive sensibility).",
-    "positive_suffix": "Observational distance, candid posture, imperfect real environment, available daylight or window light, no heroic low angles, no staged tableau.",
+    "positive_prefix": "Documentary-style photograph, neutral lighting, single subject in clean composition, journalistic, observational, restrained color palette, looks like a still from a New York Times feature.",
+    "positive_suffix": "Photojournalistic, NOT staged, NOT overproduced, observational distance.",
     "negatives": [
-      "watermark",
-      "signature",
-      "artist signature",
-      "stock photo logo",
-      "text overlay",
-      "subtitle bar",
-      "page number",
-      "frame number",
-      "extra fingers",
-      "fused fingers",
-      "six fingers",
-      "missing fingers",
-      "extra limbs",
-      "missing limbs",
-      "deformed hands",
-      "asymmetric eyes",
-      "jpeg compression artifacts",
-      "moire pattern",
-      "AI glow halo"
+      "staged",
+      "overproduced",
+      "cinematic color grading",
+      "fantasy",
+      "cartoon",
+      "neon",
+      "saturated"
     ],
     "guidance": 4.0,
     "steps": 22,
@@ -82,11 +70,10 @@
   },
   "prompt_rules": {
     "always_add": [
-      "candid posture, observational distance",
-      "imperfect real environment with factual context",
-      "neutral lens, no heroic low angle",
-      "natural daylight or available-light interior",
-      "neutral journalistic palette (real skin tones, real-world hues)"
+      "single observed subject, photojournalistic distance",
+      "natural diffused light",
+      "neutral background, no obvious set design",
+      "subject not looking at camera"
     ]
   },
   "master_primer_policy": "photo_only"

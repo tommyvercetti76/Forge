@@ -53,28 +53,17 @@
     }
   },
   "flux": {
-    "positive_prefix": "Editorial 3:2 magazine-cover photograph, single hero subject with generous clean negative space, soft directional natural light, muted editorial palette, photographic-document register (Vogue / The New Yorker cover photography sensibility).",
-    "positive_suffix": "Subject occupies 35–55% of frame; large clean margin on the top-left or top-right for headline overlay; soft background with low object density; magazine-cover crop with breathing room.",
+    "positive_prefix": "Editorial magazine cover photograph, shot on medium format, single subject in shallow depth of field, natural window light, warm cream backdrop, restrained composition with generous negative space.",
+    "positive_suffix": "Print magazine aesthetic, refined, NOT busy, NOT cluttered, single focal subject.",
     "negatives": [
-      "watermark",
-      "signature",
-      "artist signature",
-      "stock photo logo",
-      "text overlay",
-      "subtitle bar",
-      "page number",
-      "frame number",
-      "extra fingers",
-      "fused fingers",
-      "six fingers",
-      "missing fingers",
-      "extra limbs",
-      "missing limbs",
-      "deformed hands",
-      "asymmetric eyes",
-      "jpeg compression artifacts",
-      "moire pattern",
-      "AI glow halo"
+      "3D",
+      "cartoon",
+      "anime",
+      "neon",
+      "saturated colors",
+      "busy composition",
+      "cluttered",
+      "text artifacts"
     ],
     "guidance": 4.0,
     "steps": 25,
@@ -82,11 +71,10 @@
   },
   "prompt_rules": {
     "always_add": [
-      "single hero subject, generous clean negative space",
-      "soft directional natural light",
-      "muted editorial palette",
-      "magazine-cover crop with headline-safe top margin",
-      "low background object density, breathing room around subject"
+      "single focal subject (no crowds, no group shots)",
+      "shallow depth of field with subject sharp and background soft",
+      "natural lighting (window or overcast), no studio flash",
+      "warm neutral backdrop matching paper-cream palette"
     ]
   },
   "master_primer_policy": "photo_only"

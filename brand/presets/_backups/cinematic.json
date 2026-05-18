@@ -52,28 +52,16 @@
     }
   },
   "flux": {
-    "positive_prefix": "Cinematic 16:9 still frame, anamorphic-lens character, high-contrast chiaroscuro lighting with a single motivated key light and deep shadows holding 60% of the frame, color-graded teal-and-orange but restrained and desaturated, single dramatic subject with serious expression, moody filmic register, feature-film cinematography by Roger Deakins or Gordon Willis.",
-    "positive_suffix": "Movie-poster composition with one clear focal subject and empty supporting space; foreground / midground / background depth layers visible; atmospheric haze or particulate adds depth.",
+    "positive_prefix": "Cinematic 16:9 still frame, anamorphic lens character, high-contrast chiaroscuro lighting, deep shadows with single key light, color-graded teal-and-orange but desaturated, single dramatic subject, sense of mystery and weight.",
+    "positive_suffix": "Movie poster composition, single focal subject, depth and atmosphere, NOT busy.",
     "negatives": [
-      "watermark",
-      "signature",
-      "artist signature",
-      "stock photo logo",
-      "text overlay",
-      "subtitle bar",
-      "page number",
-      "frame number",
-      "extra fingers",
-      "fused fingers",
-      "six fingers",
-      "missing fingers",
-      "extra limbs",
-      "missing limbs",
-      "deformed hands",
-      "asymmetric eyes",
-      "jpeg compression artifacts",
-      "moire pattern",
-      "AI glow halo"
+      "bright",
+      "cheerful",
+      "flat lighting",
+      "stock photo",
+      "smiling",
+      "vibrant",
+      "saturated"
     ],
     "guidance": 4.5,
     "steps": 30,
@@ -84,9 +72,7 @@
       "single dramatic subject, no crowds",
       "deep shadows occupying ~60% of frame",
       "single warm key light creating rim or silhouette",
-      "atmospheric haze or particulate for depth",
-      "restrained desaturated teal-orange palette",
-      "feature-film cinematography register (Roger Deakins, Gordon Willis)"
+      "atmospheric haze or particulate for depth"
     ]
   },
   "master_primer_policy": "full"

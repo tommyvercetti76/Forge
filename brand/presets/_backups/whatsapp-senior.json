@@ -1,0 +1,49 @@
+{
+  "id": "whatsapp-senior",
+  "name": "WhatsApp Senior",
+  "description": "Warm, high-contrast card template for senior WhatsApp forwarding. Large readable text on warm background.",
+  "use_for": "WhatsApp joke card generation — optimized for phone screens, senior readability, family groups.",
+  "typography": {
+    "display_family": "Helvetica",
+    "body_family": "Helvetica",
+    "weights": ["regular"],
+    "scale": {
+      "title_max_chars": 50,
+      "title_px": 72,
+      "sub_px": 42,
+      "caption_px": 20
+    }
+  },
+  "palette_60_30_10": {
+    "dominant": {
+      "hex": "#F5E6D3",
+      "role": "warm cream background for legibility and warmth"
+    },
+    "secondary": {
+      "hex": "#2C3E50",
+      "role": "dark slate text, high contrast"
+    },
+    "accent": {
+      "hex": "#D97638",
+      "role": "warm rust accent for emphasis"
+    }
+  },
+  "composition": {
+    "card": {
+      "width": 1080,
+      "height": 1080,
+      "margin_px": 72,
+      "text_anchor": "center",
+      "background_color": "#F5E6D3",
+      "text_color": "#2C3E50",
+      "accent_color": "#D97638",
+      "line_spacing_px": 80,
+      "min_font_px": 48,
+      "max_font_px": 72
+    }
+  },
+  "flux": {
+    "positive_prefix": "warm, friendly, family-safe",
+    "negative_prefix": "political, offensive, crude"
+  }
+}

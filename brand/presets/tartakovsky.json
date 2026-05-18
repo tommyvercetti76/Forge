@@ -53,16 +53,35 @@
     }
   },
   "flux": {
-    "positive_prefix": "Hand-drawn 2D animation cel in the style of Samurai Jack by Genndy Tartakovsky: thick black ink outlines, flat color fills with NO gradients, minimal cel-shaded shadows (max two shadow tones), geometric simplicity, hand-painted backgrounds.",
-    "positive_suffix": "Flat color fills only, no smooth gradients, no photorealism, no 3D rendering.",
+    "positive_prefix": "Tartakovsky-cel 2D animation still, flat color fields with uniform medium-weight black ink outlines (1.5-2pt at 1080p), geometric simplified shape language (silhouettes built from triangles, trapezoids, circles), hand-painted background at softer line-weight than the foreground, two-tone cel-shadow (light + one darker step), Samurai Jack 2001 / Primal 2019 register.",
+    "positive_suffix": "Flat color fills with hard-edged shadow shapes, geometric shape language, restrained 60-30-10 palette with one focal saturated color, hand-painted background.",
     "negatives": [
-      "photorealistic",
-      "3D",
-      "smooth gradients",
-      "oversized heads",
-      "chibi",
-      "Disney style",
-      "anime sparkle eyes"
+      "watermark",
+      "signature",
+      "artist signature",
+      "stock photo logo",
+      "text overlay",
+      "subtitle bar",
+      "page number",
+      "frame number",
+      "extra fingers",
+      "fused fingers",
+      "six fingers",
+      "missing fingers",
+      "extra limbs",
+      "missing limbs",
+      "deformed hands",
+      "asymmetric eyes",
+      "jpeg compression artifacts",
+      "moire pattern",
+      "AI glow halo",
+      "photorealism",
+      "photographic detail",
+      "3D rendered look",
+      "smooth digital gradients",
+      "anime sparkle giant eyes",
+      "manga chibi proportions",
+      "Disney-3D plastic look"
     ],
     "guidance": 3.5,
     "steps": 25,
@@ -70,10 +89,12 @@
   },
   "prompt_rules": {
     "always_add": [
-      "ANATOMICALLY PROPORTIONAL — not chibi, not oversized heads, not cute-cartoon",
-      "subjects facing each other with eye contact when conversing",
-      "named real-world products specified by silhouette / model (e.g. 'RODE PodMic')",
-      "lighting suggested via flat highlight SHAPES only, no gradients"
+      "flat color fills with hard-edged shadow shapes",
+      "uniform medium-weight black ink outlines (1.5-2pt at 1080p)",
+      "geometric simplified shape language",
+      "two-tone cel shadow (light + one darker step)",
+      "hand-painted background register (Scott Wills / Samurai Jack)",
+      "restrained 60-30-10 palette with one focal saturated color"
     ]
   },
   "master_primer_policy": "style_safe"

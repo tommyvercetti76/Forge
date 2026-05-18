@@ -52,34 +52,20 @@
     }
   },
   "flux": {
-    "positive_prefix": "Darksiders gothic-fantasy concept-art illustration, weathered scratched bronze and stone surfaces, asymmetric heroic foreshortened pose, harsh apocalyptic backlight, charcoal + bronze + burnt-orange palette with deep shadow mass, smoky textured atmosphere, Joe Madureira ink register (Darksiders 2010 / Battle Chasers).",
-    "positive_suffix": "Single dramatic foreshortened figure, weathered worn materials (rust on metal, cracked stone, scorched leather), smoke or embers in rim-light, no clean polished surfaces, no studio-portrait composition.",
+    "positive_prefix": "Painterly comic-book illustration in the spirit of weathered gothic fantasy concept art, dramatic chiaroscuro lighting with rim light from one side, charcoal-and-bronze color grading with a single burnt-orange focal accent (molten metal, embers, or rim glow), heavy surface texture: cracked stone, weathered leather, oxidized bronze, scarred skin. Hand-painted brush feel, not rendered. Post-apocalyptic atmosphere with airborne particulate.",
+    "positive_suffix": "Carbon shadows holding the dominant 60% of the frame. Avoid clean polished surfaces, prefer worn and scarred. Single subject in heroic asymmetric pose, weight planted, no static front-facing symmetry.",
     "negatives": [
-      "watermark",
-      "signature",
-      "artist signature",
-      "stock photo logo",
-      "text overlay",
-      "subtitle bar",
-      "page number",
-      "frame number",
-      "extra fingers",
-      "fused fingers",
-      "six fingers",
-      "missing fingers",
-      "extra limbs",
-      "missing limbs",
-      "deformed hands",
-      "asymmetric eyes",
-      "jpeg compression artifacts",
-      "moire pattern",
-      "AI glow halo",
-      "anime stylization",
-      "manga giant chibi eyes",
-      "Disney-3D plastic look",
-      "Pixar volumetric render",
+      "clean polished surfaces",
+      "perfect symmetry",
+      "studio portrait lighting",
+      "pastel palette",
+      "anime style",
+      "Disney style",
+      "chibi proportions",
+      "smiling cheerful expression",
+      "stock photo style",
       "smooth gradient sky",
-      "studio portrait lighting"
+      "uniform diffuse light"
     ],
     "guidance": 4.5,
     "steps": 28,
@@ -87,12 +73,11 @@
   },
   "prompt_rules": {
     "always_add": [
-      "weathered scratched bronze and stone surfaces",
-      "asymmetric heroic foreshortened pose",
-      "harsh apocalyptic backlight from a single direction",
-      "charcoal + bronze + burnt-orange palette",
-      "smoky textured atmosphere with embers or dust",
-      "Joe Madureira thick-ink anatomy register"
+      "single dominant subject in asymmetric heroic pose, weight on one foot or planted weapon",
+      "single dramatic key light (warm) from one side, opposite side deep shadow",
+      "surface micro-detail: scars, weathered metal patina, cracked stone, leather wear, soot",
+      "atmospheric particulate (smoke, embers, dust) catching the rim light",
+      "single burnt-orange focal accent — limit color to charcoal/bronze/orange triad"
     ]
   },
   "master_primer_policy": "style_safe"
