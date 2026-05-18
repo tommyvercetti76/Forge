@@ -464,6 +464,8 @@ def build_command(action: str, payload: dict[str, Any]) -> tuple[list[str], list
         _add(cmd, "--preset", payload.get("preset"))
         _add(cmd, "--instruction", payload.get("instruction"))
         _add(cmd, "--strength", payload.get("strength"))
+        _add(cmd, "--profile", payload.get("profile"))
+        _add_bool(cmd, "--draft", payload.get("draft"))
         _add(cmd, "--steps", payload.get("steps"))
         _add(cmd, "--seed", payload.get("seed"))
         _add(cmd, "--out", payload.get("out"))
@@ -2510,8 +2512,8 @@ const specs = {
       {name:"from_image", label:"Source image", type:"path"},
       {name:"from_image_strength", label:"Image strength", type:"number", value:"0.85"},
       {name:"seeds", label:"Variants", type:"number", value:"1"},
-      {name:"draft", label:"Draft / cool", type:"checkbox"},
-      {name:"profile", label:"Speed profile", type:"select", options:"profiles"},
+      {name:"profile", label:"Speed profile (balanced = dev @ 18 steps default)", type:"select", options:"profiles", value:"balanced"},
+      {name:"draft", label:"Draft / cool (overrides profile — schnell @ 4 steps)", type:"checkbox"},
       {name:"seed", label:"Seed", type:"number", value:"1"},
       {name:"width", label:"Width", type:"number"},
       {name:"height", label:"Height", type:"number"},
@@ -2543,7 +2545,8 @@ const specs = {
       {name:"seeds", label:"Variants", type:"number", value:"1"},
       {name:"seed", label:"Seed", type:"number", value:"1"},
       {name:"guidance", label:"Guidance", type:"number", value:"6.5"},
-      {name:"draft", label:"Draft (schnell @ 4 steps — ~25 s fast preview)", type:"checkbox"},
+      {name:"profile", label:"Speed profile (balanced = dev @ 18 steps, ~2 min)", type:"select", options:"profiles", value:"balanced"},
+      {name:"draft", label:"Draft (schnell @ 4 steps — ~25 s fast preview, overrides profile)", type:"checkbox"},
       {name:"refine", label:"Refine (extra ~30 s, micro-detail pass)", type:"checkbox"},
       {name:"upscale", label:"Final resolution (RealESRGAN upscale — safe + fast)", type:"select", options:"upscaleOptions"},
       {name:"hi_res", label:"Native Hi-res 1920×1080 (txt2img only — auto-clamped for --from-image)", type:"checkbox"},
@@ -2577,7 +2580,8 @@ const specs = {
       {name:"seeds", label:"Variants", type:"number", value:"1"},
       {name:"seed", label:"Seed", type:"number", value:"7"},
       {name:"guidance", label:"Guidance", type:"number", value:"5.0"},
-      {name:"draft", label:"Draft (schnell @ 4 steps — ~25 s fast preview)", type:"checkbox"},
+      {name:"profile", label:"Speed profile (balanced = dev @ 18 steps, ~2 min)", type:"select", options:"profiles", value:"balanced"},
+      {name:"draft", label:"Draft (schnell @ 4 steps — ~25 s fast preview, overrides profile)", type:"checkbox"},
       {name:"refine", label:"Refine (extra ~30 s, micro-detail pass)", type:"checkbox"},
       {name:"upscale", label:"Final resolution (RealESRGAN upscale — safe + fast)", type:"select", options:"upscaleOptions"},
       {name:"hi_res", label:"Native Hi-res 1920×1080 (txt2img only — auto-clamped for --from-image)", type:"checkbox"},
@@ -2605,7 +2609,8 @@ const specs = {
       {name:"seeds", label:"Variants", type:"number", value:"1"},
       {name:"seed", label:"Seed", type:"number", value:"1"},
       {name:"guidance", label:"Guidance", type:"number", value:"7.5"},
-      {name:"draft", label:"Draft (schnell @ 4 steps — ~25 s fast preview)", type:"checkbox"},
+      {name:"profile", label:"Speed profile (balanced = dev @ 18 steps, ~2 min)", type:"select", options:"profiles", value:"balanced"},
+      {name:"draft", label:"Draft (schnell @ 4 steps — ~25 s fast preview, overrides profile)", type:"checkbox"},
       {name:"refine", label:"Refine (extra ~30 s, micro-detail pass)", type:"checkbox"},
       {name:"upscale", label:"Final resolution (RealESRGAN upscale — safe + fast)", type:"select", options:"upscaleOptions"},
       {name:"hi_res", label:"Native Hi-res 1920×1080 (txt2img only — auto-clamped for --from-image)", type:"checkbox"},
@@ -2639,7 +2644,8 @@ const specs = {
       {name:"seeds", label:"Variants", type:"number", value:"1"},
       {name:"seed", label:"Seed", type:"number", value:"7"},
       {name:"guidance", label:"Guidance", type:"number", value:"4.5"},
-      {name:"draft", label:"Draft (schnell @ 4 steps — ~25 s fast preview)", type:"checkbox"},
+      {name:"profile", label:"Speed profile (balanced = dev @ 18 steps, ~2 min)", type:"select", options:"profiles", value:"balanced"},
+      {name:"draft", label:"Draft (schnell @ 4 steps — ~25 s fast preview, overrides profile)", type:"checkbox"},
       {name:"refine", label:"Refine (extra ~30 s, micro-detail pass)", type:"checkbox"},
       {name:"upscale", label:"Final resolution (RealESRGAN upscale — safe + fast)", type:"select", options:"upscaleOptions"},
       {name:"hi_res", label:"Native Hi-res 1920×1080 (txt2img only — auto-clamped for --from-image)", type:"checkbox"},
@@ -2659,8 +2665,10 @@ const specs = {
       {name:"image", label:"Source image", type:"path", required:true},
       {name:"preset", label:"Preset", type:"select", options:"presetsOptional"},
       {name:"instruction", label:"Instruction", type:"textarea"},
-      {name:"strength", label:"Strength", type:"number", value:"0.6"},
-      {name:"steps", label:"Steps", type:"number", value:"25"},
+      {name:"strength", label:"Strength (0.3 minor edit, 0.6 default, 0.9 major restyle)", type:"number", value:"0.6"},
+      {name:"profile", label:"Speed profile (balanced = ~2 min default)", type:"select", options:"profiles", value:"balanced"},
+      {name:"draft", label:"Draft (schnell @ 4 steps — overrides profile)", type:"checkbox"},
+      {name:"steps", label:"Steps override (blank = use profile)", type:"number"},
       {name:"seed", label:"Seed", type:"number", value:"1"},
       {name:"out", label:"Output path", type:"path"}
     ]

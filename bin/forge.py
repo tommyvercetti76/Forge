@@ -11,6 +11,7 @@ from __future__ import annotations
 import argparse
 import atexit
 import contextlib
+import hashlib
 import json
 import math
 import os
@@ -3018,7 +3019,13 @@ def cmd_engine_render(args) -> int:
 
         if src_image_path:
             # img2img path — engine directive restyles the user's photo.
+            # Honor --profile / --draft to match the txt2img path (was using
+            # engine runtime steps directly, ignoring both knobs).
             steps_count = int(directive.runtime.get("steps", 32))
+            if args.draft:
+                steps_count = 4    # schnell-fast, even though Kontext uses dev base
+            elif args.profile and args.profile in PROFILES:
+                steps_count = int(PROFILES[args.profile].get("flux_steps", steps_count))
             guidance_val = float(guidance_override if guidance_override is not None
                                  else directive.runtime.get("guidance", 3.5))
             _engine_img2img(
@@ -3119,15 +3126,39 @@ def cmd_thumbnail(args) -> int:
     if args.bg:
         bg_path = Path(args.bg).expanduser().resolve()
     else:
-        bg_path = out_path.with_name(out_path.stem + "-bg.png")
         seed = derive_seed(series, args.frame_offset, fallback=args.seed)
-        flux_generate(
-            preset, concept, bg_path,
-            seed=seed, steps=args.steps,
-            series=series, draft=args.draft, profile=getattr(args, "profile", None),
-            lora_paths=list(args.lora) if args.lora else None,
-            lora_scales=list(args.lora_scale) if args.lora_scale else None,
-        )
+        # Background caching — keyed on every input that affects the FLUX render.
+        # When the user iterates on headline / sub text only, we reuse the cached
+        # background instead of paying another 3+ min for the same image.
+        cache_key_parts = [
+            preset_id,
+            concept,
+            str(seed),
+            args.series or "",
+            str(args.frame_offset or 0),
+            str(args.steps or ""),
+            "draft" if args.draft else "",
+            getattr(args, "profile", None) or "",
+            "|".join(args.lora or []),
+            "|".join(map(str, args.lora_scale or [])),
+        ]
+        cache_key = hashlib.sha256("\0".join(cache_key_parts).encode("utf-8")).hexdigest()[:16]
+        cache_dir = FORGE_STATE_HOME / "thumbnail-bg-cache"
+        cache_dir.mkdir(parents=True, exist_ok=True)
+        cached_bg = cache_dir / f"{preset_id}-{cache_key}.png"
+        if cached_bg.exists() and cached_bg.stat().st_size > 4096:
+            bg_path = cached_bg
+            print(dim(f"  · bg cache HIT → {cached_bg.name}  (delete to force re-render)"))
+        else:
+            bg_path = cached_bg
+            print(dim(f"  · bg cache MISS — rendering fresh ({cache_key}.png)"))
+            flux_generate(
+                preset, concept, bg_path,
+                seed=seed, steps=args.steps,
+                series=series, draft=args.draft, profile=getattr(args, "profile", None),
+                lora_paths=list(args.lora) if args.lora else None,
+                lora_scales=list(args.lora_scale) if args.lora_scale else None,
+            )
     render_thumbnail(preset, bg_path, out_path, headline=headline, sub=sub or None)
     print(green(f"✓ {out_path}"))
     return 0
@@ -3712,6 +3743,12 @@ def cmd_edit(args) -> int:
             f"  dev:         {dev_reason}\n"
             f"  Run: hf download black-forest-labs/FLUX.1-dev"
         ))
+
+    # Honor --draft / --profile overrides (was ignoring both, using --steps directly).
+    if getattr(args, "draft", False):
+        args.steps = 4
+    elif getattr(args, "profile", None) in PROFILES:
+        args.steps = int(PROFILES[args.profile].get("flux_steps", args.steps))
 
     if args.steps < 1:
         sys.exit(red("--steps must be >= 1"))
@@ -5157,8 +5194,13 @@ def main() -> int:
     p_e.add_argument("--instruction", help="free-form edit (e.g., 'swap background to teal alpine lake')")
     p_e.add_argument("--strength", type=float, default=0.6,
                      help="how much to TRANSFORM (0.3=minor, 0.9=major) — img2img fallback only")
-    p_e.add_argument("--steps", type=int, default=25,
-                     help="FLUX inference steps; lower is cooler/faster")
+    p_e.add_argument("--steps", type=int, default=18,
+                     help="FLUX inference steps. Default 18 (matches --profile balanced). "
+                          "Drop to 4 with --draft, raise to 30 for max quality.")
+    p_e.add_argument("--draft", action="store_true",
+                     help="schnell @ 4 steps for fast preview")
+    p_e.add_argument("--profile", choices=list(PROFILES), default=None,
+                     help="speed profile (cool/balanced/max/quality) — overrides --steps if set")
     p_e.add_argument("--seed", type=int, default=1)
     p_e.add_argument("--out")
     p_e.set_defaults(func=cmd_edit)
