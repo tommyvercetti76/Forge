@@ -1766,7 +1766,7 @@ _CB_LAYOUT = EnumBank("layout", [
         "centered-portrait",
         "Centered portrait: subject occupies the central 60% of the frame, "
         "vertical arrangement, simple supporting elements at periphery. "
-        "Maximum colorability — clear figure, large fillable shapes around it.",
+        "Clear hero figure, large negative space around it.",
     ),
     EnumValue(
         "environmental-wide",
@@ -1878,7 +1878,11 @@ class ChildrensColoringBookEngine(Engine):
         "secondary": {"hex": "#000000", "role": "black ink outline — closed, continuous, age-appropriate weight"},
         "accent":    {"hex": "#000000", "role": "no chromatic accent (line art); accent only via colorist's hand"},
     }
-    default_runtime = {"model": "dev", "steps": 32, "guidance": 5.5}
+    # Coloring book pages are PORTRAIT (8.5×11). 1024×1280 lets FLUX
+    # frame the subject as a coloring page rather than putting a small
+    # subject in the center of a landscape canvas with huge whitespace.
+    default_runtime = {"model": "dev", "steps": 32, "guidance": 5.5,
+                       "width": 1024, "height": 1280}
     # Two strong Coloring-Book LoRAs in our curation — picking prithivMLmods
     # (the more-downloaded, conservative one). The engine's prompt already
     # contains "coloring book page" so the trigger phrase is honoured.
@@ -2025,18 +2029,6 @@ class ChildrensColoringBookEngine(Engine):
         prompt_parts = [
             # ── SCENE FIRST — strongest T5 attention zone ──
             f"SCENE: {clean_subject}.{story_beat_line}",
-            # ── FILL THE FRAME — FLUX's prior for "coloring book page" is a
-            # cover-design layout with a tiny subject in a sea of white space.
-            # Explicit canvas-filling directive overrides that prior. Without
-            # it, every render comes back as a thumbnail-sized illustration
-            # in the corner of a mostly-empty canvas.
-            "FRAMING: full-frame illustration. The subject(s) FILL the canvas "
-            "edge to edge. NOT a small thumbnail in a corner. NOT a cover "
-            "design with a tiny logo on white space. NOT a print-on-demand "
-            "merchandise layout. The figures occupy 60-75% of the canvas "
-            "height; setting elements (table, props, background) fill the "
-            "rest. Reads as a finished illustration plate, NOT a book-cover "
-            "thumbnail.",
         ]
         if archetype.key != "from-prompt":
             prompt_parts.append(f"CHARACTER DETAIL: {archetype.description}")
@@ -2058,24 +2050,46 @@ class ChildrensColoringBookEngine(Engine):
 
             f"DRAWING STYLE: {tradition.key} — {tradition_short}",
 
-            # ── ONE consolidated line-art directive, BALANCED ──
-            # Equal weight to "BOLD black ink" and "pure white paper" so FLUX
-            # doesn't optimise for one at the cost of the other. Anti-AI-noise
-            # negatives stay in engine_negatives where they belong, not here.
-            "RENDER AS LINE ART: BOLD high-contrast SOLID BLACK INK contours "
-            "(uniform medium weight, age-appropriate, technical-pen feel — "
-            "NOT faint pencil, NOT light grey, NOT washed-out sketch). Lines "
-            "are vector-grade: confident, unbroken, closed shapes that a "
-            "printer could lay down as solid #000000 ink. Every contour is "
-            "ONE confident stroke — not try-lines, not multiple passes. "
-            "BETWEEN the black contours: pure white #FFFFFF paper, no fills, "
-            "no grey, no shading, no gradient. Simple eyes (two dots or "
-            "round-pupil ovals; NEVER manga sparkle); gentle expressions only "
-            "(no snarl, no fangs).",
+            # ── RENDER AS BLACK INK ILLUSTRATION (MONOCHROME) ──
+            # Iteration trail: "coloring book" → light pencil sketch. "Ink
+            # illustration" + colored-cartoon references (Quentin Blake,
+            # Sandra Boynton) → bold lines but FLUX added color. Need B&W-
+            # ONLY references: Edward Gorey, Saul Steinberg, Aubrey Beardsley,
+            # Mo Willems Pigeon — all famous for PURE BLACK INK ON WHITE,
+            # zero color. Explicit MONOCHROME enforcement layered on top.
+            "RENDER AS BLACK INK ILLUSTRATION (MONOCHROMATIC): pure B&W, "
+            "ZERO color, no tints, no fills, no shading, no gradient. Thick "
+            "BOLD black ink contours on pure white paper, in the lineage of "
+            "Edward Gorey's single-panel ink work, Saul Steinberg's New "
+            "Yorker cartoons, Aubrey Beardsley's black-ink illustration, "
+            "and Mo Willems' Pigeon books. Every contour is SOLID #000000 "
+            "INK — confident, decisive, high-contrast — NOT pencil, NOT "
+            "faint, NOT grey, NOT washed-out. The image is RIGOROUSLY "
+            "TWO-COLOR ONLY: solid black ink + pure white paper. NO "
+            "intermediate tones. The closed line regions are EMPTY white "
+            "space (to be filled in later by a colorist with their own "
+            "pencils — do not pre-fill anything). Simple eyes (two dots or "
+            "round-pupil ovals; NEVER manga sparkle); gentle expressions.",
 
             # Page format kept short — just the framing rule, no white repetition.
             "PAGE FORMAT: ~10% margin, no outer frame, no watermark, no text "
             "overlay, no page number, no signature.",
+
+            # ── FRAMING LAST (T5 recency bias) ──
+            # Putting this at the END is deliberate. The "B&W / monochrome /
+            # closed regions empty" instructions push FLUX to maximize the
+            # white space (shrinks the subject). Placing FRAMING as the LAST
+            # block FLUX reads pulls the composition back to full-frame via
+            # recency bias. Concrete spatial percentages instead of vague
+            # "edge to edge" — FLUX latches onto numbers.
+            "FRAMING (overrides any 'cover design' or 'thumbnail' prior): "
+            "this is a FULL-FRAME illustration. The figures fill 60-75% of "
+            "the canvas height, centered. The figures touch the top, bottom, "
+            "and sides of the safe area with at most a 10% margin. NOT a "
+            "small image floating in white space. NOT a cover design. NOT a "
+            "thumbnail. NOT a logo. The whole canvas is part of the "
+            "composition — characters + setting + props + banner together "
+            "use the full available area.",
         ])
         prompt = "\n\n".join(p for p in prompt_parts if p)
 
@@ -2322,7 +2336,11 @@ class MandalaArtEngine(Engine):
         "secondary": {"hex": "#000000", "role": "black ink line — fine, precise, closed continuous outlines"},
         "accent":    {"hex": "#000000", "role": "no chromatic accent (line art); accent via colorist's hand"},
     }
-    default_runtime = {"model": "dev", "steps": 32, "guidance": 8.5}
+    # Mandalas are radial — SQUARE aspect is the natural canvas. 1280×1280
+    # keeps the mandala centered without elongation. Same total pixel count
+    # as default landscape (~0.92 MP) so memory + time stay equal.
+    default_runtime = {"model": "dev", "steps": 32, "guidance": 8.5,
+                       "width": 1280, "height": 1280}
     engine_negatives: ClassVar[tuple[str, ...]] = (
         # Color / shading killers
         "color", "colored", "color illustration", "RGB fill", "saturated tone",
@@ -3101,6 +3119,15 @@ _MT_MOTIF = EnumBank("motif", [
         masters=("Japanese mon crest logic", "Paul Rand negative-space marks"),
     ),
     EnumValue(
+        "madhubani-folk-icon",
+        "Madhubani / Mithila-inspired folk icon reduced for apparel: clean "
+        "double-contour black keylines, almond eye, side-profile folk bird or "
+        "animal silhouette, fine interior feather/leaf linework, tiny floral "
+        "ornaments used sparingly. Contemporary and print-safe, not a dense "
+        "wall painting and not a generic logo.",
+        masters=("Sita Devi Mithila painting", "Ganga Devi Madhubani line grammar"),
+    ),
+    EnumValue(
         "tiny-line-scene",
         "Tiny quiet line scene: a small landscape, object, or moment reduced to "
         "5-9 essential strokes. No full background illustration, just the "
@@ -3163,6 +3190,13 @@ _MT_INK = EnumBank("ink", [
         "Tonal-on-tonal print: ink only one or two steps lighter/darker than "
         "the shirt base. Minimal, premium, low-contrast but still readable.",
     ),
+    EnumValue(
+        "three-ink-popti-red-black",
+        "Premium three-ink folk palette: clean black keyline ink, popti green "
+        "body fill, and deep red micro-accent. Ivory is supplied by the shirt "
+        "base or a minimal underbase, so the printed art stays screen-print "
+        "friendly instead of becoming a four-color poster.",
+    ),
 ])
 
 _MT_SHIRT_COLOR = EnumBank("shirt_color", [
@@ -3172,6 +3206,12 @@ _MT_SHIRT_COLOR = EnumBank("shirt_color", [
     EnumValue("heather-grey", "Heather grey shirt base; black or navy ink reads cleanly."),
     EnumValue("navy", "Dark navy shirt base; off-white ink gives classic restraint."),
     EnumValue("forest-green", "Forest green shirt base; cream or pale tan ink reads outdoorsy."),
+    EnumValue(
+        "cream-or-black",
+        "Design must be viable on oversized cream or black T-shirts. Use an "
+        "ivory/cream base assumption for print-art, while preserving enough "
+        "keyline contrast to invert or underbase for black cotton.",
+    ),
 ])
 
 _MT_PLACEMENT = EnumBank("placement", [
@@ -3221,11 +3261,120 @@ _MT_LAYOUT = EnumBank("layout", [
     ),
 ])
 
+_MT_TRADITION = EnumBank("tradition", [
+    EnumValue(
+        "modern-minimal",
+        "Modern minimalist merch design: clean grid, large negative space, "
+        "premium brand restraint, no cultural ornament unless the subject asks "
+        "for it.",
+    ),
+    EnumValue(
+        "madhubani-contemporary",
+        "Madhubani / Mithila-inspired contemporary apparel translation: double "
+        "black contour lines, almond eye, decorative feather/leaf infill, small "
+        "floral symbols, handmade symmetry, and flat color fields. Keep the "
+        "folk grammar visible but reduce density for premium streetwear.",
+        masters=("Sita Devi Madhubani painting", "Ganga Devi linework", "Mithila kohbar bird motifs"),
+    ),
+    EnumValue(
+        "warli-minimal",
+        "Warli-inspired minimal apparel translation: simple geometric human/"
+        "animal forms, triangular bodies, rhythmic line movement, restrained "
+        "one-ink field.",
+    ),
+    EnumValue(
+        "gond-minimal",
+        "Gond-inspired minimal apparel translation: animal silhouette with "
+        "rhythmic contour infill lines and dots, reduced so it remains printable.",
+    ),
+])
+
+_MT_DETAIL = EnumBank("detail", [
+    EnumValue(
+        "ultra-minimal",
+        "Ultra-minimal reduction: 3-7 major shapes, almost no interior detail, "
+        "maximum negative space.",
+    ),
+    EnumValue(
+        "subtle-folk-detail",
+        "Subtle folk-art detail: keep the silhouette ultra-clean, then add a "
+        "small amount of interior linework in feather, leaf, or petal zones. "
+        "Detail should enrich the mark without filling every area.",
+    ),
+    EnumValue(
+        "ornamental-balanced",
+        "Balanced ornament: visible handmade folk detailing across the subject, "
+        "but still with open breathing zones and print-safe line spacing.",
+    ),
+    EnumValue(
+        "maximal-but-printable",
+        "Maximum decoration that still works on a shirt: denser folk linework, "
+        "but thick enough for screen printing and never a full poster scene.",
+    ),
+])
+
+_MT_SYMMETRY = EnumBank("symmetry", [
+    EnumValue("none", "No symmetry requirement beyond normal composition balance."),
+    EnumValue(
+        "handmade-balanced",
+        "Elegant handmade symmetry: the design feels balanced left-to-right but "
+        "not mechanically mirrored; small folk-art irregularities remain human.",
+    ),
+    EnumValue(
+        "near-bilateral",
+        "Near-bilateral centered balance: subject and ornamental accents are "
+        "almost symmetric, with tiny hand-drawn variation.",
+    ),
+])
+
+_MT_ACCENTS = EnumBank("accents", [
+    EnumValue("none", "No ornamental accents beyond the main mark."),
+    EnumValue(
+        "small-floral-only",
+        "Small ornamental floral accents only: 2-6 tiny flowers or leaves around "
+        "the subject, not a border, not a background field.",
+    ),
+    EnumValue(
+        "micro-folk-dots",
+        "Tiny folk dots and leaf marks used as sparse punctuation around the "
+        "main subject; never dense filler.",
+    ),
+])
+
+_MT_BACKGROUND = EnumBank("background", [
+    EnumValue(
+        "no-background",
+        "No background illustration, no scenery, no filled rectangle, no texture "
+        "field; only the isolated print artwork on empty base.",
+    ),
+    EnumValue(
+        "transparent-feel",
+        "Transparent-background feel: design appears isolated and ready for "
+        "production extraction, with the base color only implied.",
+    ),
+])
+
+_MT_BORDER = EnumBank("border", [
+    EnumValue("none", "No border, no frame, no badge ring, no enclosing box."),
+    EnumValue(
+        "hairline-badge",
+        "Optional ultra-thin badge frame only if layout requires it; never a "
+        "dense ornamental border.",
+    ),
+])
+
 
 @dataclass(frozen=True)
 class MTSubjectConfig:
     subject: str
     motif: str = "monoline-icon"
+
+@dataclass(frozen=True)
+class MTStyleConfig:
+    tradition: str = "modern-minimal"
+    detail: str = "ultra-minimal"
+    symmetry: str = "none"
+    accents: str = "none"
 
 @dataclass(frozen=True)
 class MTProductionConfig:
@@ -3237,10 +3386,13 @@ class MTProductionConfig:
 class MTCompositionConfig:
     placement: str = "center-chest"
     layout: str = "single-mark"
+    background: str = "no-background"
+    border: str = "none"
 
 @dataclass(frozen=True)
 class MinimalistTShirtConfig:
     subject: MTSubjectConfig
+    style: MTStyleConfig = field(default_factory=MTStyleConfig)
     production: MTProductionConfig = field(default_factory=MTProductionConfig)
     composition: MTCompositionConfig = field(default_factory=MTCompositionConfig)
     seed: int = 1
@@ -3277,26 +3429,39 @@ class MinimalistTShirtEngine(Engine):
     default_lora_stack: ClassVar[tuple[tuple[str, float], ...]] = ()
 
     MOTIF = _MT_MOTIF
+    TRADITION = _MT_TRADITION
+    DETAIL = _MT_DETAIL
+    SYMMETRY = _MT_SYMMETRY
+    ACCENTS = _MT_ACCENTS
     OUTPUT = _MT_OUTPUT
     INK = _MT_INK
     SHIRT_COLOR = _MT_SHIRT_COLOR
     PLACEMENT = _MT_PLACEMENT
     LAYOUT = _MT_LAYOUT
+    BACKGROUND = _MT_BACKGROUND
+    BORDER = _MT_BORDER
 
     @classmethod
     def build(cls, config: MinimalistTShirtConfig) -> Directive:
         sub = config.subject
+        st = config.style
         prod = config.production
         cmp = config.composition
 
         motif = cls.MOTIF.validate(sub.motif)
+        tradition = cls.TRADITION.validate(st.tradition)
+        detail = cls.DETAIL.validate(st.detail)
+        symmetry = cls.SYMMETRY.validate(st.symmetry)
+        accents = cls.ACCENTS.validate(st.accents)
         output = cls.OUTPUT.validate(prod.output)
         ink = cls.INK.validate(prod.ink)
         shirt = cls.SHIRT_COLOR.validate(prod.shirt_color)
         placement = cls.PLACEMENT.validate(cmp.placement)
         layout = cls.LAYOUT.validate(cmp.layout)
+        background = cls.BACKGROUND.validate(cmp.background)
+        border = cls.BORDER.validate(cmp.border)
 
-        clean_subject = normalize_subject(sub.subject, max_chars=260)
+        clean_subject = normalize_subject(sub.subject, max_chars=520)
 
         if cmp.placement == "left-pocket" and cmp.layout in {"stacked-symbols", "repeat-mini-pattern"}:
             # This is allowed, but the prompt needs extra reduction pressure.
@@ -3325,13 +3490,30 @@ class MinimalistTShirtEngine(Engine):
 
         audit = {
             "motif": motif.description,
+            "tradition": tradition.description,
+            "detail": detail.description,
+            "symmetry": symmetry.description,
+            "accents": accents.description,
             "output": output.description,
             "ink": ink.description,
             "shirt_color": shirt.description,
             "placement": placement.description,
             "layout": layout.description,
+            "background": background.description,
+            "border": border.description,
             "pocket_reduction": pocket_reduction,
         }
+
+        ink_limit = (
+            "three screen-print inks maximum"
+            if ink.key.startswith("three-ink")
+            else "one or two screen-print inks maximum"
+        )
+        selected_masters = tuple(dict.fromkeys([
+            *cls.masters,
+            *motif.masters,
+            *tradition.masters,
+        ]))
 
         prompt_parts = [
             "MINIMALIST T-SHIRT DESIGN ENGINE — create a screen-printable apparel "
@@ -3340,21 +3522,34 @@ class MinimalistTShirtEngine(Engine):
             f"SUBJECT / IDEA: {clean_subject}.",
 
             f"MOTIF SYSTEM ({motif.key}): {motif.description}",
+            f"CULTURAL / STYLE REGISTER ({tradition.key}): {tradition.description}",
+            f"DETAIL DENSITY ({detail.key}): {detail.description}",
+            f"SYMMETRY ({symmetry.key}): {symmetry.description}",
+            f"ORNAMENTAL ACCENTS ({accents.key}): {accents.description}",
             f"LAYOUT ({layout.key}): {layout.description}",
             f"PLACEMENT ({placement.key}): {placement.description}",
+            f"BACKGROUND ({background.key}): {background.description}",
+            f"BORDER ({border.key}): {border.description}",
             f"INK SYSTEM ({ink.key}): {ink.description}",
             f"SHIRT / BASE COLOR ({shirt.key}): {shirt.description}",
             output_rule,
 
-            "PRINT CONSTRAINTS: one or two screen-print inks maximum, no gradients, "
+            f"PRINT CONSTRAINTS: {ink_limit}, no gradients, "
             "no photographic texture, no rendered lighting inside the artwork, no "
             "thin hairlines, no tiny decorative debris. Every shape must be clean "
             "enough to cut as vinyl or expose on a screen.",
 
-            "MINIMALISM CONTRACT: 70% of the design area must remain empty or low "
-            "detail. The subject must be recognizable from outer silhouette and "
-            "one clever interior detail. Use fewer than 12 major shapes. Use strong "
-            "negative space. If an element is not essential, remove it.",
+            "MINIMALISM CONTRACT: keep large balanced negative space, but do not "
+            "erase culturally meaningful detail. The subject must be recognizable "
+            "from its outer silhouette first, then reward close inspection with "
+            "controlled interior folk linework. Use strong negative space. If an "
+            "ornament does not support the subject, remove it.",
+
+            "FOLK-APPAREL CONTRACT: when a folk register is active, preserve the "
+            "signature line grammar (double contour, almond eye, rhythmic feather "
+            "or leaf infill, tiny floral punctuation) while keeping every line "
+            "thick and open enough for screen printing. Culturally inspired, not "
+            "costume-like, not a museum copy, not generic tribal pattern.",
 
             "TEXT POLICY: do not invent readable words, slogans, fake brand names, "
             "random letters, or decorative micro-type. If text is conceptually "
@@ -3372,7 +3567,7 @@ class MinimalistTShirtEngine(Engine):
 
             *(["\n" + pocket_reduction] if pocket_reduction else []),
 
-            assemble_masters_line(cls.masters),
+            assemble_masters_line(selected_masters),
         ]
 
         prompt = "\n\n".join(prompt_parts)
@@ -3386,7 +3581,7 @@ class MinimalistTShirtEngine(Engine):
             seed=int(config.seed),
             audit=audit,
             config=_config_to_dict(config),
-            masters=cls.masters,
+            masters=selected_masters,
         )
 
 

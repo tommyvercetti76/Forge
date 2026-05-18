@@ -2924,14 +2924,17 @@ def cmd_engine_render(args) -> int:
     seeds_n = max(1, int(getattr(args, "seeds", 1) or 1))
     refine = bool(getattr(args, "refine", False))
     refine_strength = float(getattr(args, "refine_strength", 0.25) or 0.25)
-    # Resolution shortcuts: --ultra-res > --hi-res > explicit --width/--height > default
+    # Resolution shortcuts: --ultra-res > --hi-res > explicit --width/--height >
+    # engine's default_runtime width/height > falls through to THUMB_W/H (1280×720).
+    # Engine-declared default aspect lets coloring-book engine pick portrait
+    # and mandala-art pick square — the genres' natural canvases.
     if getattr(args, "ultra_res", False):
         eff_w, eff_h = 2048, 1152
     elif getattr(args, "hi_res", False):
         eff_w, eff_h = 1920, 1080
     else:
-        eff_w = getattr(args, "width", None)
-        eff_h = getattr(args, "height", None)
+        eff_w = getattr(args, "width", None) or directive.runtime.get("width")
+        eff_h = getattr(args, "height", None) or directive.runtime.get("height")
     guidance_override = getattr(args, "guidance", None)
     if args.out:
         out_path = Path(args.out).expanduser().resolve()
@@ -4963,6 +4966,35 @@ def _wizard_engine_coloring_shortcut() -> None:
     ))
 
 
+# ─────────────── WhatsApp joke factory ───────────────
+
+def cmd_jokes_generate(args) -> int:
+    """Bridge to whatsapp_joke_factory.py"""
+    import importlib.util
+    spec = importlib.util.spec_from_file_location("whatsapp_joke_factory", HERE / "whatsapp_joke_factory.py")
+    factory = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(factory)
+    return factory.cmd_generate(args)
+
+
+def cmd_jokes_qa(args) -> int:
+    """Bridge to whatsapp_joke_factory.py"""
+    import importlib.util
+    spec = importlib.util.spec_from_file_location("whatsapp_joke_factory", HERE / "whatsapp_joke_factory.py")
+    factory = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(factory)
+    return factory.cmd_qa(args)
+
+
+def cmd_jokes_render(args) -> int:
+    """Bridge to whatsapp_joke_factory.py"""
+    import importlib.util
+    spec = importlib.util.spec_from_file_location("whatsapp_joke_factory", HERE / "whatsapp_joke_factory.py")
+    factory = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(factory)
+    return factory.cmd_render(args)
+
+
 def cmd_wizard(_args) -> int:
     print_menu(short=False)
     while True:
@@ -5337,6 +5369,34 @@ def main() -> int:
     p_m.add_argument("--remove", action="append", default=None,
                      help="(clean) remove an entire model repo, e.g. black-forest-labs/FLUX.1-schnell. Repeatable.")
     p_m.set_defaults(func=cmd_models)
+
+    # forge jokes — WhatsApp joke pack generator
+    p_jokes = sub.add_parser("jokes", help="WhatsApp joke pack generator for Indian seniors")
+    jokes_sub = p_jokes.add_subparsers(dest="jokes_cmd", required=True)
+
+    jokes_gen = jokes_sub.add_parser("generate", help="generate a new joke pack")
+    jokes_gen.add_argument("--mode", choices=["daily", "morning", "festival", "regional", "voice-note"], default="daily")
+    jokes_gen.add_argument("--langs", type=lambda x: x.split(","), default=["hi", "mr"], help="comma-separated language codes (default: hi,mr)")
+    jokes_gen.add_argument("--count", type=int, default=12, help="number of jokes to generate")
+    jokes_gen.add_argument("--cards", type=int, default=4, help="number of image cards")
+    jokes_gen.add_argument("--audio", type=int, default=2, help="number of audio clips")
+    jokes_gen.add_argument("--video", type=int, default=2, help="number of MP4 videos")
+    jokes_gen.add_argument("--voice", default="male_warm", help="voice preset id")
+    jokes_gen.add_argument("--seed", type=int, help="random seed")
+    jokes_gen.add_argument("--out", required=True, help="output directory")
+    jokes_gen.add_argument("--dry-run", action="store_true", help="text only, no cards/audio/video")
+    jokes_gen.set_defaults(func=cmd_jokes_generate)
+
+    jokes_qa = jokes_sub.add_parser("qa", help="QA an existing pack")
+    jokes_qa.add_argument("manifest", help="path to manifest.json")
+    jokes_qa.set_defaults(func=cmd_jokes_qa)
+
+    jokes_render = jokes_sub.add_parser("render", help="re-render artifacts from manifest")
+    jokes_render.add_argument("manifest", help="path to manifest.json")
+    jokes_render.add_argument("--cards", action="store_true")
+    jokes_render.add_argument("--audio", action="store_true")
+    jokes_render.add_argument("--video", action="store_true")
+    jokes_render.set_defaults(func=cmd_jokes_render)
 
     p_w = sub.add_parser("wizard", help="full guided interactive mode")
     p_w.set_defaults(func=cmd_wizard)
