@@ -85,3 +85,8 @@ weights/
 *.bak
 tmp/
 .cache/
+
+# Throwaway one-off render scripts (showcase / verification batches)
+# Their intent lives in commit messages; the engines themselves are
+# the production surface, not these scripts.
+bin/_render_*.sh
