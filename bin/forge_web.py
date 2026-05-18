@@ -2539,9 +2539,8 @@ const specs = {
       {name:"concept", label:"Prompt", type:"textarea", required:true, value:"A dragon holding a puppy in Pixar Style"},
       {name:"headline", label:"Headline", type:"text", required:true, value:"CAREGIVER"},
       {name:"sub", label:"Sub", type:"text", value:"ALLY"},
-      {name:"bg", label:"Background path", type:"path"},
-      {name:"draft", label:"Draft / cool", type:"checkbox"},
-      {name:"profile", label:"Speed profile", type:"select", options:"profiles", value:"balanced"},
+      {name:"bg", label:"Background path (skip BG render — supply your own)", type:"path"},
+      {name:"profile", label:"Render mode", type:"select", options:"profiles", value:"balanced"},
       {name:"seed", label:"Seed", type:"number", value:"1"},
       {name:"frame_offset", label:"Frame offset", type:"number", value:"0"},
       {name:"steps", label:"Steps override", type:"number"},
@@ -2553,7 +2552,7 @@ const specs = {
   engine: {
     title: "Branded Image",
     fields: [
-      {name:"name", label:"Engine", type:"select", options:"engines", required:true},
+      {name:"name", label:"Engine (optional if a Recipe is selected — recipe carries its engine)", type:"select", options:"engines"},
       {name:"recipe", label:"Recipe", type:"select", options:"recipesOptional"},
       {name:"subject", label:"Prompt", type:"textarea"},
       {name:"config", label:"Config overrides", type:"text"},
@@ -2561,8 +2560,7 @@ const specs = {
       {name:"from_image", label:"Source image", type:"path"},
       {name:"from_image_strength", label:"Image strength", type:"number", value:"0.85"},
       {name:"seeds", label:"Variants", type:"number", value:"1"},
-      {name:"profile", label:"Speed profile (balanced = dev @ 18 steps default)", type:"select", options:"profiles", value:"balanced"},
-      {name:"draft", label:"Draft / cool (overrides profile — schnell @ 4 steps)", type:"checkbox"},
+      {name:"profile", label:"Render mode", type:"select", options:"profiles", value:"balanced"},
       {name:"seed", label:"Seed", type:"number", value:"1"},
       {name:"width", label:"Width", type:"number"},
       {name:"height", label:"Height", type:"number"},
@@ -2595,7 +2593,6 @@ const specs = {
       {name:"seed", label:"Seed", type:"number", value:"1"},
       {name:"guidance", label:"Guidance", type:"number", value:"6.5"},
       {name:"profile", label:"Speed profile (balanced = dev @ 18 steps, ~2 min)", type:"select", options:"profiles", value:"balanced"},
-      {name:"draft", label:"Draft (schnell @ 4 steps — ~25 s fast preview, overrides profile)", type:"checkbox"},
       {name:"refine", label:"Refine (extra ~30 s, micro-detail pass)", type:"checkbox"},
       {name:"upscale", label:"Final resolution (RealESRGAN upscale — safe + fast)", type:"select", options:"upscaleOptions"},
       {name:"hi_res", label:"Native Hi-res 1920×1080 (txt2img only — auto-clamped for --from-image)", type:"checkbox"},
@@ -2638,7 +2635,6 @@ const specs = {
       {name:"seed", label:"Seed", type:"number", value:"7"},
       {name:"guidance", label:"Guidance", type:"number", value:"5.0"},
       {name:"profile", label:"Speed profile (balanced = dev @ 18 steps, ~2 min)", type:"select", options:"profiles", value:"balanced"},
-      {name:"draft", label:"Draft (schnell @ 4 steps — ~25 s fast preview, overrides profile)", type:"checkbox"},
       {name:"refine", label:"Refine (extra ~30 s, micro-detail pass)", type:"checkbox"},
       {name:"upscale", label:"Final resolution (RealESRGAN upscale — safe + fast)", type:"select", options:"upscaleOptions"},
       {name:"hi_res", label:"Native Hi-res 1920×1080 (txt2img only — auto-clamped for --from-image)", type:"checkbox"},
@@ -2675,7 +2671,6 @@ const specs = {
       {name:"seed", label:"Seed", type:"number", value:"1"},
       {name:"guidance", label:"Guidance", type:"number", value:"7.5"},
       {name:"profile", label:"Speed profile (balanced = dev @ 18 steps, ~2 min)", type:"select", options:"profiles", value:"balanced"},
-      {name:"draft", label:"Draft (schnell @ 4 steps — ~25 s fast preview, overrides profile)", type:"checkbox"},
       {name:"refine", label:"Refine (extra ~30 s, micro-detail pass)", type:"checkbox"},
       {name:"upscale", label:"Final resolution (RealESRGAN upscale — safe + fast)", type:"select", options:"upscaleOptions"},
       {name:"hi_res", label:"Native Hi-res 1920×1080 (txt2img only — auto-clamped for --from-image)", type:"checkbox"},
@@ -2718,7 +2713,6 @@ const specs = {
       {name:"seed", label:"Seed", type:"number", value:"7"},
       {name:"guidance", label:"Guidance", type:"number", value:"4.5"},
       {name:"profile", label:"Speed profile (balanced = dev @ 18 steps, ~2 min)", type:"select", options:"profiles", value:"balanced"},
-      {name:"draft", label:"Draft (schnell @ 4 steps — ~25 s fast preview, overrides profile)", type:"checkbox"},
       {name:"refine", label:"Refine (extra ~30 s, micro-detail pass)", type:"checkbox"},
       {name:"upscale", label:"Final resolution (RealESRGAN upscale — safe + fast)", type:"select", options:"upscaleOptions"},
       {name:"hi_res", label:"Native Hi-res 1920×1080 (txt2img only — auto-clamped for --from-image)", type:"checkbox"},
@@ -2747,9 +2741,8 @@ const specs = {
       {name:"preset", label:"Preset", type:"select", options:"presetsOptional"},
       {name:"instruction", label:"Instruction", type:"textarea"},
       {name:"strength", label:"Strength (0.3 minor edit, 0.6 default, 0.9 major restyle)", type:"number", value:"0.6"},
-      {name:"profile", label:"Speed profile (balanced = ~2 min default)", type:"select", options:"profiles", value:"balanced"},
-      {name:"draft", label:"Draft (schnell @ 4 steps — overrides profile)", type:"checkbox"},
-      {name:"steps", label:"Steps override (blank = use profile)", type:"number"},
+      {name:"profile", label:"Render mode", type:"select", options:"profiles", value:"balanced"},
+      {name:"steps", label:"Steps override (blank = use render mode)", type:"number"},
       {name:"seed", label:"Seed", type:"number", value:"1"},
       {name:"out", label:"Output path", type:"path"}
     ]
@@ -2761,8 +2754,7 @@ const specs = {
       {name:"preset", label:"Preset", type:"select", options:"presets", value:"cinematic"},
       {name:"voice", label:"Voice", type:"select", options:"voices"},
       {name:"series", label:"Series", type:"select", options:"seriesOptional"},
-      {name:"draft", label:"Draft / cool", type:"checkbox"},
-      {name:"profile", label:"Speed profile", type:"select", options:"profiles", value:"balanced"},
+      {name:"profile", label:"Render mode", type:"select", options:"profiles", value:"balanced"},
       {name:"steps", label:"Steps override", type:"number"},
       {name:"lora", label:"LoRA paths", type:"textarea"},
       {name:"lora_scale", label:"LoRA scales", type:"text"},
@@ -2783,8 +2775,7 @@ const specs = {
       {name:"segments", label:"Segments", type:"number", value:"4"},
       {name:"seconds", label:"Seconds", type:"number", value:"15"},
       {name:"shots_per_segment", label:"Shots per segment", type:"number", value:"4"},
-      {name:"draft", label:"Draft / cool", type:"checkbox"},
-      {name:"profile", label:"Speed profile", type:"select", options:"profiles", value:"balanced"},
+      {name:"profile", label:"Render mode", type:"select", options:"profiles", value:"balanced"},
       {name:"steps", label:"Steps override", type:"number"},
       {name:"no_flux", label:"No FLUX", type:"checkbox"},
       {name:"out", label:"Output dir", type:"path", value:"~/Desktop/forge-test/episode"}
@@ -3121,7 +3112,17 @@ const FIELD_HELP = {
 function optionsFor(field) {
   const cfg = state.config || {};
   if (field.choices) return field.choices.map(v => ({ value:v, label:v }));
-  if (field.options === "profiles") return [{value:"", label:"preset default"}, {value:"cool", label:"cool — schnell @ 4 steps (~25 s)"}, {value:"balanced", label:"balanced — dev @ 18 steps (~3 min)"}, {value:"max", label:"max — dev @ 25 steps (~5 min)"}, {value:"quality", label:"quality — dev @ 36 steps + fp16 (production grade, ~12 min)"}];
+  // Render Mode — unified speed/quality knob. Replaces the separate draft
+  // checkbox. Preview is the fast-scout pass; Production is the print-grade
+  // final. Backend values stay stable (cool/balanced/max/quality) so existing
+  // scripts and CLI invocations keep working.
+  if (field.options === "profiles") return [
+    {value:"",          label:"(engine default)"},
+    {value:"cool",      label:"Preview — schnell @ 4 steps (~25 s)"},
+    {value:"balanced",  label:"Balanced — dev @ 18 steps (~3 min)"},
+    {value:"max",       label:"Max — dev @ 25 steps (~5 min)"},
+    {value:"quality",   label:"Production — dev @ 36 steps + fp16 (~12 min)"},
+  ];
   if (field.options === "seriesOptional") return [{value:"", label:"none"}, ...(cfg.series || []).map(v => ({value:v, label:v}))];
   if (field.options === "presetsOptional") return [{value:"", label:"none"}, ...(cfg.presets || []).map(v => ({value:v, label:v}))];
   if (field.options === "enginesOptional") return [{value:"", label:"all"}, ...(cfg.engines || []).map(v => ({value:v, label:v}))];
@@ -3767,6 +3768,10 @@ function renderForm() {
       const recipe = (state.config.recipes || []).find(r => r.id === recipeId);
       if (!recipe) return;
       const fieldMap = RECIPE_FIELD_MAP[recipe.engine] || {};
+      // Generic Engine page: auto-fill the engine select from the recipe so a
+      // recipe-only run becomes a one-click flow.
+      const engineEl = form.querySelector('[name="name"]');
+      if (engineEl && recipe.engine) engineEl.value = recipe.engine;
       if (recipe.subject) {
         const el = form.querySelector('[name="subject"]');
         if (el) el.value = recipe.subject;
@@ -3789,8 +3794,84 @@ function renderForm() {
       showToast(`Loaded recipe: ${recipeId}`, "success");
     });
   }
+  // Smart-disable: form fields that are no-ops under certain modes get a
+  // visual disabled state + tooltip, so the user doesn't believe they're
+  // changing the image when they're not. Re-evaluated on every form input.
+  function applyFieldGating() {
+    const fromImage = (form.querySelector('[name="from_image"]') || {}).value || "";
+    const upscale = (form.querySelector('[name="upscale"]') || {}).value || "";
+    // When Kontext mode active (from_image set), several controls are no-op:
+    //   - guidance: Kontext ignores explicit guidance (uses model default 2.5)
+    //   - refine / refine_strength: not run on img2img path
+    //   - hi_res / ultra_res: backend rejects native >1280×720 for img2img
+    //   - negative: engine negatives still apply but extra terms are dropped
+    const kontextNoOps = ["guidance", "refine", "refine_strength", "hi_res", "ultra_res", "negative", "no_default_loras"];
+    for (const name of kontextNoOps) {
+      const el = form.querySelector(`[name="${name}"]`);
+      if (!el) continue;
+      const wrap = el.closest(".field") || el.parentElement;
+      if (fromImage) {
+        el.disabled = true;
+        if (wrap) {
+          wrap.style.opacity = "0.45";
+          wrap.title = "Not used in --from-image (Kontext) mode";
+        }
+      } else {
+        el.disabled = false;
+        if (wrap) {
+          wrap.style.opacity = "";
+          wrap.title = "";
+        }
+      }
+    }
+    // Upscale supersedes native hi-res / ultra-res — if user picks an upscale
+    // factor, mute the native-resolution checkboxes. (Backend accepts both but
+    // the user wants upscale to be THE high-res path.)
+    for (const name of ["hi_res", "ultra_res"]) {
+      const el = form.querySelector(`[name="${name}"]`);
+      if (!el || fromImage) continue;   // already handled above when Kontext
+      const wrap = el.closest(".field") || el.parentElement;
+      if (upscale) {
+        el.disabled = true;
+        el.checked = false;
+        if (wrap) {
+          wrap.style.opacity = "0.45";
+          wrap.title = "Upscale supersedes native hi-res / ultra-res";
+        }
+      } else {
+        el.disabled = false;
+        if (wrap) {
+          wrap.style.opacity = "";
+          wrap.title = "";
+        }
+      }
+    }
+    // Thumbnail-only: when series is set, seed is derived from base_seed +
+    // frame_offset — explicit seed is ignored.
+    const seriesEl = form.querySelector('[name="series"]');
+    const seedEl = form.querySelector('[name="seed"]');
+    if (seriesEl && seedEl) {
+      const seriesPicked = (seriesEl.value || "").trim() !== "";
+      const wrap = seedEl.closest(".field") || seedEl.parentElement;
+      if (seriesPicked) {
+        seedEl.disabled = true;
+        if (wrap) {
+          wrap.style.opacity = "0.45";
+          wrap.title = "Series-locked: derived from series base_seed + frame_offset";
+        }
+      } else {
+        seedEl.disabled = false;
+        if (wrap) {
+          wrap.style.opacity = "";
+          wrap.title = "";
+        }
+      }
+    }
+  }
+  applyFieldGating();
   updateCommandPreview();
-  form.oninput = updateCommandPreview;
+  form.addEventListener("input", () => { applyFieldGating(); updateCommandPreview(); });
+  form.addEventListener("change", applyFieldGating);
 }
 
 // Reverse map of build_command's --config synthesizers: maps each engine's
@@ -3835,6 +3916,10 @@ function gatherPayload() {
   const form = document.getElementById("jobForm");
   for (const el of form.elements) {
     if (!el.name) continue;
+    // Skip disabled fields — they're gated by applyFieldGating() and would
+    // otherwise leak default values into the cmd (e.g. hi_res=on when upscale
+    // is set, or guidance=preset when from_image is set).
+    if (el.disabled) continue;
     if (el.type === "checkbox") payload[el.name] = el.checked;
     else payload[el.name] = el.value;
   }
