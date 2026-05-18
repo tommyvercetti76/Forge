@@ -331,7 +331,10 @@ class NoirCinematographyEngine(Engine):
         "secondary": {"hex": "#E8E4DA", "role": "off-white highlight on subject, rim-light edge"},
         "accent":    {"hex": "#9A2222", "role": "single accent (blood-red default)"},
     }
-    default_runtime = {"model": "dev", "steps": 28, "guidance": 4.5}
+    # Noir cinema is widescreen film stills — 16:9 landscape is the genre's
+    # native canvas (Roger Deakins, Gordon Willis, Conrad Hall framings).
+    default_runtime = {"model": "dev", "steps": 28, "guidance": 4.5,
+                       "width": 1280, "height": 720}
     engine_negatives: ClassVar[tuple[str, ...]] = (
         # Wrong register
         "bright daylight bleed", "smiling face", "centered square-on pose",
@@ -659,7 +662,10 @@ class WildlifePhotorealismEngine(Engine):
         "secondary": {"hex": "#A88E6E", "role": "subject's body coloration, hairlight-warm midtone"},
         "accent":    {"hex": "#D5A04C", "role": "single golden-hour-warm focal accent (eye highlight, rim glow, feather edge)"},
     }
-    default_runtime = {"model": "dev", "steps": 30, "guidance": 3.5}
+    # Wildlife photography: 16:9 landscape matches Nat Geo / BBC Earth /
+    # editorial-wildlife framing. Environment + subject share the frame.
+    default_runtime = {"model": "dev", "steps": 30, "guidance": 3.5,
+                       "width": 1280, "height": 720}
     engine_negatives: ClassVar[tuple[str, ...]] = (
         # Wrong register
         "fused toes", "extra toes", "extra fingers on paws",
@@ -938,7 +944,11 @@ class ImpressionistPaintingEngine(Engine):
         "secondary": {"hex": "#E8C547", "role": "complementary yellow — star-glow, sunflower, field"},
         "accent":    {"hex": "#3D5B2E", "role": "olive-green or cypress-dark vertical accent"},
     }
-    default_runtime = {"model": "dev", "steps": 30, "guidance": 4.0}
+    # Impressionist works are typically 4:3 (Monet's Water Lilies, Renoir
+    # gatherings) — gives the brushwork room without forcing widescreen
+    # cropping of vertical compositions.
+    default_runtime = {"model": "dev", "steps": 30, "guidance": 4.0,
+                       "width": 1280, "height": 960}
     engine_negatives: ClassVar[tuple[str, ...]] = (
         # Wrong medium
         "smooth digital gradient", "photo-realism creep", "modern HDR color grade",
@@ -1226,7 +1236,11 @@ class IndianClassicalEngine(Engine):
         "secondary": {"hex": "#D4A04C", "role": "saffron/marigold/gold-leaf complement, jewelry + garment + halo"},
         "accent":    {"hex": "#9C2A2A", "role": "deep-red sindoor / kumkum / lotus / ceremonial cloth"},
     }
-    default_runtime = {"model": "dev", "steps": 32, "guidance": 5.0}
+    # Indian classical art is typically PORTRAIT — Madhubani panels, Tanjore
+    # rectangular gilt vertical, Pahari miniatures all use 4:5-ish portrait.
+    # Ravi Varma oleographs are 3:4. 1024×1280 = 4:5, the average.
+    default_runtime = {"model": "dev", "steps": 32, "guidance": 5.0,
+                       "width": 1024, "height": 1280}
     engine_negatives: ClassVar[tuple[str, ...]] = (
         # Wrong aesthetic / register
         "plastic-doll skin", "Disney-cute proportions", "anime stylization",
@@ -2977,7 +2991,11 @@ class StylizedCinematicEngine(Engine):
         "secondary": {"hex": "#E8D9B8", "role": "midground + character highlights"},
         "accent":    {"hex": "#D4751A", "role": "single focal accent (ON-AIR sign, mic light, golden-hour rim)"},
     }
-    default_runtime = {"model": "dev", "steps": 28, "guidance": 4.5}
+    # Stylized cinematic = animation cel / concept-art / painterly stills.
+    # 16:9 widescreen matches Tartakovsky / Mignola / McQuarrie / Ghibli
+    # framing conventions.
+    default_runtime = {"model": "dev", "steps": 28, "guidance": 4.5,
+                       "width": 1280, "height": 720}
     engine_negatives: ClassVar[tuple[str, ...]] = (
         # Wrong register
         "photorealism", "photographic detail", "3D rendered look",
@@ -3413,7 +3431,10 @@ class MinimalistTShirtEngine(Engine):
         "secondary": {"hex": "#111111", "role": "primary screen-print ink"},
         "accent":    {"hex": "#B65A32", "role": "optional second ink, never more than 10% of the design"},
     }
-    default_runtime = {"model": "dev", "steps": 28, "guidance": 5.5}
+    # T-shirt graphics are SQUARE (print files are 4500×4500 typically).
+    # 1280×1280 matches the print aspect; FLUX centers the design naturally.
+    default_runtime = {"model": "dev", "steps": 28, "guidance": 5.5,
+                       "width": 1280, "height": 1280}
     engine_negatives: ClassVar[tuple[str, ...]] = (
         "photorealistic scene", "full illustration background", "poster art",
         "complex shading", "gradient", "airbrush", "drop shadow", "glow",
