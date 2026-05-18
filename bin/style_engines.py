@@ -3436,16 +3436,35 @@ class MinimalistTShirtEngine(Engine):
     default_runtime = {"model": "dev", "steps": 28, "guidance": 5.5,
                        "width": 1280, "height": 1280}
     engine_negatives: ClassVar[tuple[str, ...]] = (
+        # Wrong register
         "photorealistic scene", "full illustration background", "poster art",
         "complex shading", "gradient", "airbrush", "drop shadow", "glow",
         "3D render", "embroidery texture", "stitched patch texture",
         "distressed grunge texture", "halftone", "speckled noise",
+        # Text & branding garbage
         "tiny details", "micro text", "random letters", "gibberish text",
-        "slogan text", "watermark", "signature", "logo of an existing brand",
+        "slogan text", "watermark", "signature", "artist signature",
+        "faux artist signature", "decorative script in corner",
+        "tiny faux-name script", "logo of an existing brand",
         "copyrighted character", "busy composition", "too many objects",
+        # Background clutter
+        "background scenery", "scattered ornaments", "background flora",
+        "background stars", "background grass", "background flowers",
+        "background birds", "frame border", "outer border", "decorative frame",
+        "off-white paper", "cream paper", "antique paper", "beige background",
+        "vintage paper texture",
+        # Mockup junk
         "photo of a person wearing shirt", "model posing", "hanger", "store rack",
         "wrinkled fabric covering the design", "folded shirt obscuring print",
         "large blank poster border", "mockup template watermark",
+        # Anatomy failures
+        "missing limbs", "stubby vestigial legs", "fused limbs", "floating limbs",
+        "extra limbs", "three legs on four-legged animal", "broken anatomy",
+        "deformed paws", "mangled feet", "extra toes", "missing toes",
+        "asymmetric eyes", "lazy eye", "fused eyes",
+        # Pose stiffness
+        "statue-stiff totem pose", "four-perfectly-aligned-fence-post legs",
+        "wooden museum diorama stance",
     )
     default_lora_stack: ClassVar[tuple[tuple[str, float], ...]] = ()
 
@@ -3569,6 +3588,32 @@ class MinimalistTShirtEngine(Engine):
             "Decorations are NOT on a separate saddle blanket / sash / cape / "
             "scarf draped on top of the subject — they are tattooed INTO the "
             "body's own form. The Madhubani T-shirt grammar: body as canvas.",
+
+            # ── ANATOMY GUARD (limbs, motion, completeness) ──
+            # Past renders had stubby legs that didn't read as 'in motion' and
+            # sometimes lost a limb entirely. Explicit guard fixes that:
+            "ANATOMY GUARD: every limb is COMPLETE, anatomically sound, and "
+            "fully resolved within the silhouette. If the subject has 4 legs, "
+            "render all 4 legs (not 3, not stubs, not fused). Animal "
+            "anatomy follows zoology: elephants have pillar-broad legs with "
+            "toenail detail and tucked tail; horses have hocks and fetlocks; "
+            "birds have visible joints (wing/shoulder, knee, ankle); humans "
+            "have 5 fingers per hand, 5 toes per foot, bilateral eyes. NO "
+            "missing limbs, NO fused limbs, NO floating limbs, NO 6-finger "
+            "hands, NO stubby vestigial legs. Joints are visible where the "
+            "anatomy expects them (knee, elbow, shoulder, hip).",
+
+            # ── MOTION (dynamic poses, not statue stiffness) ──
+            # T-shirt graphics are most compelling when the subject feels
+            # alive: a lifted leg, a turned head, a curling tail. Explicit
+            # motion directive pushes FLUX out of "totem pole" stiffness.
+            "POSE & MOTION: subjects feel alive and balanced, NOT statue-"
+            "stiff totems. If the subject has legs, vary their stance "
+            "(forward stride, lifted paw, planted-and-shifted weight) — "
+            "never four-perfectly-aligned-fence-posts. Heads tilt or turn "
+            "slightly to suggest attention. Tails curl or arc. Ears "
+            "perk or flop. The subject should feel like a snapshot of a "
+            "living being, not a museum diorama.",
 
             # ── ENGINE KNOBS (compact form) ──
             f"MOTIF ({motif.key}): {motif.description}",

@@ -84,6 +84,42 @@ REALESRGAN_MODELS_DIR = REALESRGAN_HOME / "models"
 # Model choice depends on subject register: anime model preserves clean
 # line work better (mandala / coloring-book), plus model is better at photo
 # detail (wildlife / cinematic / indian-classical).
+def _make_transparent_bg(src: Path, dst: Path, *, threshold: int = 235) -> None:
+    """Save a copy of src with near-white pixels turned to alpha=0.
+
+    Used for T-shirt mockup workflows: the engine forces a pure white
+    background, so a simple luminance threshold gives a clean cut-out.
+    Pixels with R, G, B all > threshold become transparent.
+
+    threshold=235 catches white + paper-white + faint edges. Tighter
+    threshold (250) preserves more anti-aliasing; looser (200) cuts
+    more aggressively but may eat highlights inside the subject.
+    """
+    try:
+        from PIL import Image
+    except ImportError:
+        sys.exit(red("transparent-bg requires Pillow: pip install Pillow"))
+    img = Image.open(src).convert("RGBA")
+    pixels = img.load()
+    w, h = img.size
+    for y in range(h):
+        for x in range(w):
+            r, g, b, a = pixels[x, y]
+            if r > threshold and g > threshold and b > threshold:
+                # Smooth alpha based on how close to pure white we are —
+                # gives anti-aliased edges, not hard binary cut-outs.
+                dist = min(255 - r, 255 - g, 255 - b)
+                alpha = max(0, min(255, dist * 12))  # 0 at pure white → 240 at threshold
+                pixels[x, y] = (r, g, b, alpha)
+    dst.parent.mkdir(parents=True, exist_ok=True)
+    img.save(dst, "PNG", optimize=True)
+
+
+# Engines whose output is intended for T-shirt / sticker / die-cut use —
+# auto-produce a transparent-background sibling alongside each render.
+_TRANSPARENT_BG_AUTO_ENGINES: set[str] = {"minimalist-tshirt"}
+
+
 REALESRGAN_MODEL_FOR_ENGINE = {
     "mandala-art":              "realesrgan-x4plus-anime",
     "childrens-coloring-book":  "realesrgan-x4plus-anime",
@@ -3137,6 +3173,16 @@ def cmd_engine_render(args) -> int:
                 raise
             except Exception as e:
                 print(dim(f"    · upscale skipped — {e}"))
+        # Auto-generate a transparent-background sibling for T-shirt / sticker /
+        # die-cut workflows. Engine prompts force a pure white background, so
+        # a luminance-threshold cut-out gives a clean alpha mask.
+        if engine_name in _TRANSPARENT_BG_AUTO_ENGINES:
+            transparent_path = png_path.with_name(png_path.stem + ".transparent.png")
+            try:
+                _make_transparent_bg(png_path, transparent_path)
+                print(green(f"    ✓ transparent → {transparent_path.name}"))
+            except Exception as e:
+                print(dim(f"    · transparent-bg skipped — {e}"))
         variants.append({"seed": this_seed, "png_name": png_path.name, "png_path": str(png_path)})
         print(green(f"    ✓ {png_path}"))
 
