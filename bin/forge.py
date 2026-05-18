@@ -84,32 +84,48 @@ REALESRGAN_MODELS_DIR = REALESRGAN_HOME / "models"
 # Model choice depends on subject register: anime model preserves clean
 # line work better (mandala / coloring-book), plus model is better at photo
 # detail (wildlife / cinematic / indian-classical).
-def _make_transparent_bg(src: Path, dst: Path, *, threshold: int = 235) -> None:
-    """Save a copy of src with near-white pixels turned to alpha=0.
+def _make_transparent_bg(src: Path, dst: Path, *, tolerance: int = 24) -> None:
+    """Save src with the detected background color turned to alpha=0.
 
-    Used for T-shirt mockup workflows: the engine forces a pure white
-    background, so a simple luminance threshold gives a clean cut-out.
-    Pixels with R, G, B all > threshold become transparent.
+    Auto-detects background by sampling the 4 corner regions; pixels within
+    `tolerance` of the dominant corner color become transparent (with
+    anti-aliased alpha falloff at edges so the cut isn't hard-binary).
 
-    threshold=235 catches white + paper-white + faint edges. Tighter
-    threshold (250) preserves more anti-aliasing; looser (200) cuts
-    more aggressively but may eat highlights inside the subject.
+    Used for T-shirt mockup workflows. Handles pure-white, cream, and
+    any other clean solid-color background — not just #FFFFFF.
+
+    tolerance=24 catches background + faint anti-alias halo while keeping
+    subject color regions intact. Bump higher (40) for noisier backgrounds.
     """
     try:
         from PIL import Image
     except ImportError:
         sys.exit(red("transparent-bg requires Pillow: pip install Pillow"))
     img = Image.open(src).convert("RGBA")
-    pixels = img.load()
     w, h = img.size
+    # Sample background color from the 4 corners (10×10 regions averaged).
+    samples_r: list[int] = []
+    samples_g: list[int] = []
+    samples_b: list[int] = []
+    sample_box = 10
+    for (cx, cy) in [(0, 0), (w - sample_box, 0), (0, h - sample_box), (w - sample_box, h - sample_box)]:
+        for dx in range(sample_box):
+            for dy in range(sample_box):
+                px = img.getpixel((cx + dx, cy + dy))
+                samples_r.append(px[0]); samples_g.append(px[1]); samples_b.append(px[2])
+    bg_r = sum(samples_r) // len(samples_r)
+    bg_g = sum(samples_g) // len(samples_g)
+    bg_b = sum(samples_b) // len(samples_b)
+    pixels = img.load()
     for y in range(h):
         for x in range(w):
             r, g, b, a = pixels[x, y]
-            if r > threshold and g > threshold and b > threshold:
-                # Smooth alpha based on how close to pure white we are —
-                # gives anti-aliased edges, not hard binary cut-outs.
-                dist = min(255 - r, 255 - g, 255 - b)
-                alpha = max(0, min(255, dist * 12))  # 0 at pure white → 240 at threshold
+            dr, dg, db = abs(r - bg_r), abs(g - bg_g), abs(b - bg_b)
+            max_d = max(dr, dg, db)
+            if max_d <= tolerance:
+                # Smooth alpha based on how close to the bg color — soft edges.
+                # 0 at exact bg color → ~240 at the tolerance boundary.
+                alpha = max(0, min(255, int(max_d / tolerance * 240)))
                 pixels[x, y] = (r, g, b, alpha)
     dst.parent.mkdir(parents=True, exist_ok=True)
     img.save(dst, "PNG", optimize=True)

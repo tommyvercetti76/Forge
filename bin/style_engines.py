@@ -3215,6 +3215,21 @@ _MT_INK = EnumBank("ink", [
         "base or a minimal underbase, so the printed art stays screen-print "
         "friendly instead of becoming a four-color poster.",
     ),
+    EnumValue(
+        "vibrant-folk",
+        "Vibrant full-color Madhubani folk-art palette — the REFERENCE STANDARD "
+        "for premium Indian-folk T-shirt design (think the colorful peacock / "
+        "horse / deer / orca prints sold on Daram, Bombay Shirt Company, Suta, "
+        "Etsy bestsellers). 5-6 saturated folk colors used together: deep "
+        "indigo or rich brown or jet black as the BODY FILL (not just outline), "
+        "saffron-orange + leaf-green + vermillion-red + cream-white + bright "
+        "yellow as decoration colors. The body is a RICH SATURATED FILL, not a "
+        "blank silhouette. Decorations are MULTI-COLORED inside the body. "
+        "Outlines are bold black double-contour where the Madhubani tradition "
+        "demands. NOT a 2-ink screen-print minimal mark. NOT a black silhouette "
+        "with tiny accents. This is colorful folk-art that happens to print "
+        "well on a tee.",
+    ),
 ])
 
 _MT_SHIRT_COLOR = EnumBank("shirt_color", [
@@ -3397,7 +3412,12 @@ class MTStyleConfig:
 @dataclass(frozen=True)
 class MTProductionConfig:
     output: str = "print-art"
-    ink: str = "one-ink-black"
+    # Default changed 'one-ink-black' → 'vibrant-folk' (2026-05-17).
+    # User feedback: reference standard for premium Madhubani T-shirts is
+    # multi-color folk art (vibrant peacock / horse / deer / orca prints),
+    # not minimalist 2-ink silhouettes. The one-ink-black option remains
+    # available for users who explicitly want monochrome screen-print.
+    ink: str = "vibrant-folk"
     shirt_color: str = "natural-cream"
 
 @dataclass(frozen=True)
@@ -3436,35 +3456,16 @@ class MinimalistTShirtEngine(Engine):
     default_runtime = {"model": "dev", "steps": 28, "guidance": 5.5,
                        "width": 1280, "height": 1280}
     engine_negatives: ClassVar[tuple[str, ...]] = (
-        # Wrong register
         "photorealistic scene", "full illustration background", "poster art",
         "complex shading", "gradient", "airbrush", "drop shadow", "glow",
         "3D render", "embroidery texture", "stitched patch texture",
         "distressed grunge texture", "halftone", "speckled noise",
-        # Text & branding garbage
         "tiny details", "micro text", "random letters", "gibberish text",
-        "slogan text", "watermark", "signature", "artist signature",
-        "faux artist signature", "decorative script in corner",
-        "tiny faux-name script", "logo of an existing brand",
+        "slogan text", "watermark", "signature", "logo of an existing brand",
         "copyrighted character", "busy composition", "too many objects",
-        # Background clutter
-        "background scenery", "scattered ornaments", "background flora",
-        "background stars", "background grass", "background flowers",
-        "background birds", "frame border", "outer border", "decorative frame",
-        "off-white paper", "cream paper", "antique paper", "beige background",
-        "vintage paper texture",
-        # Mockup junk
         "photo of a person wearing shirt", "model posing", "hanger", "store rack",
         "wrinkled fabric covering the design", "folded shirt obscuring print",
         "large blank poster border", "mockup template watermark",
-        # Anatomy failures
-        "missing limbs", "stubby vestigial legs", "fused limbs", "floating limbs",
-        "extra limbs", "three legs on four-legged animal", "broken anatomy",
-        "deformed paws", "mangled feet", "extra toes", "missing toes",
-        "asymmetric eyes", "lazy eye", "fused eyes",
-        # Pose stiffness
-        "statue-stiff totem pose", "four-perfectly-aligned-fence-post legs",
-        "wooden museum diorama stance",
     )
     default_lora_stack: ClassVar[tuple[tuple[str, float], ...]] = ()
 
@@ -3555,103 +3556,129 @@ class MinimalistTShirtEngine(Engine):
             *tradition.masters,
         ]))
 
-        # ── ELEVATED PROMPT (mirrors the playbook that fixed coloring-book
-        # and mandala-art):
-        #   1) SCENE leads (strongest T5 attention zone)
-        #   2) FRAMING is explicit + concrete (defeats FLUX's "Etsy listing"
-        #      prior that puts a tiny subject inside a border on cream paper)
-        #   3) SILHOUETTE-FILL enforcement (decorations INSIDE the body, not
-        #      on a separate saddle/blanket)
-        #   4) Spot-color references (Saul Bass, Charley Harper) that FLUX
-        #      knows for bold silhouette + minimal palette on white
-        #   5) Trimmed total prompt to fit T5's ~2500-char attention budget
         prompt_parts = [
-            # ── SCENE FIRST ──
-            f"SCENE: {clean_subject}.",
+            "MINIMALIST T-SHIRT DESIGN ENGINE — create a screen-printable apparel "
+            "graphic, not a poster, not a full illustration, not an e-commerce ad.",
 
-            # ── FRAMING (concrete, suppresses Etsy-product-listing prior) ──
-            "FRAMING: this is a SCREEN-PRINT APPAREL GRAPHIC, NOT a poster, "
-            "NOT an Etsy product listing, NOT a framed illustration. The "
-            "subject FILLS 80-90% of the canvas edge-to-edge on a PURE "
-            "WHITE #FFFFFF background. NO cream, NO beige, NO antique paper, "
-            "NO off-white. NO outer border, NO frame, NO ornamental edge "
-            "decoration. NO signature, NO stamp, NO watermark, NO artist "
-            "tag. NO background scenery (no grass, no flowers, no stars, "
-            "no sky, no scattered ornaments). The subject is alone on white.",
+            f"SUBJECT / IDEA: {clean_subject}.",
 
-            # ── SILHOUETTE-FILL TREATMENT (the body IS the canvas) ──
-            "SILHOUETTE-FILL TREATMENT: the subject's body silhouette is the "
-            "primary shape — bold, confident, recognizable at 50px thumbnail "
-            "size. ALL decorative motifs live INSIDE the body silhouette: "
-            "leaves on the flanks, dot bands across the chest/neck, "
-            "ornamental anklets on the legs, wave-ribbon midsection. "
-            "Decorations are NOT on a separate saddle blanket / sash / cape / "
-            "scarf draped on top of the subject — they are tattooed INTO the "
-            "body's own form. The Madhubani T-shirt grammar: body as canvas.",
-
-            # ── ANATOMY GUARD (limbs, motion, completeness) ──
-            # Past renders had stubby legs that didn't read as 'in motion' and
-            # sometimes lost a limb entirely. Explicit guard fixes that:
-            "ANATOMY GUARD: every limb is COMPLETE, anatomically sound, and "
-            "fully resolved within the silhouette. If the subject has 4 legs, "
-            "render all 4 legs (not 3, not stubs, not fused). Animal "
-            "anatomy follows zoology: elephants have pillar-broad legs with "
-            "toenail detail and tucked tail; horses have hocks and fetlocks; "
-            "birds have visible joints (wing/shoulder, knee, ankle); humans "
-            "have 5 fingers per hand, 5 toes per foot, bilateral eyes. NO "
-            "missing limbs, NO fused limbs, NO floating limbs, NO 6-finger "
-            "hands, NO stubby vestigial legs. Joints are visible where the "
-            "anatomy expects them (knee, elbow, shoulder, hip).",
-
-            # ── MOTION (dynamic poses, not statue stiffness) ──
-            # T-shirt graphics are most compelling when the subject feels
-            # alive: a lifted leg, a turned head, a curling tail. Explicit
-            # motion directive pushes FLUX out of "totem pole" stiffness.
-            "POSE & MOTION: subjects feel alive and balanced, NOT statue-"
-            "stiff totems. If the subject has legs, vary their stance "
-            "(forward stride, lifted paw, planted-and-shifted weight) — "
-            "never four-perfectly-aligned-fence-posts. Heads tilt or turn "
-            "slightly to suggest attention. Tails curl or arc. Ears "
-            "perk or flop. The subject should feel like a snapshot of a "
-            "living being, not a museum diorama.",
-
-            # ── ENGINE KNOBS (compact form) ──
-            f"MOTIF ({motif.key}): {motif.description}",
-            f"REGISTER ({tradition.key}): {tradition.description}",
-            f"DETAIL ({detail.key}): {detail.description}",
+            f"MOTIF SYSTEM ({motif.key}): {motif.description}",
+            f"CULTURAL / STYLE REGISTER ({tradition.key}): {tradition.description}",
+            f"DETAIL DENSITY ({detail.key}): {detail.description}",
             f"SYMMETRY ({symmetry.key}): {symmetry.description}",
-            f"ACCENTS ({accents.key}): {accents.description}",
-            f"INK ({ink.key}): {ink.description}",
+            f"ORNAMENTAL ACCENTS ({accents.key}): {accents.description}",
+            f"LAYOUT ({layout.key}): {layout.description}",
+            f"PLACEMENT ({placement.key}): {placement.description}",
+            f"BACKGROUND ({background.key}): {background.description}",
+            f"BORDER ({border.key}): {border.description}",
+            f"INK SYSTEM ({ink.key}): {ink.description}",
+            f"SHIRT / BASE COLOR ({shirt.key}): {shirt.description}",
             output_rule,
 
-            # ── PRINT CONSTRAINTS (single tight block) ──
-            f"PRINT CONSTRAINTS: {ink_limit}. Flat color fills, hard edges, "
-            "no gradients, no photographic texture, no rendered lighting, "
-            "no thin hairlines (everything must survive 4-inch print). "
-            "Lines are vector-grade: a screen-print shop could cut these as "
-            "solid color separations directly.",
+            # ── PRINT CONSTRAINTS ──
+            # When vibrant-folk is active, encode the multi-color folk-art
+            # discipline: SIX named colors, decoration across SEVEN body
+            # zones, plus a scattered ornamental aura. Other ink modes still
+            # get the cut-as-vinyl-or-screen constraint.
+            (
+                "COLOR PALETTE — VIBRANT MADHUBANI (six-color hand-painted "
+                "folk register): the rendered image carries SIX saturated "
+                "folk-art hues together — (1) DEEP INDIGO #1a2952 OR RICH "
+                "WALNUT BROWN #5a3a1f as the BODY FILL (the body is a full "
+                "saturated color, NOT a blank silhouette outline), (2) "
+                "SAFFRON ORANGE #e87722, (3) LEAF GREEN #3d7d3d, (4) "
+                "VERMILLION RED #c8261f, (5) CREAM WHITE #f2e8d5, (6) GOLD "
+                "YELLOW #e8b827. Outlines are bold BLACK #000000 double-"
+                "contour. All six colors must appear visibly somewhere in "
+                "the composition. Flat color fields with hard edges. NO "
+                "gradients, NO soft shading, NO photographic lighting, NO "
+                "watercolor wash. Reference standard: the colorful peacock "
+                "/ blue horse / brown deer Madhubani T-shirts from Daram, "
+                "Bombay Shirt Company, Suta, Mithila Art Institute prints — "
+                "that level of saturation, palette richness, and density."
 
-            # ── READABILITY ──
-            "READABILITY: design reads at three distances — phone thumbnail "
-            "(silhouette + 1-2 color hits), across-the-room shirt view "
-            "(body shape + accent color), close inspection (interior "
-            "ornamental linework). Silhouette clarity beats ornamental detail.",
+                if ink.key == "vibrant-folk" else
+                f"PRINT CONSTRAINTS: {ink_limit}, no gradients, no "
+                "photographic texture, no rendered lighting, no thin "
+                "hairlines, no tiny decorative debris. Every shape must be "
+                "clean enough to cut as vinyl or expose on a screen."
+            ),
 
-            # ── TEXT POLICY ──
-            "TEXT: NO words, NO slogans, NO fake brand names, NO random "
-            "letters, NO decorative micro-type anywhere on the design. "
-            "Typography is added later in a separate compositing step.",
+            # ── BODY DECORATION across SEVEN zones (only when vibrant-folk) ──
+            (
+                "BODY DECORATION — SEVEN ZONES (Madhubani ornamental density): "
+                "decorative motifs span SEVEN visible zones of the body "
+                "silhouette, not just one saddle blanket. (1) FOREHEAD/CROWN "
+                "— a small tikka medallion or feather plume. (2) EAR or "
+                "MANE — layered leaf-and-vein pattern. (3) NECK or COLLAR "
+                "— a dot-band or wave ribbon. (4) BACK/SADDLE — large "
+                "ornamental panel (Madhubani lotus + sun + dot-border). "
+                "(5) FLANK or SHOULDER — vine or leaf-and-petal motif. (6) "
+                "HIP or HAUNCH — circular floral medallion. (7) LEG ANKLETS "
+                "— rhythmic stripe bands at every joint. Each zone uses a "
+                "different color combination from the six-color palette so "
+                "the eye finds new detail across the body."
 
-            *(["POCKET-SIZE: " + pocket_reduction] if pocket_reduction else []),
+                if ink.key == "vibrant-folk" else ""
+            ),
 
-            # ── REFERENCE STANDARD (B&W + spot-color masters) ──
-            "REFERENCE STANDARD: the production tier is Saul Bass title-card "
-            "silhouettes (Anatomy of a Murder 1959, The Man with the Golden "
-            "Arm 1955), Charley Harper minimal-realism wildlife prints, M.C. "
-            "Escher's bold-line woodcut animals, Paul Rand corporate marks, "
-            "and Etsy bestselling Madhubani screen-prints (Indian folk-art "
-            "T-shirts from Daram, Bombay Shirt Company, Suta). Every line "
-            "deliberate, every color load-bearing, zero filler.",
+            # ── ORNAMENTAL AURA in the negative space ──
+            (
+                "ORNAMENTAL AURA: 8-14 small Madhubani-style decorative "
+                "flourishes scattered tastefully in the negative space "
+                "around the subject — tiny 5-7 petaled flowers (vermillion "
+                "or saffron centers with green leaf accents), single "
+                "saffron-or-cream dots, small starbursts, brief leaf "
+                "sprigs. Asymmetric folk-art balance, NOT a uniform grid. "
+                "Each flourish ~5-10% of the subject's eye size. Subject "
+                "still dominates."
+
+                if ink.key == "vibrant-folk" else ""
+            ),
+
+            "MINIMALISM CONTRACT: keep large balanced negative space, but do not "
+            "erase culturally meaningful detail. The subject must be recognizable "
+            "from its outer silhouette first, then reward close inspection with "
+            "controlled interior folk linework. Use strong negative space. If an "
+            "ornament does not support the subject, remove it.",
+
+            "FOLK-APPAREL CONTRACT: when a folk register is active, preserve the "
+            "signature line grammar (double contour, almond eye, rhythmic feather "
+            "or leaf infill, tiny floral punctuation) while keeping every line "
+            "thick and open enough for screen printing. Culturally inspired, not "
+            "costume-like, not a museum copy, not generic tribal pattern.",
+
+            "TEXT POLICY: do not invent readable words, slogans, fake brand names, "
+            "random letters, or decorative micro-type. If text is conceptually "
+            "needed, reserve a clean blank caption zone so exact typography can be "
+            "added later by Forge/PIL/vector tooling.",
+
+            "APPAREL READABILITY: the design must read at three distances: phone "
+            "thumbnail, across-the-room shirt view, and close inspection. Prioritize "
+            "silhouette clarity over detail.",
+
+            # ── ONE surgical fix: limb proportions only ──
+            # User feedback on v1: 'I loved how expressive v1 was, only complaint "
+            # was skinny legs'. Everything else from v1 stays — the Madhubani
+            # aura around the subject, the cream/light background, the small
+            # petals + stars, the cultural personality. Just don't draw
+            # broad-bodied animals on stick-thin legs.
+            "LIMB PROPORTIONS: animal limbs are PROPORTIONAL to body mass. "
+            "Elephants get PILLAR-BROAD pachyderm legs (broad at shoulder + "
+            "hip, tapering moderately to a wide foot). Bears + lions get "
+            "muscular legs. Horses get visible hocks and fetlocks. Birds get "
+            "sturdy visible knee + ankle joints. NO stick-thin twig legs on "
+            "broad-bodied animals; the legs should support the weight the "
+            "body suggests.",
+
+            "COMPOSITION DISCIPLINE: centered balance, clean margins, no accidental "
+            "tangents, no cropped-off design parts, no background scene competing "
+            "with the mark. The graphic should feel like a premium merch mark from "
+            "a good design studio.",
+
+            *(["\n" + pocket_reduction] if pocket_reduction else []),
+
+            assemble_masters_line(selected_masters),
         ]
 
         prompt = "\n\n".join(prompt_parts)
@@ -3667,11 +3694,6 @@ class MinimalistTShirtEngine(Engine):
             config=_config_to_dict(config),
             masters=selected_masters,
         )
-
-
-# ════════════════════════════════════════════════════════════════════════════
-# Registry + entry points
-# ════════════════════════════════════════════════════════════════════════════
 
 
 def _config_to_dict(config: Any) -> dict[str, Any]:
