@@ -1,7 +1,7 @@
 {
   "id": "cinematic",
   "name": "Cinematic",
-  "description": "Movie-poster \u2014 dramatic light, bold display type, high-contrast palette, mystery",
+  "description": "Movie-poster — dramatic light, bold display type, high-contrast palette, mystery",
   "use_for": "dramatic narrative, mystery, big-reveal videos, behind-the-scenes",
   "typography": {
     "display_family": "Impact",
@@ -74,5 +74,6 @@
       "single warm key light creating rim or silhouette",
       "atmospheric haze or particulate for depth"
     ]
-  }
+  },
+  "master_primer_policy": "full"
 }

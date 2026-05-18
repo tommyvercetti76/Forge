@@ -6,7 +6,9 @@
   "typography": {
     "display_family": "Impact",
     "body_family": "Helvetica",
-    "weights": ["bold"],
+    "weights": [
+      "bold"
+    ],
     "scale": {
       "title_max_chars": 24,
       "title_px": 138,
@@ -15,9 +17,18 @@
     }
   },
   "palette_60_30_10": {
-    "dominant":  { "hex": "#1A1614", "role": "charcoal-brown shadow regions, 60% of frame" },
-    "secondary": { "hex": "#8C7A66", "role": "bronze / weathered-copper midtones on subject + environment" },
-    "accent":    { "hex": "#D75A1F", "role": "burnt-orange single focal accent — molten metal, embers, eye glow" }
+    "dominant": {
+      "hex": "#1A1614",
+      "role": "charcoal-brown shadow regions, 60% of frame"
+    },
+    "secondary": {
+      "hex": "#8C7A66",
+      "role": "bronze / weathered-copper midtones on subject + environment"
+    },
+    "accent": {
+      "hex": "#D75A1F",
+      "role": "burnt-orange single focal accent — molten metal, embers, eye glow"
+    }
   },
   "composition": {
     "thumbnail": {
@@ -28,7 +39,10 @@
       "accent_bar_role": "accent",
       "accent_bar_width_px": 320,
       "accent_bar_height_px": 6,
-      "dim_band": { "opacity": 0.65, "vertical_start": 0.66 }
+      "dim_band": {
+        "opacity": 0.65,
+        "vertical_start": 0.66
+      }
     },
     "video_overlay": {
       "hook_anchor": "center",
@@ -41,9 +55,16 @@
     "positive_prefix": "Painterly comic-book illustration in the spirit of weathered gothic fantasy concept art, dramatic chiaroscuro lighting with rim light from one side, charcoal-and-bronze color grading with a single burnt-orange focal accent (molten metal, embers, or rim glow), heavy surface texture: cracked stone, weathered leather, oxidized bronze, scarred skin. Hand-painted brush feel, not rendered. Post-apocalyptic atmosphere with airborne particulate.",
     "positive_suffix": "Carbon shadows holding the dominant 60% of the frame. Avoid clean polished surfaces, prefer worn and scarred. Single subject in heroic asymmetric pose, weight planted, no static front-facing symmetry.",
     "negatives": [
-      "clean polished surfaces", "perfect symmetry", "studio portrait lighting",
-      "pastel palette", "anime style", "Disney style", "chibi proportions",
-      "smiling cheerful expression", "stock photo style", "smooth gradient sky",
+      "clean polished surfaces",
+      "perfect symmetry",
+      "studio portrait lighting",
+      "pastel palette",
+      "anime style",
+      "Disney style",
+      "chibi proportions",
+      "smiling cheerful expression",
+      "stock photo style",
+      "smooth gradient sky",
       "uniform diffuse light"
     ],
     "guidance": 4.5,
@@ -58,5 +79,6 @@
       "atmospheric particulate (smoke, embers, dust) catching the rim light",
       "single burnt-orange focal accent — limit color to charcoal/bronze/orange triad"
     ]
-  }
+  },
+  "master_primer_policy": "style_safe"
 }

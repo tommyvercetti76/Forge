@@ -886,11 +886,13 @@ MASTER_NEGATIVES: list[str] = [
 ]
 
 
-# Tail-end craft directive baked onto every gen. Now demands sub-detail per
-# material AND explicit anti-bloom rendering — the two things that separate
-# "AI-looking" output from "this was actually shot/painted." Short enough that
-# the engine's voice still leads.
-MASTER_POSITIVE_HINT = (
+# Tail-end craft directive baked onto every gen. Four policies — chosen
+# per preset via `preset["master_primer_policy"]` (default "full" for back-
+# compat). The photoreal-grade material directives (pores, weave, tarnish,
+# scratches) actively FIGHT flat-cel and ink-only presets (tartakovsky,
+# batman-noir), so style_safe gives those the anti-bloom shielding without
+# the photoreal-specific demands.
+MASTER_POSITIVE_HINT_FULL = (
     "Render with crisp edge definition on every surface — NO soft halation, "
     "NO ambient bloom around bright objects, NO dreamy gradient haze around "
     "the subject. Every prominent material in frame carries 2-3 specific "
@@ -901,6 +903,35 @@ MASTER_POSITIVE_HINT = (
     "are hard where objects touch surfaces. The image must read as something "
     "made by hand or captured by camera — not as something dreamed by a model."
 )
+# Style-safe: keep the anti-AI-bloom guard but DROP the photoreal-only
+# material directives. Flat-cel / ink / painterly presets get this.
+MASTER_POSITIVE_HINT_STYLE_SAFE = (
+    "Render with confident edges and a clean readable silhouette. NO soft "
+    "halation, NO ambient bloom around bright objects, NO dreamy gradient "
+    "haze around the subject, NO AI-glow milky highlights. Respect the "
+    "named style's craft language — flat color fills stay flat, ink stays "
+    "ink, paint stays paint, brushwork stays visible. The image should read "
+    "as something made by hand in that tradition, not dreamed by a model."
+)
+# Kept for back-compat — older code references MASTER_POSITIVE_HINT.
+MASTER_POSITIVE_HINT = MASTER_POSITIVE_HINT_FULL
+
+# Map policy name → hint string. None = no hint appended.
+_MASTER_PRIMER_HINTS: dict[str, str | None] = {
+    "full":        MASTER_POSITIVE_HINT_FULL,
+    "photo_only":  MASTER_POSITIVE_HINT_FULL,    # alias — photoreal gets full
+    "style_safe":  MASTER_POSITIVE_HINT_STYLE_SAFE,
+    "off":         None,
+}
+
+def _resolve_master_primer_hint(preset: dict) -> str | None:
+    """Pick the right master primer hint for this preset, honoring both
+    the preset's declared policy AND the FORGE_MASTER_PRIMER env override."""
+    # Env var off → respect it regardless of preset policy.
+    if os.environ.get("FORGE_MASTER_PRIMER", "on").lower() == "off":
+        return None
+    policy = str(preset.get("master_primer_policy", "full")).lower()
+    return _MASTER_PRIMER_HINTS.get(policy, MASTER_POSITIVE_HINT_FULL)
 
 
 def build_flux_prompt(preset: dict, concept: str, series: dict | None = None) -> str:
@@ -951,9 +982,11 @@ def build_flux_prompt(preset: dict, concept: str, series: dict | None = None) ->
     if all_negatives:
         parts.append("DO NOT include: " + ", ".join(all_negatives) + ".")
     parts.append(flux["positive_suffix"])
-    # Tail-end craft hint — applied once per gen, opt-out via FORGE_MASTER_PRIMER=off
-    if os.environ.get("FORGE_MASTER_PRIMER", "on").lower() != "off":
-        parts.append(MASTER_POSITIVE_HINT)
+    # Tail-end craft hint — per-preset policy (full / photo_only / style_safe / off).
+    # Opt-out globally via FORGE_MASTER_PRIMER=off.
+    hint = _resolve_master_primer_hint(preset)
+    if hint:
+        parts.append(hint)
     return "\n\n".join(parts)
 
 

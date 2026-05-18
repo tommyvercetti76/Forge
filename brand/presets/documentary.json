@@ -1,7 +1,7 @@
 {
   "id": "documentary",
   "name": "Documentary",
-  "description": "News / documentary \u2014 restrained, factual, sans-serif, single accent",
+  "description": "News / documentary — restrained, factual, sans-serif, single accent",
   "use_for": "explainers, factual reporting, data stories, journalistic content",
   "typography": {
     "display_family": "Helvetica",
@@ -75,5 +75,6 @@
       "neutral background, no obvious set design",
       "subject not looking at camera"
     ]
-  }
+  },
+  "master_primer_policy": "photo_only"
 }

@@ -1,7 +1,7 @@
 {
   "id": "editorial",
   "name": "Editorial",
-  "description": "Magazine-cover feel \u2014 refined serif, generous whitespace, restrained palette",
+  "description": "Magazine-cover feel — refined serif, generous whitespace, restrained palette",
   "use_for": "long-form essays, op-eds, thoughtful explainers, founder-letter content",
   "typography": {
     "display_family": "Cormorant Garamond",
@@ -76,5 +76,6 @@
       "natural lighting (window or overcast), no studio flash",
       "warm neutral backdrop matching paper-cream palette"
     ]
-  }
+  },
+  "master_primer_policy": "photo_only"
 }

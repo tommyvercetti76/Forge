@@ -6,7 +6,9 @@
   "typography": {
     "display_family": "Impact",
     "body_family": "Helvetica",
-    "weights": ["bold"],
+    "weights": [
+      "bold"
+    ],
     "scale": {
       "title_max_chars": 22,
       "title_px": 132,
@@ -15,9 +17,18 @@
     }
   },
   "palette_60_30_10": {
-    "dominant":  { "hex": "#080808", "role": "deep black shadows occupying 60% of frame" },
-    "secondary": { "hex": "#E8E4DA", "role": "off-white highlight on subject, rim-light" },
-    "accent":    { "hex": "#9A2222", "role": "single blood-red focal element (optional)" }
+    "dominant": {
+      "hex": "#080808",
+      "role": "deep black shadows occupying 60% of frame"
+    },
+    "secondary": {
+      "hex": "#E8E4DA",
+      "role": "off-white highlight on subject, rim-light"
+    },
+    "accent": {
+      "hex": "#9A2222",
+      "role": "single blood-red focal element (optional)"
+    }
   },
   "composition": {
     "thumbnail": {
@@ -28,7 +39,10 @@
       "accent_bar_role": "accent",
       "accent_bar_width_px": 280,
       "accent_bar_height_px": 6,
-      "dim_band": { "opacity": 0.72, "vertical_start": 0.62 }
+      "dim_band": {
+        "opacity": 0.72,
+        "vertical_start": 0.62
+      }
     },
     "video_overlay": {
       "hook_anchor": "center",
@@ -41,9 +55,15 @@
     "positive_prefix": "Monochrome black-and-white comic-noir illustration, ink-and-paint craft, deep chiaroscuro lighting with a single hard rim light from one side, heavy black ink shadows occupying ~60% of frame, weathered surface micro-texture, gritty hand-drawn linework, comic-book panel feel, brooding atmosphere with particulate in the air.",
     "positive_suffix": "Heavy black ink shadows, NO color saturation except optional single blood-red accent, NO plastic gloss, NO smooth cartoon shading. The image should look painted with ink on rough paper, not rendered.",
     "negatives": [
-      "color photography", "vibrant saturated palette", "cheerful daylight",
-      "soft gradient shading", "plastic sheen", "anime style",
-      "Disney style", "stock photography lighting", "even flat illumination"
+      "color photography",
+      "vibrant saturated palette",
+      "cheerful daylight",
+      "soft gradient shading",
+      "plastic sheen",
+      "anime style",
+      "Disney style",
+      "stock photography lighting",
+      "even flat illumination"
     ],
     "guidance": 4.5,
     "steps": 28,
@@ -56,5 +76,6 @@
       "particulate haze, dust motes, or rain catching the rim light",
       "subject surface shows wear: scratches, weathered fabric, calloused skin"
     ]
-  }
+  },
+  "master_primer_policy": "style_safe"
 }

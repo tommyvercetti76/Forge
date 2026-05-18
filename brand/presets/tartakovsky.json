@@ -1,7 +1,7 @@
 {
   "id": "tartakovsky",
   "name": "Tartakovsky",
-  "description": "Genndy Tartakovsky / Samurai Jack \u2014 hand-drawn cel, thick outlines, flat fills",
+  "description": "Genndy Tartakovsky / Samurai Jack — hand-drawn cel, thick outlines, flat fills",
   "use_for": "narrative storytelling, character-driven content, mythic/timeless feel",
   "typography": {
     "display_family": "Impact",
@@ -70,10 +70,11 @@
   },
   "prompt_rules": {
     "always_add": [
-      "ANATOMICALLY PROPORTIONAL \u2014 not chibi, not oversized heads, not cute-cartoon",
+      "ANATOMICALLY PROPORTIONAL — not chibi, not oversized heads, not cute-cartoon",
       "subjects facing each other with eye contact when conversing",
       "named real-world products specified by silhouette / model (e.g. 'RODE PodMic')",
       "lighting suggested via flat highlight SHAPES only, no gradients"
     ]
-  }
+  },
+  "master_primer_policy": "style_safe"
 }

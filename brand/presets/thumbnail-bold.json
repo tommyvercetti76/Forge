@@ -6,7 +6,9 @@
   "typography": {
     "display_family": "Impact",
     "body_family": "Helvetica",
-    "weights": ["bold"],
+    "weights": [
+      "bold"
+    ],
     "scale": {
       "title_max_chars": 30,
       "title_px": 96,
@@ -52,7 +54,12 @@
   "flux": {
     "positive_prefix": "Cinematic 16:9 still, single subject, strong rim light, neutral background, room for headline text overlay in lower third.",
     "positive_suffix": "Bold composition, leave lower third uncluttered for typography.",
-    "negatives": ["busy lower third", "text in image", "watermark", "logo"],
+    "negatives": [
+      "busy lower third",
+      "text in image",
+      "watermark",
+      "logo"
+    ],
     "guidance": 4.0,
     "steps": 22,
     "model": "dev"
@@ -63,5 +70,6 @@
       "single dominant subject upper two-thirds",
       "strong tonal contrast so white text reads"
     ]
-  }
+  },
+  "master_primer_policy": "full"
 }
