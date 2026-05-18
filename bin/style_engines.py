@@ -2010,8 +2010,12 @@ class ChildrensColoringBookEngine(Engine):
             tradition_short = tradition_short[:420].rsplit(". ", 1)[0] + "."
 
         # T5-XXL budget — keep total prompt under ~2200 chars (~550 tokens).
-        # Lead with the line-art directive (FLUX otherwise colorizes scenes with
-        # human characters + rich settings), then the subject, then style detail.
+        # ORDER MATTERS: lead with SCENE so T5's strongest attention sees the
+        # user's subject FIRST. Engine discipline comes after. The "white
+        # background" / "no grey" rules used to be split across FOUR blocks
+        # which cumulatively pushed FLUX to render lines anemically light —
+        # consolidated into ONE balanced statement that demands BOTH crisp
+        # black ink AND white background.
         #
         # CRITICAL UX RULE: each enum block ONLY gets injected when the user
         # picked a real value. The "from-prompt" sentinel means "I want the
@@ -2019,22 +2023,29 @@ class ChildrensColoringBookEngine(Engine):
         # is the fix for the famous "I typed 'puppy' but the dropdown stayed
         # at 'blue-jay-with-finches' and I got a blue jay" bug.
         prompt_parts = [
-            "COLORING BOOK PAGE — black ink line drawing on a pure white page. "
-            "NO COLOR anywhere. NO shading, NO gradient, NO grey, NO interior fill. "
-            "Every region is a closed fillable outline a child colors inside. "
-            "Single-color black ink only. White background edge-to-edge.",
-
-            f"SCENE TO DRAW: {clean_subject}.{story_beat_line}",
+            # ── SCENE FIRST — strongest T5 attention zone ──
+            f"SCENE: {clean_subject}.{story_beat_line}",
+            # ── FILL THE FRAME — FLUX's prior for "coloring book page" is a
+            # cover-design layout with a tiny subject in a sea of white space.
+            # Explicit canvas-filling directive overrides that prior. Without
+            # it, every render comes back as a thumbnail-sized illustration
+            # in the corner of a mostly-empty canvas.
+            "FRAMING: full-frame illustration. The subject(s) FILL the canvas "
+            "edge to edge. NOT a small thumbnail in a corner. NOT a cover "
+            "design with a tiny logo on white space. NOT a print-on-demand "
+            "merchandise layout. The figures occupy 60-75% of the canvas "
+            "height; setting elements (table, props, background) fill the "
+            "rest. Reads as a finished illustration plate, NOT a book-cover "
+            "thumbnail.",
         ]
         if archetype.key != "from-prompt":
             prompt_parts.append(f"CHARACTER DETAIL: {archetype.description}")
         if emotion.key != "from-prompt":
             prompt_parts.append(f"EMOTION: {emotion.description}{prop_line}")
         elif prop_line:
-            # Emotion was 'from-prompt' but a prop was picked — surface the prop alone.
             prompt_parts.append(f"PROP:{prop_line}")
         if setting.key != "from-prompt" or tod.key != "from-prompt":
-            setting_line = f"SETTING: "
+            setting_line = "SETTING: "
             if setting.key != "from-prompt":
                 setting_line += setting.description + " "
             if tod.key != "from-prompt":
@@ -2047,36 +2058,24 @@ class ChildrensColoringBookEngine(Engine):
 
             f"DRAWING STYLE: {tradition.key} — {tradition_short}",
 
-            "LINE-ART RULES: every contour is a SINGLE confident technical-pen "
-            "ink stroke — NOT a pencil sketch, NOT multiple parallel try-lines, "
-            "NOT cross-hatched shading. Uniform line weight "
-            f"({age.key}-appropriate). Each individual stroke is crisp, "
-            "unbroken, closed. The line is vector-grade — a printer could lay "
-            "this down as solid black ink at any resolution. No grain, no "
-            "jitter, no fuzz, no halation around the line. PURE WHITE "
-            "backgrounds (no grey/black fill, no off-white, no paper texture, "
-            "no halftone dots). Texture only as sparse edge marks (NEVER "
-            "interior hatching). Simple eyes — NEVER manga giant-eye sparkle, "
-            "NEVER realistic irises; no fangs, no snarls, no predatory "
-            "expression. NO photorealism, NO 3D-render, NO AI-glow halo, NO "
-            "watercolor wash, NO pencil shading. ABSOLUTELY MONOCHROME.",
+            # ── ONE consolidated line-art directive, BALANCED ──
+            # Equal weight to "BOLD black ink" and "pure white paper" so FLUX
+            # doesn't optimise for one at the cost of the other. Anti-AI-noise
+            # negatives stay in engine_negatives where they belong, not here.
+            "RENDER AS LINE ART: BOLD high-contrast SOLID BLACK INK contours "
+            "(uniform medium weight, age-appropriate, technical-pen feel — "
+            "NOT faint pencil, NOT light grey, NOT washed-out sketch). Lines "
+            "are vector-grade: confident, unbroken, closed shapes that a "
+            "printer could lay down as solid #000000 ink. Every contour is "
+            "ONE confident stroke — not try-lines, not multiple passes. "
+            "BETWEEN the black contours: pure white #FFFFFF paper, no fills, "
+            "no grey, no shading, no gradient. Simple eyes (two dots or "
+            "round-pupil ovals; NEVER manga sparkle); gentle expressions only "
+            "(no snarl, no fangs).",
 
-            "PAPER QUALITY: the white background is RGB pure-white (#FFFFFF) "
-            "edge-to-edge — NOT off-white, NOT cream, NOT yellowed, NOT "
-            "textured paper, NOT noisy/grainy, NOT halftone-dotted. Print-"
-            "ready vector feel: as if scanned at 600dpi from a clean inked "
-            "original.",
-
-            "PAGE FORMAT: white background edge-to-edge, ~10% margin, NO frame, "
-            "NO border, NO watermark, NO text overlay, NO page number.",
-
-            "REFERENCE STANDARD: match the production quality of professional "
-            "children's coloring books — Mo Willems 'Don't Let the Pigeon...' "
-            "(2003+), Sandra Boynton 'Moo Baa La La La' (1982), Eric Carle "
-            "'Hungry Caterpillar' (1969), and the Dover Creative Haven kids' "
-            "series: every stroke deliberate, every region closed, age-"
-            "appropriate density honoured, character anatomy preserved + "
-            "recognizable at thumbnail size, ALWAYS gentle / never scary.",
+            # Page format kept short — just the framing rule, no white repetition.
+            "PAGE FORMAT: ~10% margin, no outer frame, no watermark, no text "
+            "overlay, no page number, no signature.",
         ])
         prompt = "\n\n".join(p for p in prompt_parts if p)
 
@@ -3069,6 +3068,329 @@ class StylizedCinematicEngine(Engine):
 
 
 # ════════════════════════════════════════════════════════════════════════════
+# MinimalistTShirtEngine — screen-printable apparel graphics, not posters
+# ════════════════════════════════════════════════════════════════════════════
+#
+# This engine is intentionally stricter than a generic "logo" or "poster"
+# prompt. A good T-shirt graphic must survive cotton texture, screen printing,
+# distance viewing, washing, and a tiny phone thumbnail. The engine therefore
+# optimizes for low ink count, strong silhouette, negative space, and no fake
+# text generation.
+
+
+_MT_MOTIF = EnumBank("motif", [
+    EnumValue(
+        "monoline-icon",
+        "Single continuous monoline icon system: one confident line weight, "
+        "rounded joins, no filled shadows, no sketchy double strokes. Reads as "
+        "a simple vector mark that could be plotted or screen printed.",
+        masters=("Paul Rand logo reduction", "Otl Aicher pictograms"),
+    ),
+    EnumValue(
+        "geometric-silhouette",
+        "Flat geometric silhouette built from circles, triangles, rectangles, "
+        "and clean cutouts. The subject reads instantly by outer shape, with "
+        "very few interior details.",
+        masters=("Bauhaus geometric posters", "Saul Bass cut-paper title cards"),
+    ),
+    EnumValue(
+        "negative-space-symbol",
+        "Negative-space symbol: the clever detail is removed from the shape "
+        "rather than drawn on top. One or two internal cutouts create the idea; "
+        "empty space is part of the design.",
+        masters=("Japanese mon crest logic", "Paul Rand negative-space marks"),
+    ),
+    EnumValue(
+        "tiny-line-scene",
+        "Tiny quiet line scene: a small landscape, object, or moment reduced to "
+        "5-9 essential strokes. No full background illustration, just the "
+        "minimum lines needed for the joke or memory to land.",
+    ),
+    EnumValue(
+        "retro-minimal-badge",
+        "Minimal retro badge: simple circle/oval/arched badge frame, one icon, "
+        "one reserved text band, vintage outdoor-club restraint without busy "
+        "distressing or fake texture.",
+        masters=("Swiss travel poster reduction", "1970s park patch geometry"),
+    ),
+    EnumValue(
+        "abstract-type-safe",
+        "Typography-safe abstract lockup: graphic shapes leave a clean blank "
+        "caption band for exact text to be added later by PIL/vector tooling. "
+        "The diffusion model must NOT invent readable letters.",
+    ),
+])
+
+_MT_OUTPUT = EnumBank("output", [
+    EnumValue(
+        "print-art",
+        "Flat print artwork only: centered graphic on a plain high-contrast "
+        "background, not a shirt mockup, not photographed, no fabric folds, no "
+        "model, no hanger. Intended for extraction / production handoff.",
+    ),
+    EnumValue(
+        "shirt-mockup",
+        "Clean apparel mockup: one blank T-shirt laid flat or ghosted front-on, "
+        "design printed in the requested placement. No person wearing it, no "
+        "busy studio props, no e-commerce clutter.",
+    ),
+])
+
+_MT_INK = EnumBank("ink", [
+    EnumValue(
+        "one-ink-black",
+        "One-ink black screen print: pure black art, no grey, no gradient, no "
+        "halftone. Best on white, natural, heather, or light shirt colors.",
+    ),
+    EnumValue(
+        "one-ink-white",
+        "One-ink white screen print: pure white art, no grey, no glow. Best on "
+        "black, navy, forest, maroon, or other dark shirt colors.",
+    ),
+    EnumValue(
+        "two-ink-earth",
+        "Two-ink earth palette: deep charcoal plus muted terracotta or ochre. "
+        "Exactly two inks, large simple shapes, no blended transitions.",
+    ),
+    EnumValue(
+        "two-ink-retro",
+        "Two-ink retro palette: off-white plus one faded accent such as rust, "
+        "mustard, teal, or brick. Looks like restrained vintage merch, not a "
+        "multi-color poster.",
+    ),
+    EnumValue(
+        "tonal-on-tonal",
+        "Tonal-on-tonal print: ink only one or two steps lighter/darker than "
+        "the shirt base. Minimal, premium, low-contrast but still readable.",
+    ),
+])
+
+_MT_SHIRT_COLOR = EnumBank("shirt_color", [
+    EnumValue("white", "White cotton shirt base; use dark ink for legibility."),
+    EnumValue("black", "Black cotton shirt base; use white or warm light ink."),
+    EnumValue("natural-cream", "Natural cream / unbleached cotton shirt base; warm premium everyday feel."),
+    EnumValue("heather-grey", "Heather grey shirt base; black or navy ink reads cleanly."),
+    EnumValue("navy", "Dark navy shirt base; off-white ink gives classic restraint."),
+    EnumValue("forest-green", "Forest green shirt base; cream or pale tan ink reads outdoorsy."),
+])
+
+_MT_PLACEMENT = EnumBank("placement", [
+    EnumValue(
+        "center-chest",
+        "Main front print centered on the chest, occupying roughly 8-11 inches "
+        "wide on a real shirt. Strongest default for shareable design previews.",
+    ),
+    EnumValue(
+        "left-pocket",
+        "Small left-chest pocket mark, roughly 2.5-3.5 inches wide. Must be "
+        "ultra-simple and readable at thumbnail size.",
+    ),
+    EnumValue(
+        "back-large",
+        "Large back print layout, roughly 11-13 inches wide, still minimal and "
+        "not poster-busy. Front is implied blank unless the prompt says otherwise.",
+    ),
+])
+
+_MT_LAYOUT = EnumBank("layout", [
+    EnumValue(
+        "single-mark",
+        "One symbol or icon only. No frame, no text, no secondary objects. This "
+        "is the cleanest and most production-safe layout.",
+    ),
+    EnumValue(
+        "icon-plus-caption-zone",
+        "One icon plus a blank reserved caption zone under it for exact text to "
+        "be added later. The model must leave the zone clean and avoid invented "
+        "letters.",
+    ),
+    EnumValue(
+        "circular-badge",
+        "Simple circular or oval badge frame containing one icon and negative "
+        "space. No dense patch texture, no tiny lettering around the ring.",
+    ),
+    EnumValue(
+        "stacked-symbols",
+        "Two or three simple symbols stacked vertically with equal spacing. "
+        "Every symbol must be reducible to a flat icon.",
+    ),
+    EnumValue(
+        "repeat-mini-pattern",
+        "Small repeated mini-motif pattern, evenly spaced, very low density. "
+        "Suitable for pocket marks or subtle all-over concept previews.",
+    ),
+])
+
+
+@dataclass(frozen=True)
+class MTSubjectConfig:
+    subject: str
+    motif: str = "monoline-icon"
+
+@dataclass(frozen=True)
+class MTProductionConfig:
+    output: str = "print-art"
+    ink: str = "one-ink-black"
+    shirt_color: str = "natural-cream"
+
+@dataclass(frozen=True)
+class MTCompositionConfig:
+    placement: str = "center-chest"
+    layout: str = "single-mark"
+
+@dataclass(frozen=True)
+class MinimalistTShirtConfig:
+    subject: MTSubjectConfig
+    production: MTProductionConfig = field(default_factory=MTProductionConfig)
+    composition: MTCompositionConfig = field(default_factory=MTCompositionConfig)
+    seed: int = 1
+
+
+class MinimalistTShirtEngine(Engine):
+    name: ClassVar[str] = "minimalist-tshirt"
+    config_cls: ClassVar[type] = MinimalistTShirtConfig
+    masters: ClassVar[tuple[str, ...]] = (
+        "Paul Rand — IBM / ABC logo reduction: idea compressed into unforgettable simple geometry",
+        "Saul Bass — title-card silhouettes: cut-paper clarity, flat forms, instant read",
+        "Josef Müller-Brockmann — Swiss grid discipline: alignment, negative space, restraint",
+        "Otl Aicher — Munich pictograms: human-readable icon grammar at tiny sizes",
+        "Japanese mon crests — negative-space emblem logic: one-color identity through silhouette",
+    )
+    palette_60_30_10 = {
+        "dominant":  {"hex": "#F5EFE3", "role": "shirt / background field or blank cotton base"},
+        "secondary": {"hex": "#111111", "role": "primary screen-print ink"},
+        "accent":    {"hex": "#B65A32", "role": "optional second ink, never more than 10% of the design"},
+    }
+    default_runtime = {"model": "dev", "steps": 28, "guidance": 5.5}
+    engine_negatives: ClassVar[tuple[str, ...]] = (
+        "photorealistic scene", "full illustration background", "poster art",
+        "complex shading", "gradient", "airbrush", "drop shadow", "glow",
+        "3D render", "embroidery texture", "stitched patch texture",
+        "distressed grunge texture", "halftone", "speckled noise",
+        "tiny details", "micro text", "random letters", "gibberish text",
+        "slogan text", "watermark", "signature", "logo of an existing brand",
+        "copyrighted character", "busy composition", "too many objects",
+        "photo of a person wearing shirt", "model posing", "hanger", "store rack",
+        "wrinkled fabric covering the design", "folded shirt obscuring print",
+        "large blank poster border", "mockup template watermark",
+    )
+    default_lora_stack: ClassVar[tuple[tuple[str, float], ...]] = ()
+
+    MOTIF = _MT_MOTIF
+    OUTPUT = _MT_OUTPUT
+    INK = _MT_INK
+    SHIRT_COLOR = _MT_SHIRT_COLOR
+    PLACEMENT = _MT_PLACEMENT
+    LAYOUT = _MT_LAYOUT
+
+    @classmethod
+    def build(cls, config: MinimalistTShirtConfig) -> Directive:
+        sub = config.subject
+        prod = config.production
+        cmp = config.composition
+
+        motif = cls.MOTIF.validate(sub.motif)
+        output = cls.OUTPUT.validate(prod.output)
+        ink = cls.INK.validate(prod.ink)
+        shirt = cls.SHIRT_COLOR.validate(prod.shirt_color)
+        placement = cls.PLACEMENT.validate(cmp.placement)
+        layout = cls.LAYOUT.validate(cmp.layout)
+
+        clean_subject = normalize_subject(sub.subject, max_chars=260)
+
+        if cmp.placement == "left-pocket" and cmp.layout in {"stacked-symbols", "repeat-mini-pattern"}:
+            # This is allowed, but the prompt needs extra reduction pressure.
+            pocket_reduction = (
+                "POCKET-SIZE REDUCTION: because this is a left-pocket mark, every "
+                "element must remain readable at 3 inches wide; remove any detail "
+                "that would disappear at that size."
+            )
+        else:
+            pocket_reduction = ""
+
+        output_rule = (
+            "OUTPUT MODE: " + output.description
+        )
+        if output.key == "print-art":
+            output_rule += (
+                " The artwork should look like production-ready flat vector art "
+                "on a plain contrasting field; no garment, no photo mockup."
+            )
+        else:
+            output_rule += (
+                f" Show the design on a {shirt.key.replace('-', ' ')} blank T-shirt, "
+                "front-facing or clean flat-lay, with the shirt itself secondary "
+                "to the printed graphic."
+            )
+
+        audit = {
+            "motif": motif.description,
+            "output": output.description,
+            "ink": ink.description,
+            "shirt_color": shirt.description,
+            "placement": placement.description,
+            "layout": layout.description,
+            "pocket_reduction": pocket_reduction,
+        }
+
+        prompt_parts = [
+            "MINIMALIST T-SHIRT DESIGN ENGINE — create a screen-printable apparel "
+            "graphic, not a poster, not a full illustration, not an e-commerce ad.",
+
+            f"SUBJECT / IDEA: {clean_subject}.",
+
+            f"MOTIF SYSTEM ({motif.key}): {motif.description}",
+            f"LAYOUT ({layout.key}): {layout.description}",
+            f"PLACEMENT ({placement.key}): {placement.description}",
+            f"INK SYSTEM ({ink.key}): {ink.description}",
+            f"SHIRT / BASE COLOR ({shirt.key}): {shirt.description}",
+            output_rule,
+
+            "PRINT CONSTRAINTS: one or two screen-print inks maximum, no gradients, "
+            "no photographic texture, no rendered lighting inside the artwork, no "
+            "thin hairlines, no tiny decorative debris. Every shape must be clean "
+            "enough to cut as vinyl or expose on a screen.",
+
+            "MINIMALISM CONTRACT: 70% of the design area must remain empty or low "
+            "detail. The subject must be recognizable from outer silhouette and "
+            "one clever interior detail. Use fewer than 12 major shapes. Use strong "
+            "negative space. If an element is not essential, remove it.",
+
+            "TEXT POLICY: do not invent readable words, slogans, fake brand names, "
+            "random letters, or decorative micro-type. If text is conceptually "
+            "needed, reserve a clean blank caption zone so exact typography can be "
+            "added later by Forge/PIL/vector tooling.",
+
+            "APPAREL READABILITY: the design must read at three distances: phone "
+            "thumbnail, across-the-room shirt view, and close inspection. Prioritize "
+            "silhouette clarity over detail.",
+
+            "COMPOSITION DISCIPLINE: centered balance, clean margins, no accidental "
+            "tangents, no cropped-off design parts, no background scene competing "
+            "with the mark. The graphic should feel like a premium merch mark from "
+            "a good design studio.",
+
+            *(["\n" + pocket_reduction] if pocket_reduction else []),
+
+            assemble_masters_line(cls.masters),
+        ]
+
+        prompt = "\n\n".join(prompt_parts)
+
+        return Directive(
+            engine=cls.name,
+            positive=prompt,
+            negatives=tuple(cls.engine_negatives),
+            palette_60_30_10=dict(cls.palette_60_30_10),
+            runtime=dict(cls.default_runtime),
+            seed=int(config.seed),
+            audit=audit,
+            config=_config_to_dict(config),
+            masters=cls.masters,
+        )
+
+
+# ════════════════════════════════════════════════════════════════════════════
 # Registry + entry points
 # ════════════════════════════════════════════════════════════════════════════
 
@@ -3089,6 +3411,7 @@ ENGINES: dict[str, type[Engine]] = {
     ChildrensColoringBookEngine.name: ChildrensColoringBookEngine,
     MandalaArtEngine.name: MandalaArtEngine,
     StylizedCinematicEngine.name: StylizedCinematicEngine,
+    MinimalistTShirtEngine.name: MinimalistTShirtEngine,
 }
 
 
