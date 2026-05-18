@@ -1047,8 +1047,19 @@ def config_payload() -> dict[str, Any]:
     except Exception:
         engines, mandala_styles, child_themes, folk_themes, complexity = [], [], [], [], ["low", "medium", "max"]
     library = _read_json(BRAND_DIR / "prompts" / "library.json", {})
+    # Ship recipe contents (subject + config) along with metadata so the client
+    # can prefill the form when a recipe is selected — fixes the leak where
+    # form defaults silently override the recipe's content.
     recipes = [
-        {"id": rid, "engine": spec.get("engine"), "description": spec.get("description", "")}
+        {
+            "id":          rid,
+            "engine":      spec.get("engine"),
+            "description": spec.get("description", ""),
+            "subject":     spec.get("subject", ""),
+            "config":      spec.get("config", {}) if isinstance(spec.get("config"), dict) else {},
+            "seed":        spec.get("seed"),
+            "guidance":    spec.get("guidance"),
+        }
         for rid, spec in sorted(library.items())
         if isinstance(spec, dict)
     ]
@@ -1279,6 +1290,24 @@ class Handler(BaseHTTPRequestHandler):
                 else:
                     job.stop()
                     self._json({"ok": True})
+            elif parsed.path == "/api/preview-command":
+                # Server-side command preview — runs the same build_command()
+                # that startJob would invoke, so the user sees the REAL cmd
+                # (including nested forge subcommands or python script paths),
+                # not a naive synthesis. Used by updateCommandPreview() in the
+                # form layer, debounced on form input.
+                body = self._read_body()
+                action = str(body.get("action") or "").strip()
+                payload = body.get("payload") if isinstance(body.get("payload"), dict) else {}
+                try:
+                    cmd, _env = build_command(action, payload)
+                    cmd_display = " ".join(shlex_quote(p) for p in cmd)
+                    self._json({"cmd_display": cmd_display})
+                except SystemExit as e:
+                    self._json({"cmd_display": f"# preview unavailable: {e}", "error": True})
+                except Exception as e:
+                    self._json({"cmd_display": f"# preview error: {type(e).__name__}: {e}", "error": True})
+                return
             elif parsed.path == "/api/ratings":
                 body = self._read_body()
                 rid = body.get("render_id")
@@ -1916,6 +1945,26 @@ form { padding: 18px; display: grid; gap: 14px; }
   text-transform: none;
   margin-top: 6px;
 }
+
+/* Collapsed "power-user knobs" expander — wraps rarely-touched fields. */
+details.form-expander {
+  margin: 18px 0 14px;
+  padding: 10px 12px;
+  border: 1px dashed var(--line);
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: 3px;
+}
+details.form-expander > summary {
+  cursor: pointer;
+  font: 10px/1 var(--font-pixel);
+  letter-spacing: 2px;
+  color: var(--muted);
+  user-select: none;
+  padding: 4px 0;
+}
+details.form-expander[open] > summary { color: var(--gold); margin-bottom: 6px; }
+details.form-expander > summary::marker { color: var(--muted); }
+details.form-expander > .field { margin-top: 10px; }
 
 /* Help modal — same pixel-frame as picker, narrower */
 .help-card {
@@ -2557,6 +2606,14 @@ const specs = {
       {name:"from_image", label:"Source image", type:"path"},
       {name:"from_image_strength", label:"Image strength (0.3 minor, 0.85 default, 0.95 near-replace)", type:"number", value:"0.85"},
 
+      {name:"_adv2", label:"▾ ADVANCED — power-user knobs (rarely needed)", type:"expander", hint:"Defaults are good. Tweak only when you know why — these can fight with the engine's discipline blocks.", fields:[
+        {name:"quantize",        label:"Quantize (FLUX weight precision — env default q8)", type:"select", options:"quantizeOptions"},
+        {name:"negative",        label:"Extra negative terms (comma-sep) — engine has 80+ baked-in already", type:"text"},
+        {name:"refine_strength", label:"Refine strength (only if Refine is on; default 0.25)", type:"number", value:"0.25"},
+        {name:"width",           label:"Width override (px) — bypasses Hi-res / Ultra-res", type:"number"},
+        {name:"height",          label:"Height override (px) — bypasses Hi-res / Ultra-res", type:"number"},
+      ]},
+
       {name:"out", label:"Output path", type:"path"}
     ]
   },
@@ -2592,6 +2649,14 @@ const specs = {
       {name:"from_image", label:"Source image", type:"path"},
       {name:"from_image_strength", label:"Image strength (0.3 minor, 0.85 default, 0.95 near-replace)", type:"number", value:"0.85"},
 
+      {name:"_adv2", label:"▾ ADVANCED — power-user knobs (rarely needed)", type:"expander", hint:"Defaults are good. Tweak only when you know why — these can fight with the engine's discipline blocks.", fields:[
+        {name:"quantize",        label:"Quantize (FLUX weight precision — env default q8)", type:"select", options:"quantizeOptions"},
+        {name:"negative",        label:"Extra negative terms (comma-sep) — engine has 80+ baked-in already", type:"text"},
+        {name:"refine_strength", label:"Refine strength (only if Refine is on; default 0.25)", type:"number", value:"0.25"},
+        {name:"width",           label:"Width override (px) — bypasses Hi-res / Ultra-res", type:"number"},
+        {name:"height",          label:"Height override (px) — bypasses Hi-res / Ultra-res", type:"number"},
+      ]},
+
       {name:"out", label:"Output path", type:"path"}
     ]
   },
@@ -2620,6 +2685,14 @@ const specs = {
       {name:"_adv", label:"Use your photo (optional)", type:"section", hint:"Pick a source image to mandalize — your subject's outline gets re-rendered as ornamental mandala line art via FLUX-Kontext."},
       {name:"from_image", label:"Source image", type:"path"},
       {name:"from_image_strength", label:"Image strength (0.3 minor, 0.85 default, 0.95 near-replace)", type:"number", value:"0.85"},
+
+      {name:"_adv2", label:"▾ ADVANCED — power-user knobs (rarely needed)", type:"expander", hint:"Defaults are good. Tweak only when you know why — these can fight with the engine's discipline blocks.", fields:[
+        {name:"quantize",        label:"Quantize (FLUX weight precision — env default q8)", type:"select", options:"quantizeOptions"},
+        {name:"negative",        label:"Extra negative terms (comma-sep) — engine has 80+ baked-in already", type:"text"},
+        {name:"refine_strength", label:"Refine strength (only if Refine is on; default 0.25)", type:"number", value:"0.25"},
+        {name:"width",           label:"Width override (px) — bypasses Hi-res / Ultra-res", type:"number"},
+        {name:"height",          label:"Height override (px) — bypasses Hi-res / Ultra-res", type:"number"},
+      ]},
 
       {name:"out", label:"Output path", type:"path"}
     ]
@@ -2655,6 +2728,14 @@ const specs = {
       {name:"_adv", label:"Use your photo (optional)", type:"section", hint:"Pick a source image to restyle it in the chosen tradition (Tartakovsky / Mignola / McQuarrie / Ghibli...) via FLUX-Kontext."},
       {name:"from_image", label:"Source image", type:"path"},
       {name:"from_image_strength", label:"Image strength (0.3 minor, 0.85 default, 0.95 near-replace)", type:"number", value:"0.85"},
+
+      {name:"_adv2", label:"▾ ADVANCED — power-user knobs (rarely needed)", type:"expander", hint:"Defaults are good. Tweak only when you know why — these can fight with the engine's discipline blocks.", fields:[
+        {name:"quantize",        label:"Quantize (FLUX weight precision — env default q8)", type:"select", options:"quantizeOptions"},
+        {name:"negative",        label:"Extra negative terms (comma-sep) — engine has 80+ baked-in already", type:"text"},
+        {name:"refine_strength", label:"Refine strength (only if Refine is on; default 0.25)", type:"number", value:"0.25"},
+        {name:"width",           label:"Width override (px) — bypasses Hi-res / Ultra-res", type:"number"},
+        {name:"height",          label:"Height override (px) — bypasses Hi-res / Ultra-res", type:"number"},
+      ]},
 
       {name:"out", label:"Output path", type:"path"}
     ]
@@ -2722,7 +2803,7 @@ const specs = {
       {name:"sarvam_mr_speaker", label:"Marathi speaker (Sarvam)", type:"select", options:"sarvam_speakers"},
 
       {name:"_s3", label:"LANGUAGES", type:"section", hint:"All three are on by default. Uncheck any you don't want. English is always produced (it's the source narration); turning off the others just skips translation."},
-      {name:"do_en", label:"English (Kokoro)", type:"checkbox", checked:true},
+      {name:"do_en_note", label:"English is always produced (Kokoro). Tick boxes below to ALSO render Hindi / Marathi via Sarvam.", type:"section"},
       {name:"do_hi", label:"Hindi (Sarvam)", type:"checkbox", checked:true},
       {name:"do_mr", label:"Marathi (Sarvam)", type:"checkbox", checked:true},
 
@@ -2894,7 +2975,7 @@ const specs = {
   "models-scan": { title:"Models Scan", fields: [{name:"full", label:"Full", type:"checkbox"}] },
   "models-clean": { title:"Models Clean", fields: [{name:"dry_run", label:"Dry run", type:"checkbox", checked:true}, {name:"yes", label:"Yes", type:"checkbox"}, {name:"full", label:"Full", type:"checkbox"}, {name:"remove", label:"Remove repos", type:"textarea"}] },
   "models-adopt": { title:"Models Adopt", fields: [{name:"path", label:"Model file", type:"path", required:true}, {name:"as", label:"As", type:"select", choices:["flux-bfl","kokoro","huggingface","ollama"]}, {name:"delete_source", label:"Delete source", type:"checkbox"}] },
-  bench: { title:"Bench", fields: [{name:"real", label:"Real microbenchmarks", type:"checkbox"}] }
+  bench: { title:"Bench", fields: [{name:"real", label:"Probe metadata only — real model microbenchmarks not yet implemented", type:"checkbox"}] }
 };
 
 // Field help text — shown when the ? icon next to a label is clicked.
@@ -2965,7 +3046,7 @@ const FIELD_HELP = {
   subtitle_mode: "Subtitle output format. srt = classic, vtt = modern web standard, none = skip.",
   force: "Re-render even if cached output exists.",
   offline_skip_check: "Skip the model-readiness check (offline mode only).",
-  real: "Run real GPU microbenchmarks (slower).",
+  real: "Note: real GPU microbenchmarks are NOT yet implemented. The current backend only writes conservative probe metadata regardless of this flag. Tracked as a separate task.",
   full: "Include the per-model breakdown (slower).",
   dry_run: "Preview-only — show what would happen without doing it.",
   yes: "Skip per-file confirmations.",
@@ -3075,13 +3156,17 @@ function optionsFor(field) {
   if (field.options === "scSkyStates") return [{value:"from-prompt", label:"(from prompt — let your text decide)"}, ...["clear-blue", "partly-cumulus", "dramatic-cumulus", "cirrus-streak", "overcast-blanket", "sunset-pastel", "starfield-rural", "milky-way-band", "aurora-curtain", "stormy-cloud-anvil"].map(v => ({value:v, label:v}))];
   if (field.options === "scTwinkles") return [{value:"from-prompt", label:"(from prompt — let your text decide)"}, ...["none", "scattered-fireflies", "distant-city-lights", "candle-cluster", "fairy-lights-string", "lantern-cluster", "sparse-stars", "dense-star-field", "bioluminescent-water"].map(v => ({value:v, label:v}))];
   if (field.options === "scAtmospheres") return [{value:"from-prompt", label:"(from prompt — let your text decide)"}, ...["clear-dry", "fog-low", "mist-mid", "rain-streak", "smoke-haze", "dust-mote", "snow-fall", "volumetric-shaft"].map(v => ({value:v, label:v}))];
-  // RealESRGAN post-render upscale — safer than native hi-res, near-zero memory cost
+  // RealESRGAN post-render upscale — safer than native hi-res, near-zero memory cost.
+  // Native binary supports 2/3/4; non-native factors (6/8/12/16) chain two passes.
   if (field.options === "upscaleOptions") return [
     {value:"",    label:"none (base size — 1280×720 default)"},
-    {value:"2x",  label:"2× upscale → 2560×1440 (~6 s post-process)"},
-    {value:"4x",  label:"4× upscale → 5120×2880 (~6 s post-process)"},
-    {value:"8x",  label:"8× upscale → 10240×5760 (~15 s post-process) — recommended for print"},
-    {value:"16x", label:"16× upscale → 20480×11520 (~30 s post-process) — experimental"},
+    {value:"2x",  label:"2× → 2560×1440 (~6 s)"},
+    {value:"3x",  label:"3× → 3840×2160 / 4K UHD (~6 s)"},
+    {value:"4x",  label:"4× → 5120×2880 (~6 s)"},
+    {value:"6x",  label:"6× → 7680×4320 / 8K UHD (~12 s, chained 3×→2×)"},
+    {value:"8x",  label:"8× → 10240×5760 (~15 s, chained 4×→2×) — recommended for print"},
+    {value:"12x", label:"12× → 15360×8640 (~18 s, chained 4×→3×)"},
+    {value:"16x", label:"16× → 20480×11520 (~30 s, chained 4×→4×) — experimental"},
   ];
   // mflux --quantize selector (env default = q8 if not set)
   if (field.options === "quantizeOptions") return [
@@ -3119,6 +3204,26 @@ function renderActions() {
 }
 
 function fieldElement(field) {
+  // Collapsed <details> wrapping a list of inner fields — for "power-user
+  // knobs that most people never touch". Form input events bubble up so the
+  // command preview still updates when these are tweaked.
+  if (field.type === "expander") {
+    const details = document.createElement("details");
+    details.className = "form-expander";
+    const summary = document.createElement("summary");
+    summary.textContent = field.label;
+    details.appendChild(summary);
+    if (field.hint) {
+      const hint = document.createElement("div");
+      hint.className = "form-section-hint";
+      hint.textContent = field.hint;
+      details.appendChild(hint);
+    }
+    for (const sub of (field.fields || [])) {
+      details.appendChild(fieldElement(sub));
+    }
+    return details;
+  }
   if (field.type === "section") {
     const sec = document.createElement("div");
     sec.className = "form-section";
@@ -3651,9 +3756,79 @@ function renderForm() {
   run.textContent = "Run";
   runbar.appendChild(run);
   form.appendChild(runbar);
+  // Recipe prefill — when the recipe dropdown changes, populate the matching
+  // form fields from the recipe's contents. Fixes the leak where form defaults
+  // silently override the recipe's subject/config when --recipe is also sent.
+  const recipeEl = form.querySelector('[name="recipe"]');
+  if (recipeEl) {
+    recipeEl.addEventListener("change", () => {
+      const recipeId = recipeEl.value;
+      if (!recipeId) return;
+      const recipe = (state.config.recipes || []).find(r => r.id === recipeId);
+      if (!recipe) return;
+      const fieldMap = RECIPE_FIELD_MAP[recipe.engine] || {};
+      if (recipe.subject) {
+        const el = form.querySelector('[name="subject"]');
+        if (el) el.value = recipe.subject;
+      }
+      for (const [cfgKey, formFieldName] of Object.entries(fieldMap)) {
+        const val = (recipe.config || {})[cfgKey];
+        if (val === undefined || val === null || val === "") continue;
+        const el = form.querySelector(`[name="${formFieldName}"]`);
+        if (el) el.value = String(val);
+      }
+      if (recipe.seed != null) {
+        const el = form.querySelector('[name="seed"]');
+        if (el) el.value = recipe.seed;
+      }
+      if (recipe.guidance != null) {
+        const el = form.querySelector('[name="guidance"]');
+        if (el) el.value = recipe.guidance;
+      }
+      updateCommandPreview();
+      showToast(`Loaded recipe: ${recipeId}`, "success");
+    });
+  }
   updateCommandPreview();
   form.oninput = updateCommandPreview;
 }
+
+// Reverse map of build_command's --config synthesizers: maps each engine's
+// recipe config keys → form field name. Kept in sync with the per-engine
+// build_command handlers (search for _join_kv_pairs in bin/forge_web.py).
+const RECIPE_FIELD_MAP = {
+  "childrens-coloring-book": {
+    "style.tradition":              "cb_tradition",
+    "style.age_range":              "cb_age_range",
+    "scene.environmental_density":  "cb_density",
+    "subject.character_archetype":  "cb_archetype",
+    "scene.setting":                "cb_setting",
+    "narrative.moment":             "cb_moment",
+    "subject.emotion":              "cb_emotion",
+    "subject.props":                "cb_props",
+    "composition.character_count":  "cb_character_count",
+  },
+  "mandala-art": {
+    "style.tradition":      "ma_tradition",
+    "subject.treatment":    "ma_treatment",
+    "style.symmetry":       "ma_symmetry",
+    "style.complexity":     "ma_complexity",
+    "composition.border":   "ma_border",
+  },
+  "indian-classical": {
+    "style.tradition":      "ic_tradition",
+    "style.ground":         "ic_ground",
+    "subject.mudra":        "ic_mudra",
+    "subject.composition":  "ic_composition",
+  },
+  "stylized-cinematic": {
+    "style.tradition":             "sc_tradition",
+    "light.time_of_day":           "sc_time_of_day",
+    "light.sky_state":             "sc_sky_state",
+    "light.twinkles_and_glow":     "sc_twinkles",
+    "light.atmospheric_medium":    "sc_atmosphere",
+  },
+};
 
 function gatherPayload() {
   const payload = {};
@@ -3666,15 +3841,34 @@ function gatherPayload() {
   return payload;
 }
 
+// Server-side command preview — calls /api/preview-command which runs the
+// SAME build_command() that startJob will invoke. So the preview is the
+// real cmd (including nested forge subcommands + python script paths),
+// not a naive synthesis. Debounced 150ms to absorb fast typing.
+let _previewAbort = null;
+let _previewTimer = null;
 function updateCommandPreview() {
-  const payload = gatherPayload();
-  const parts = ["forge", state.action];
-  for (const [k, v] of Object.entries(payload)) {
-    if (v === "" || v === false) continue;
-    if (v === true) parts.push(`--${k.replaceAll("_","-")}`);
-    else parts.push(`--${k.replaceAll("_","-")} ${String(v).includes(" ") ? JSON.stringify(v) : v}`);
-  }
-  document.getElementById("commandPreview").textContent = parts.join(" ");
+  clearTimeout(_previewTimer);
+  _previewTimer = setTimeout(async () => {
+    if (_previewAbort) _previewAbort.abort();
+    _previewAbort = new AbortController();
+    const payload = gatherPayload();
+    try {
+      const res = await fetch("/api/preview-command", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({action: state.action, payload}),
+        signal: _previewAbort.signal,
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      document.getElementById("commandPreview").textContent = data.cmd_display || "";
+    } catch (e) {
+      if (e.name === "AbortError") return;
+      document.getElementById("commandPreview").textContent =
+        `# preview unavailable (${e.message || e})`;
+    }
+  }, 150);
 }
 
 async function startJob(event) {
