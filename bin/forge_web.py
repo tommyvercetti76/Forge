@@ -332,6 +332,22 @@ def build_command(action: str, payload: dict[str, Any]) -> tuple[list[str], list
         engine_name = str(payload.get("name") or "").strip()
         if engine_name:
             cmd.append(engine_name)
+    elif action == "create":
+        # Unified Create page — dispatches to the per-engine handler based on
+        # payload.style. The 4 per-engine page handlers are kept as-is so the
+        # legacy sidebar entries still work; "create" just routes to one of
+        # them with the same payload.
+        style = str(payload.get("style") or "").strip()
+        dispatch = {
+            "childrens-coloring-book":  "coloring-page",
+            "mandala-art":              "mandala-art-page",
+            "indian-classical":         "indian-folk-page",
+            "stylized-cinematic":       "stylized-cinematic-page",
+        }
+        target = dispatch.get(style)
+        if not target:
+            sys.exit(red(f"unknown style {style!r} (expected one of {sorted(dispatch)})"))
+        return build_command(target, payload)
     elif action == "coloring-page":
         cmd.extend(["engine", "render", "childrens-coloring-book"])
         _add(cmd, "--recipe", payload.get("recipe"))
@@ -2489,12 +2505,13 @@ const groups = [
     ["gallery", "All renders + ratings"],
   ]],
   ["CREATE", [
-    ["coloring-page",            "Children's coloring book"],
-    ["mandala-art-page",         "Mandala art"],
-    ["indian-folk-page",         "Indian folk art (Madhubani / Warli / Tanjore)"],
-    ["stylized-cinematic-page",  "Stylized cinematic (Tartakovsky / Mignola / Ghibli)"],
-    ["thumbnail",                "Thumbnail (preset + headline overlay)"],
-    ["engine",                   "Other engine (advanced)"],
+    ["create",                   "▸ Create (any style — recommended)"],
+    ["thumbnail",                "▸ Thumbnail (preset + headline overlay)"],
+    ["engine",                   "▸ Other engine (advanced)"],
+    ["coloring-page",            "  · Children's coloring book (legacy direct page)"],
+    ["mandala-art-page",         "  · Mandala art (legacy direct page)"],
+    ["indian-folk-page",         "  · Indian folk art (legacy direct page)"],
+    ["stylized-cinematic-page",  "  · Stylized cinematic (legacy direct page)"],
   ]],
   ["EDIT", [
     ["edit",                     "Edit / restyle an existing image"],
@@ -2577,6 +2594,80 @@ const specs = {
       {name:"ultra_res", label:"Native Ultra-res 2048×1152 (RISKY)", type:"checkbox"},
       {name:"no_default_loras", label:"Skip engine's default LoRA stack", type:"checkbox"},
       {name:"out", label:"Output path", type:"path"}
+    ]
+  },
+
+  // Unified Create page — one surface for ALL image styles. Style picker
+  // switches which engine + which set of Style Details are visible. All
+  // other fields (prompt, source image, render mode, final size, seed,
+  // variants) are shared across styles.
+  "create": {
+    title: "Create — any style",
+    fields: [
+      // ── Always visible ──────────────────────────────────────────────────
+      {name:"style",        label:"Style", type:"select", options:"styleOptions", value:"childrens-coloring-book"},
+      {name:"subject",      label:"Prompt — describe what you want", type:"textarea", required:true, value:"a curious bear cub holding a balloon in a meadow"},
+      {name:"recipe",       label:"Recipe (optional — prefills prompt + style details)", type:"select", options:"recipesAll"},
+      {name:"from_image",   label:"Source image (optional — img2img / Kontext restyle)", type:"path"},
+      {name:"profile",      label:"Render mode", type:"select", options:"profiles", value:"balanced"},
+      {name:"upscale",      label:"Final size (RealESRGAN upscale)", type:"select", options:"upscaleOptions"},
+      {name:"seed",         label:"Seed", type:"number", value:"1"},
+      {name:"seeds",        label:"Variants (best-of contact sheet)", type:"number", value:"1"},
+
+      // ── Style Details — engine-specific fields, conditional on Style ────
+      {name:"_style", label:"▾ Style details", type:"expander", hint:"Engine-specific knobs. Auto-filtered to your Style choice above. Defaults are tuned.", fields:[
+        // childrens-coloring-book
+        {name:"cb_tradition",       label:"Tradition", type:"select", options:"cbTraditions", value:"mo-willems-minimal",     showWhen:{style:"childrens-coloring-book"}},
+        {name:"cb_age_range",       label:"Age range", type:"select", options:"cbAgeRanges", value:"kids-6-9",                showWhen:{style:"childrens-coloring-book"}},
+        {name:"cb_density",         label:"Density", type:"select", options:"cbDensity", value:"balanced",                    showWhen:{style:"childrens-coloring-book"}},
+        {name:"cb_archetype",       label:"Character", type:"select", options:"cbArchetypes", value:"from-prompt",            showWhen:{style:"childrens-coloring-book"}},
+        {name:"cb_setting",         label:"Setting", type:"select", options:"cbSettings", value:"from-prompt",                showWhen:{style:"childrens-coloring-book"}},
+        {name:"cb_moment",          label:"Narrative moment", type:"select", options:"cbMoments", value:"from-prompt",        showWhen:{style:"childrens-coloring-book"}},
+        {name:"cb_emotion",         label:"Emotion", type:"select", options:"cbEmotions", value:"from-prompt",                showWhen:{style:"childrens-coloring-book"}},
+        {name:"cb_props",           label:"Prop", type:"select", options:"cbProps", value:"no-prop",                          showWhen:{style:"childrens-coloring-book"}},
+        {name:"cb_character_count", label:"Characters in scene", type:"number", value:"1",                                    showWhen:{style:"childrens-coloring-book"}},
+        // mandala-art
+        {name:"ma_tradition",       label:"Tradition", type:"select", options:"maTraditions", value:"zentangle-organic",      showWhen:{style:"mandala-art"}},
+        {name:"ma_treatment",       label:"Treatment", type:"select", options:"maTreatments", value:"from-prompt",            showWhen:{style:"mandala-art"}},
+        {name:"ma_symmetry",        label:"Symmetry", type:"select", options:"maSymmetries", value:"from-prompt",             showWhen:{style:"mandala-art"}},
+        {name:"ma_complexity",      label:"Complexity", type:"select", options:"maComplexity", value:"from-prompt",           showWhen:{style:"mandala-art"}},
+        {name:"ma_border",          label:"Border", type:"select", options:"maBorders", value:"from-prompt",                  showWhen:{style:"mandala-art"}},
+        // indian-classical
+        {name:"ic_tradition",       label:"Tradition", type:"select", options:"icTraditions", value:"madhubani",              showWhen:{style:"indian-classical"}},
+        {name:"ic_composition",     label:"Composition", type:"select", options:"icCompositions", value:"from-prompt",        showWhen:{style:"indian-classical"}},
+        {name:"ic_mudra",           label:"Mudra / pose", type:"select", options:"icMudras", value:"from-prompt",             showWhen:{style:"indian-classical"}},
+        {name:"ic_ground",          label:"Ground / setting", type:"select", options:"icGrounds", value:"from-prompt",        showWhen:{style:"indian-classical"}},
+        // stylized-cinematic
+        {name:"sc_tradition",       label:"Tradition", type:"select", options:"scTraditions", value:"tartakovsky-cel",        showWhen:{style:"stylized-cinematic"}},
+        {name:"sc_time_of_day",     label:"Time of day", type:"select", options:"scTimeOfDay", value:"from-prompt",           showWhen:{style:"stylized-cinematic"}},
+        {name:"sc_sky_state",       label:"Sky state", type:"select", options:"scSkyStates", value:"from-prompt",             showWhen:{style:"stylized-cinematic"}},
+        {name:"sc_twinkles",        label:"Twinkles + glow", type:"select", options:"scTwinkles", value:"from-prompt",        showWhen:{style:"stylized-cinematic"}},
+        {name:"sc_atmosphere",      label:"Atmospheric medium", type:"select", options:"scAtmospheres", value:"from-prompt",  showWhen:{style:"stylized-cinematic"}},
+      ]},
+
+      {name:"_imgctrl", label:"▾ Image control — guidance, refine, negatives, LoRA", type:"expander", hint:"Affect HOW the engine paints. Defaults are tuned per style.", fields:[
+        {name:"from_image_strength", label:"Source image strength (only if you uploaded a photo)", type:"number", value:"0.85"},
+        {name:"guidance",            label:"Guidance (leave blank = engine default)", type:"number"},
+        {name:"refine",              label:"Refine (extra ~30 s, micro-detail pass)", type:"checkbox"},
+        {name:"refine_strength",     label:"Refine strength", type:"number", value:"0.25"},
+        {name:"negative",            label:"Extra negative terms — engine has 50-94 baked in already", type:"text"},
+        {name:"no_default_loras",    label:"Skip engine's default LoRA stack", type:"checkbox"},
+      ]},
+
+      {name:"_output", label:"▾ Output", type:"expander", fields:[
+        {name:"out", label:"Output path", type:"path"},
+      ]},
+
+      {name:"_perf", label:"▾ Performance — M5 Max specific", type:"expander", fields:[
+        {name:"quantize", label:"Quantize (FLUX weight precision)", type:"select", options:"quantizeOptions"},
+      ]},
+
+      {name:"_danger", label:"⚠ Danger zone — native hi-res / ultra-res", type:"expander", hint:"DO NOT use with --from-image. Use Final Size upscale above.", fields:[
+        {name:"hi_res",    label:"Native Hi-res 1920×1080 (txt2img only)", type:"checkbox"},
+        {name:"ultra_res", label:"Native Ultra-res 2048×1152 (RISKY)", type:"checkbox"},
+        {name:"width",     label:"Width override (px)", type:"number"},
+        {name:"height",    label:"Height override (px)", type:"number"},
+      ]},
     ]
   },
 
@@ -3186,6 +3277,21 @@ function optionsFor(field) {
   if (field.options === "scSkyStates") return [{value:"from-prompt", label:"(from prompt — let your text decide)"}, ...["clear-blue", "partly-cumulus", "dramatic-cumulus", "cirrus-streak", "overcast-blanket", "sunset-pastel", "starfield-rural", "milky-way-band", "aurora-curtain", "stormy-cloud-anvil"].map(v => ({value:v, label:v}))];
   if (field.options === "scTwinkles") return [{value:"from-prompt", label:"(from prompt — let your text decide)"}, ...["none", "scattered-fireflies", "distant-city-lights", "candle-cluster", "fairy-lights-string", "lantern-cluster", "sparse-stars", "dense-star-field", "bioluminescent-water"].map(v => ({value:v, label:v}))];
   if (field.options === "scAtmospheres") return [{value:"from-prompt", label:"(from prompt — let your text decide)"}, ...["clear-dry", "fog-low", "mist-mid", "rain-streak", "smoke-haze", "dust-mote", "snow-fall", "volumetric-shaft"].map(v => ({value:v, label:v}))];
+  // Unified Create page style picker — maps to engine names used by build_command.
+  if (field.options === "styleOptions") return [
+    {value:"childrens-coloring-book", label:"Children's coloring book — B&W line-art for kids"},
+    {value:"mandala-art",             label:"Mandala art — ornamental B&W line-art"},
+    {value:"indian-classical",        label:"Indian folk art — Madhubani / Warli / Tanjore / Pahari (colored)"},
+    {value:"stylized-cinematic",      label:"Stylized cinematic — Tartakovsky / Mignola / McQuarrie / Ghibli"},
+  ];
+  // Recipes filtered to currently-selected Style on the unified Create page.
+  if (field.options === "recipesAll") {
+    const styleEl = document.querySelector('[name="style"]');
+    const currentStyle = styleEl ? styleEl.value : "";
+    const all = (cfg.recipes || []);
+    const filtered = currentStyle ? all.filter(r => r.engine === currentStyle) : all;
+    return [{value:"", label:"(write your own prompt)"}, ...filtered.map(r => ({value:r.id, label:r.id}))];
+  }
   // RealESRGAN post-render upscale — safer than native hi-res, near-zero memory cost.
   // Native binary supports 2/3/4; non-native factors (6/8/12/16) chain two passes.
   if (field.options === "upscaleOptions") return [
@@ -3234,6 +3340,16 @@ function renderActions() {
 }
 
 function fieldElement(field) {
+  // Helper: tag the returned node with data-show-when so applyShowWhen()
+  // can hide/show it based on another field's value. Inner inputs are
+  // disabled when hidden so gatherPayload skips them.
+  function withShowWhen(node, field) {
+    if (field && field.showWhen) {
+      try { node.dataset.showWhen = JSON.stringify(field.showWhen); }
+      catch (e) { /* ignore */ }
+    }
+    return node;
+  }
   // Collapsed <details> wrapping a list of inner fields — for "power-user
   // knobs that most people never touch". Form input events bubble up so the
   // command preview still updates when these are tweaked.
@@ -3252,7 +3368,7 @@ function fieldElement(field) {
     for (const sub of (field.fields || [])) {
       details.appendChild(fieldElement(sub));
     }
-    return details;
+    return withShowWhen(details, field);
   }
   if (field.type === "section") {
     const sec = document.createElement("div");
@@ -3264,7 +3380,7 @@ function fieldElement(field) {
       hint.textContent = field.hint;
       sec.appendChild(hint);
     }
-    return sec;
+    return withShowWhen(sec, field);
   }
   const wrap = document.createElement("div");
   wrap.className = "field";
@@ -3343,7 +3459,7 @@ function fieldElement(field) {
     el.spellcheck = false;
     wrap.appendChild(el);
   }
-  return wrap;
+  return withShowWhen(wrap, field);
 }
 
 async function fetchAndRenderSuggestion(engine, formEl) {
@@ -3731,6 +3847,7 @@ function renderForm() {
   // this action maps to. Engine-driven actions surface the suggestion
   // automatically; pure pipelines (audiobook / brief / etc) get nothing.
   const engineForAction = {
+    "create": null,  // dynamic — derived from the Style picker
     "engine": null,  // user picks engine; we don't know yet
     "coloring-page": "childrens-coloring-book",
     "mandala-art-page": "mandala-art",
@@ -3739,7 +3856,13 @@ function renderForm() {
   };
   const sugEngine = engineForAction[state.action];
   if (sugEngine !== undefined) {
-    fetchAndRenderSuggestion(sugEngine || state.pendingEngineForSuggestion, form);
+    // On the Create page, derive engine from the Style picker.
+    let engine = sugEngine;
+    if (state.action === "create") {
+      const styleEl = form.querySelector('[name="style"]');
+      engine = styleEl ? styleEl.value : "childrens-coloring-book";
+    }
+    fetchAndRenderSuggestion(engine || state.pendingEngineForSuggestion, form);
   }
 
   // Walk fields in order. Sections + textareas span full width; other fields
@@ -3897,10 +4020,56 @@ function renderForm() {
       }
     }
   }
+  // Conditional visibility: fields tagged with showWhen:{otherField: value}
+  // appear only when the named control matches the expected value. Used by
+  // the unified Create page to swap engine-specific Style Details based on
+  // the top-level Style picker.
+  function applyShowWhen() {
+    for (const node of form.querySelectorAll("[data-show-when]")) {
+      try {
+        const spec = JSON.parse(node.dataset.showWhen || "{}");
+        let visible = true;
+        for (const [key, expected] of Object.entries(spec)) {
+          const probe = form.querySelector(`[name="${key}"]`);
+          const val = probe ? (probe.type === "checkbox" ? String(probe.checked) : (probe.value || "")) : "";
+          if (Array.isArray(expected)) {
+            if (!expected.includes(val)) { visible = false; break; }
+          } else if (val !== String(expected)) {
+            visible = false; break;
+          }
+        }
+        node.style.display = visible ? "" : "none";
+        // Disable the input inside so its value is skipped by gatherPayload
+        const innerInput = node.querySelector("input, select, textarea");
+        if (innerInput) innerInput.disabled = !visible || innerInput.dataset.gatedDisabled === "1";
+      } catch (e) { /* malformed showWhen — skip */ }
+    }
+  }
+  // On the Create page, the recipe dropdown is filtered by Style. When user
+  // switches Style, repopulate the recipe options to match.
+  const styleEl = form.querySelector('[name="style"]');
+  const recipeForStyle = form.querySelector('[name="recipe"]');
+  if (styleEl && recipeForStyle) {
+    styleEl.addEventListener("change", () => {
+      const newOpts = optionsFor({options: "recipesAll"});
+      const currentVal = recipeForStyle.value;
+      recipeForStyle.innerHTML = "";
+      let preserved = false;
+      for (const opt of newOpts) {
+        const o = document.createElement("option");
+        o.value = opt.value || "";
+        o.textContent = opt.label || opt.value || "";
+        if (opt.value === currentVal) { o.selected = true; preserved = true; }
+        recipeForStyle.appendChild(o);
+      }
+      if (!preserved) recipeForStyle.value = "";
+    });
+  }
+  applyShowWhen();
   applyFieldGating();
   updateCommandPreview();
-  form.addEventListener("input", () => { applyFieldGating(); updateCommandPreview(); });
-  form.addEventListener("change", applyFieldGating);
+  form.addEventListener("input", () => { applyShowWhen(); applyFieldGating(); updateCommandPreview(); });
+  form.addEventListener("change", () => { applyShowWhen(); applyFieldGating(); });
 }
 
 // Reverse map of build_command's --config synthesizers: maps each engine's
