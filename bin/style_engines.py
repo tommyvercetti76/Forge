@@ -1874,7 +1874,7 @@ class ChildrensColoringBookEngine(Engine):
         "Hayao Miyazaki — My Neighbor Totoro (1988) storyboards: clean confident pen-line, restrained environmental detail",
     )
     palette_60_30_10 = {
-        "dominant":  {"hex": "#FFFFFF", "role": "pure white paper / fillable region — 95% of pixels"},
+        "dominant":  {"hex": "#FFFFFF", "role": "pure white paper — background + fillable space between outlines"},
         "secondary": {"hex": "#000000", "role": "black ink outline — closed, continuous, age-appropriate weight"},
         "accent":    {"hex": "#000000", "role": "no chromatic accent (line art); accent only via colorist's hand"},
     }
@@ -2319,7 +2319,7 @@ class MandalaArtEngine(Engine):
         "Sita Devi (Madhubani / Mithila, Padma Shri 1981): folk-mandala narrative motif tradition",
     )
     palette_60_30_10 = {
-        "dominant":  {"hex": "#FFFFFF", "role": "pure white paper / fillable region — 90% of pixels"},
+        "dominant":  {"hex": "#FFFFFF", "role": "pure white paper — background + fillable space between mandala outlines"},
         "secondary": {"hex": "#000000", "role": "black ink line — fine, precise, closed continuous outlines"},
         "accent":    {"hex": "#000000", "role": "no chromatic accent (line art); accent via colorist's hand"},
     }
@@ -2399,7 +2399,12 @@ class MandalaArtEngine(Engine):
                 "or kaleidoscope, not bilateral."
             )
 
-        clean_subject = normalize_subject(sub.subject, max_chars=120)
+        # Mandala renders need anatomy guards in the subject (head, beak, eye,
+        # legs, tail-feather structure, etc.) to keep central subjects
+        # recognizable. 120 chars cuts that off; 400 leaves room for STEP-1-
+        # style anatomy specs without blowing the T5 budget when combined
+        # with the engine's ornament discipline blocks.
+        clean_subject = normalize_subject(sub.subject, max_chars=400)
 
         audit = {
             "tradition": tradition.description,
