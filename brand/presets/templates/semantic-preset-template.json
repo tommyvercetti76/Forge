@@ -1,0 +1,174 @@
+{
+  "id": "REPLACE_WITH_PRESET_ID",
+  "name": "REPLACE WITH DISPLAY NAME",
+  "description": "One sentence describing the preset in user-facing language.",
+  "use_for": "Where this preset should be selected and why.",
+  "typography": {
+    "display_family": "Impact",
+    "body_family": "Helvetica",
+    "weights": [
+      "bold"
+    ],
+    "scale": {
+      "title_max_chars": 24,
+      "title_px": 120,
+      "sub_px": 38,
+      "caption_px": 22
+    }
+  },
+  "palette_60_30_10": {
+    "dominant": {
+      "hex": "#111111",
+      "role": "dominant visual field and shadow structure"
+    },
+    "secondary": {
+      "hex": "#F4F0E8",
+      "role": "subject highlight and primary text"
+    },
+    "accent": {
+      "hex": "#D94B2B",
+      "role": "single focal accent"
+    }
+  },
+  "composition": {
+    "thumbnail": {
+      "headline_anchor": "bottom-center",
+      "headline_color": "#F4F0E8",
+      "headline_outline": "#111111",
+      "headline_outline_px": 5,
+      "accent_bar_role": "accent",
+      "accent_bar_width_px": 300,
+      "accent_bar_height_px": 6,
+      "dim_band": {
+        "opacity": 0.65,
+        "vertical_start": 0.62
+      }
+    },
+    "video_overlay": {
+      "hook_anchor": "center",
+      "moment_anchor": "bottom-left",
+      "moment_accent_left_bar_px": 10,
+      "cta_anchor": "bottom-right"
+    }
+  },
+  "flux": {
+    "positive_prefix": "Backward-compatible compressed prompt prefix assembled from semantic tokens.",
+    "positive_suffix": "Backward-compatible craft suffix assembled from semantic tokens.",
+    "negatives": [
+      "text in image",
+      "watermark",
+      "logo"
+    ],
+    "guidance": 4.5,
+    "steps": 22,
+    "model": "dev"
+  },
+  "prompt_rules": {
+    "always_add": [
+      "single dominant subject",
+      "clear foreground-background separation",
+      "safe area reserved for typography"
+    ]
+  },
+  "master_primer_policy": "style_safe",
+  "semantic_contract": {
+    "schema_version": "forge.semantic_preset.v1",
+    "intent": "One sentence explaining the reliable visual promise.",
+    "audience": "Who judges whether this preset succeeded.",
+    "visual_identity": "The preset's stable recognizable look.",
+    "success_definition": "A concrete pass condition for generated outputs.",
+    "non_goals": [
+      "Things this preset should not try to do."
+    ]
+  },
+  "semantic_tokens": [
+    {
+      "id": "preset.style.identity",
+      "dimension": "style",
+      "prompt_text": "positive observable style instruction",
+      "weight": 1.0,
+      "priority": "core",
+      "visible_evidence": "what a reviewer should see",
+      "binds_to": [
+        "frame"
+      ],
+      "allowed_variants": [],
+      "failure_if_missing": true,
+      "evaluation_question": "Does the output visibly match the preset's style identity?"
+    },
+    {
+      "id": "preset.composition.subject_anchor",
+      "dimension": "composition",
+      "prompt_text": "single dominant subject positioned away from the typography safe zone",
+      "weight": 1.0,
+      "priority": "core",
+      "visible_evidence": "one main subject with readable empty space for overlay",
+      "binds_to": [
+        "subject",
+        "lower_third"
+      ],
+      "allowed_variants": [
+        "center upper two-thirds",
+        "left third upper two-thirds",
+        "right third upper two-thirds"
+      ],
+      "failure_if_missing": true,
+      "evaluation_question": "Is there one dominant subject and is the text zone uncluttered?"
+    }
+  ],
+  "dependency_vectors": [
+    {
+      "from_token": "preset.composition.subject_anchor",
+      "to_token": "preset.safe_zone.lower_third",
+      "relation": "requires",
+      "strength": 1.0,
+      "reason": "Thumbnail overlays fail if the subject occupies the same area as the headline.",
+      "prompt_assembly_effect": "Place safe-zone instruction after subject instruction and repeat in prompt_rules.always_add."
+    }
+  ],
+  "precision_contract": {
+    "intent": "One sentence purpose.",
+    "primary_use": "thumbnail_background",
+    "style_atoms": [],
+    "composition_atoms": [],
+    "lighting_atoms": [],
+    "camera_atoms": [],
+    "surface_atoms": [],
+    "palette_atoms": [],
+    "thumbnail_safety_atoms": [],
+    "hard_failure_terms": [
+      "text in image",
+      "watermark",
+      "logo"
+    ],
+    "safe_zones": [
+      {
+        "name": "lower_third",
+        "bbox_pct": [
+          0.0,
+          0.62,
+          1.0,
+          1.0
+        ],
+        "required": "low detail, no faces, no subject-critical object"
+      }
+    ],
+    "eval_questions": [],
+    "benchmark_prompts": []
+  },
+  "runtime_recommendation": {
+    "profile": "balanced",
+    "guidance_candidates": [
+      3.5,
+      4.5,
+      5.5
+    ],
+    "step_candidates": [
+      18,
+      25,
+      36
+    ],
+    "lora_paths": [],
+    "lora_scales": []
+  }
+}

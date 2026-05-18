@@ -43,6 +43,7 @@ flowchart TB
 | `forge show` | Working | Full preset JSON | Loads one preset by id. |
 | `forge mandala` | Working | SVG, PNG, QC JSON | Procedural polar geometry in `mandala_engine.py`. |
 | `forge childrens-book` | Working | Page SVGs, PNGs, QC JSON, manifest | Procedural vector pages in `mandala_engine.py`. |
+| `forge folk-art` | Working initial grammar | SVG, PNG, QC JSON | Procedural folk/devotional coloring page in `mandala_engine.py`. |
 | `forge engine` | Working | FLUX PNGs, directives, galleries | Typed style engines in `style_engines.py`. |
 | `forge thumbnail` | Working | Branded PNG thumbnail | FLUX background plus PIL text overlay. |
 | `forge voice` | Working | WAV/MP3/M4A/AIFF audio | Kokoro or macOS `say`; optional Sarvam translation. |
@@ -80,9 +81,15 @@ forge mandala --style floral --symmetry 24 --rings 9 --complexity max --out mand
 
 - Builds motifs in polar coordinates around a fixed center.
 - Uses exact symmetry order for radial repetition.
+- Uses style-specific geometry grammars, not just palette swaps:
+  `coloring`, `floral`, `geometric`, `sacred`, `playful`, and `luxury` now
+  emit different motif families.
+- Repeats canonical motif templates with SVG `rotate()` transforms rather than
+  recomputing each copy independently.
 - Emits SVG first, then rasterizes to PNG with Pillow.
 - Writes QC metadata with ring count, motif count, shape count, center, and
-  pixel-level sanity checks.
+  pixel-level sanity checks. QC also records the selected style grammar and
+  symmetry construction contract.
 
 **Limits**
 
@@ -116,6 +123,33 @@ forge childrens-book --theme all --pages 3 --symmetry 12 --rings 7 --complexity 
 - Current subjects are `rabbits-garden`, `crows-texas`, and `blue-jay`.
 - The style is printable line art, not photorealism.
 
+## Folk Devotional Coloring Page
+
+**Command**
+
+```sh
+forge folk-art --theme buddha-peacock --width 2400 --height 1800 --out buddha-peacock.png
+```
+
+**Outputs**
+
+- `buddha-peacock.png`
+- `buddha-peacock.svg`
+- `buddha-peacock.qc.json`
+
+**Mechanism**
+
+- Procedurally composes a central serene figure, halo lotus ring, paired
+  peacocks, tree arches, woven lower border, hatching, and stippling.
+- Emits SVG first, then PNG, with no diffusion and no generated text.
+- QC records motif families and the paired side-motif symmetry contract.
+
+**Limits**
+
+- Initial theme is `buddha-peacock`.
+- This is an original procedural page inspired by folk devotional coloring-art
+  structure; it is not a copy of any reference image.
+
 ## Specialist FLUX Engines
 
 **Commands**
@@ -133,6 +167,10 @@ forge engine render wildlife-photo --subject "blue jay perched on a branch"
 - `wildlife-photo`
 - `impressionist`
 - `indian-classical`
+- `childrens-coloring-book`
+- `mandala-art`
+- `stylized-cinematic`
+- `minimalist-tshirt`
 
 **Outputs**
 
@@ -146,6 +184,8 @@ forge engine render wildlife-photo --subject "blue jay perched on a branch"
 - Engine invariants reject invalid combinations before generation.
 - Domain-specific negatives are stacked with Forge's master primer.
 - Rendering routes through the same FLUX generation path as thumbnails.
+- `minimalist-tshirt` is optimized for low-ink apparel marks, print-art mode,
+  shirt mockups, and no generated typography.
 
 **Limits**
 

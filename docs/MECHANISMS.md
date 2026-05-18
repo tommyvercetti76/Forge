@@ -146,6 +146,26 @@ Used by:
 
 This is the correct mechanism when symmetry must be mathematical.
 
+Mandala styles use distinct geometry grammars:
+
+- `coloring`: bold fillable rosettes and closed page-friendly cells.
+- `floral`: lotus rosettes, petal rings, and leaf borders.
+- `geometric`: polygon lattices, radial lines, diamonds, and angular borders.
+- `sacred`: yantra-like triangles, nested circles, lotus rings, and square/circle
+  scaffolds.
+- `playful`: bubbles, stars, scallops, and lighter child-friendly spacing.
+- `luxury`: dark-ground gold filigree, jewel dots, fine arcs, and delicate
+  concentric polygons.
+
+Each output QC records `style_grammar.motif_families` so style collapse is
+detectable in tests and review.
+
+For mathematical strictness, repeated mandala motifs are now generated as
+canonical templates and copied by SVG `rotate(angle cx cy)` groups. This follows
+the fundamental-region pattern used in computational geometric ornament work:
+define the motif once, then apply the symmetry operation. The PNG remains a
+raster derivative, so SVG is the authoritative mathematical artifact.
+
 ## ffmpeg Assembly
 
 ffmpeg handles:

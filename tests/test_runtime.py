@@ -13,7 +13,7 @@ sys.path.insert(0, str(ROOT / "bin"))
 
 import forge_runtime
 from forge_runtime import JobStore, ResourceLock, estimate_token_count, ffmpeg_filter_escape, parse_language_codes, validate_png
-from mandala_engine import ChildrensBookConfig, MandalaConfig, write_childrens_book, write_mandala
+from mandala_engine import ChildrensBookConfig, FolkArtConfig, MandalaConfig, build_mandala, write_childrens_book, write_folk_art_page, write_mandala
 import importlib.util
 
 process_video_spec = importlib.util.spec_from_file_location("process_video", ROOT / "bin" / "process-video.py")
@@ -107,6 +107,23 @@ class RuntimeTests(unittest.TestCase):
             self.assertTrue(qc["construction_pass"])
             self.assertEqual(qc["symmetry_order"], 12)
             self.assertGreater(qc["shape_count"], 50)
+            svg = Path(artifact["svg"]).read_text(encoding="utf-8")
+            self.assertIn('transform="rotate(', svg)
+            self.assertFalse(qc["symmetry_contract"]["recomputed_independent_copies"])
+
+    def test_mandala_styles_use_distinct_geometry_grammars(self) -> None:
+        grammars = set()
+        signatures = set()
+        for style in ("coloring", "floral", "geometric", "luxury", "playful", "sacred"):
+            canvas, qc = build_mandala(
+                MandalaConfig(style=style, width=512, height=512, rings=4, symmetry=12, seed=7, supersample=1),
+            )
+            grammars.add(tuple(qc["style_grammar"]["motif_families"]))
+            signatures.add(
+                tuple((shape["type"], len(shape.get("points", []))) for shape in canvas.shapes[:24])
+            )
+        self.assertEqual(len(grammars), 6)
+        self.assertGreaterEqual(len(signatures), 5)
 
     def test_childrens_book_engine_writes_pages(self) -> None:
         with tempfile.TemporaryDirectory() as td:
@@ -121,6 +138,18 @@ class RuntimeTests(unittest.TestCase):
                 validate_png(Path(page["png"]), width=512, height=512, min_bytes=1024)
                 self.assertTrue(Path(page["svg"]).exists())
                 self.assertTrue(Path(page["qc"]).exists())
+
+    def test_folk_art_engine_writes_devotional_coloring_page(self) -> None:
+        with tempfile.TemporaryDirectory() as td:
+            artifact = write_folk_art_page(
+                FolkArtConfig(width=900, height=900, stroke_width=1.5, supersample=1),
+                Path(td) / "folk.png",
+            )
+            validate_png(Path(artifact["png"]), width=900, height=900, min_bytes=1024)
+            self.assertTrue(Path(artifact["svg"]).exists())
+            qc = json.loads(Path(artifact["qc"]).read_text(encoding="utf-8"))
+            self.assertEqual(qc["engine"], "forge.procedural-folk-art.v1")
+            self.assertIn("paired peacocks", qc["style_grammar"]["motif_families"])
 
 
 if __name__ == "__main__":

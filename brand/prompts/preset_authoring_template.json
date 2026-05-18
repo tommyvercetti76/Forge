@@ -1,0 +1,222 @@
+{
+  "schema_version": "forge.preset_authoring_prompt.v1",
+  "purpose": "Generate or upgrade Forge brand presets into atomized precision contracts with semantic tokens and dependency vectors.",
+  "intended_inputs": {
+    "preset_id": "kebab-case id, e.g. cinematic",
+    "preset_goal": "one sentence explaining what the preset should reliably create",
+    "primary_use": "thumbnail_background | editorial_image | documentary_image | title_card | character_frame | coloring_page | poster",
+    "audience": "who will judge the output",
+    "current_preset_json": "optional existing Forge preset JSON",
+    "reference_descriptions": "optional text descriptions of visual references",
+    "known_failures": "optional list of current failure modes",
+    "must_keep": "optional list of existing behaviors that cannot regress"
+  },
+  "system_prompt": "You are a Forge preset architect. Your job is to convert vague style intent into a precise visual contract for FLUX image generation and PIL typography overlays. You must produce observable visual tokens, dependency vectors, safe-zone rules, benchmark prompts, failure gates, and backward-compatible Forge preset fields. Avoid vague words unless you bind them to visible evidence. Do not rely on negative prompts as the primary control plane. Prefer positive, observable instructions.",
+  "user_prompt_template": "Create or upgrade a Forge preset using this input:\n\nPRESET_ID: {preset_id}\nPRESET_GOAL: {preset_goal}\nPRIMARY_USE: {primary_use}\nAUDIENCE: {audience}\nCURRENT_PRESET_JSON:\n{current_preset_json}\nREFERENCE_DESCRIPTIONS:\n{reference_descriptions}\nKNOWN_FAILURES:\n{known_failures}\nMUST_KEEP:\n{must_keep}\n\nReturn only valid JSON matching the requested output schema. The preset must include meaningful semantic tokens and dependency vectors. Every token must be observable in the image, useful for prompt assembly, or useful for evaluation. Every dependency vector must explain why one token requires, supports, conflicts with, or inhibits another token.",
+  "output_schema": {
+    "schema_version": "forge.semantic_preset.v1",
+    "id": "string",
+    "name": "string",
+    "description": "string",
+    "use_for": "string",
+    "primary_use": "string",
+    "semantic_contract": {
+      "intent": "string",
+      "audience": "string",
+      "visual_identity": "string",
+      "success_definition": "string",
+      "non_goals": [
+        "string"
+      ]
+    },
+    "semantic_tokens": [
+      {
+        "id": "preset.dimension.short_name",
+        "dimension": "subject | composition | lighting | camera | palette | surface | typography | safe_zone | style | era | cultural | quality | exclusion",
+        "prompt_text": "positive observable instruction",
+        "weight": 1.0,
+        "priority": "core | strong | optional",
+        "visible_evidence": "what a reviewer should see",
+        "binds_to": [
+          "subject | background | lower_third | face | palette | typography | frame"
+        ],
+        "allowed_variants": [
+          "string"
+        ],
+        "failure_if_missing": true,
+        "evaluation_question": "yes/no visual question"
+      }
+    ],
+    "dependency_vectors": [
+      {
+        "from_token": "token id",
+        "to_token": "token id",
+        "relation": "requires | supports | inhibits | conflicts | locks | sequence_before | sequence_after",
+        "strength": 0.0,
+        "reason": "plain-language reason",
+        "prompt_assembly_effect": "how this edge affects prompt order, wording, or validation"
+      }
+    ],
+    "prompt_blocks": {
+      "subject_first": [
+        "token ids or literal block names"
+      ],
+      "style_identity": [
+        "token ids"
+      ],
+      "composition": [
+        "token ids"
+      ],
+      "lighting_camera": [
+        "token ids"
+      ],
+      "palette_surface": [
+        "token ids"
+      ],
+      "safe_zones": [
+        "token ids"
+      ],
+      "craft_hint": [
+        "token ids"
+      ],
+      "hard_exclusions": [
+        "token ids"
+      ]
+    },
+    "precision_contract": {
+      "intent": "string",
+      "primary_use": "string",
+      "style_atoms": [
+        "string"
+      ],
+      "composition_atoms": [
+        "string"
+      ],
+      "lighting_atoms": [
+        "string"
+      ],
+      "camera_atoms": [
+        "string"
+      ],
+      "surface_atoms": [
+        "string"
+      ],
+      "palette_atoms": [
+        "string"
+      ],
+      "thumbnail_safety_atoms": [
+        "string"
+      ],
+      "hard_failure_terms": [
+        "string"
+      ],
+      "safe_zones": [
+        {
+          "name": "string",
+          "bbox_pct": [
+            0.0,
+            0.0,
+            1.0,
+            1.0
+          ],
+          "required": "string"
+        }
+      ],
+      "eval_questions": [
+        {
+          "id": "string",
+          "question": "string",
+          "required": true,
+          "token_ids": [
+            "string"
+          ]
+        }
+      ],
+      "benchmark_prompts": [
+        {
+          "id": "string",
+          "prompt": "string",
+          "expected_tokens": [
+            "string"
+          ],
+          "edge_case": false
+        }
+      ]
+    },
+    "forge_legacy_fields": {
+      "typography": {},
+      "palette_60_30_10": {},
+      "composition": {},
+      "flux": {
+        "positive_prefix": "string",
+        "positive_suffix": "string",
+        "negatives": [
+          "string"
+        ],
+        "guidance": 4.5,
+        "steps": 22,
+        "model": "dev"
+      },
+      "prompt_rules": {
+        "always_add": [
+          "string"
+        ]
+      },
+      "master_primer_policy": "full | photo_only | style_safe | off"
+    },
+    "runtime_recommendation": {
+      "profile": "cool | balanced | max | quality",
+      "guidance_candidates": [
+        3.5,
+        4.5,
+        5.5
+      ],
+      "step_candidates": [
+        18,
+        25,
+        36
+      ],
+      "lora_paths": [],
+      "lora_scales": []
+    },
+    "failure_modes": [
+      {
+        "id": "string",
+        "description": "string",
+        "likely_cause": "string",
+        "repair_token_ids": [
+          "string"
+        ],
+        "automatic_check": "string"
+      }
+    ],
+    "author_notes": [
+      "string"
+    ]
+  },
+  "token_quality_rules": [
+    "A token must be visible, measurable, or necessary for evaluation.",
+    "A token must bind to a target such as subject, face, background, lower_third, palette, or frame.",
+    "A token must not be a vague quality word by itself.",
+    "If using a style label, pair it with visible evidence such as line weight, lighting ratio, lens, material, palette, or composition.",
+    "Convert stylistic negatives into positive instructions whenever possible.",
+    "Keep hard exclusions only for true defects such as text in image, watermark, extra limbs, logo, gore, or unsafe content."
+  ],
+  "dependency_relation_definitions": {
+    "requires": "The target token must be present for the source token to work.",
+    "supports": "The target token improves the source token but is not mandatory.",
+    "inhibits": "The source token weakens the target token and should lower its weight.",
+    "conflicts": "The two tokens should not be active together.",
+    "locks": "The source token fixes the target value for consistency.",
+    "sequence_before": "The source token should be assembled earlier in the prompt.",
+    "sequence_after": "The source token should be assembled later in the prompt."
+  },
+  "anti_patterns": [
+    "Do not output only a long positive_prefix paragraph.",
+    "Do not use 'beautiful', 'high quality', 'cinematic', or 'premium' without observable details.",
+    "Do not hide composition requirements inside a style sentence.",
+    "Do not rely on 'not busy' when the real requirement is 'lower third has low edge density and no faces'.",
+    "Do not mix incompatible render grammars such as flat cel shading and photoreal skin pores unless the dependency vectors explain the tradeoff.",
+    "Do not create benchmark prompts that only test easy cases."
+  ]
+}

@@ -77,6 +77,16 @@ Forge should use research as evaluation scaffolding, not decoration:
   construction rather than diffusion guesses. Sources:
   [human symmetry preference](https://pmc.ncbi.nlm.nih.gov/articles/PMC3374766/),
   [dihedral groups](https://math.libretexts.org/Bookshelves/Abstract_and_Geometric_Algebra/An_Inquiry-Based_Approach_to_Abstract_Algebra_%28Ernst%29/04%253A_Families_of_Groups/4.02%253A_Dihedral_Groups).
+- **Fundamental-region construction**: geometric ornament systems should define a
+  motif once, then copy it by symmetry transformations instead of recomputing
+  every repeated copy. Sources:
+  [A computerized method for generating Islamic star patterns](https://doi.org/10.1016/j.cad.2017.11.002),
+  [Computer Generated Islamic Star Patterns](https://symmetry-us.com/Journals/kaplan/index.html).
+- **Robust geometry**: floating-point recomputation can introduce small but
+  visible inconsistencies. Forge should prefer canonical templates, transforms,
+  and explicit QC over independent redrawing. Sources:
+  [Adaptive Precision Floating-Point Arithmetic and Fast Robust Geometric Predicates](https://people.eecs.berkeley.edu/~jrs/papers/robust-predicates.pdf),
+  [Recent progress in exact geometric computation](https://doi.org/10.1016/j.jsc.2004.09.005).
 - **Audiobook quality**: score speech with objective quality metrics, transcript
   similarity, pacing, silence, and loudness. Sources:
   [PESQ ITU-T P.862](https://www.itu.int/ITU-T/recommendations/rec.aspx?rec=P.862),
@@ -117,6 +127,8 @@ Forge should use research as evaluation scaffolding, not decoration:
 - Exact cyclic symmetry contract: every motif group count divisible by `n`.
 - Optional dihedral contract: mirrored wedge pairs must match.
 - SVG-level invariant checks before rasterization.
+- Canonical motif templates copied by SVG `rotate()` group actions; avoid
+  recomputing independent copies of the same wedge.
 - Pixel-level rotation/mirror checks only as secondary sanity checks.
 - Deterministic seed, shape count, ring count, and motif hashes in QC.
 

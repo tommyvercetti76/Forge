@@ -10,7 +10,6 @@ from __future__ import annotations
 import json
 import math
 import os
-import random
 from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Any
@@ -29,6 +28,7 @@ COMPLEXITY_LEVELS = {
 
 MANDALA_STYLES = {"coloring", "sacred", "floral", "geometric", "playful", "luxury"}
 CHILD_THEMES = ("rabbits-garden", "crows-texas", "blue-jay")
+FOLK_ART_THEMES = ("buddha-peacock",)
 
 
 @dataclass(frozen=True)
@@ -56,6 +56,17 @@ class ChildrensBookConfig:
     seed: int = 101
     width: int = 2400
     height: int = 2400
+    palette: str = "ink"
+    supersample: int = 2
+
+
+@dataclass(frozen=True)
+class FolkArtConfig:
+    theme: str = "buddha-peacock"
+    width: int = 2400
+    height: int = 1800
+    complexity: str = "max"
+    stroke_width: float = 3.0
     palette: str = "ink"
     supersample: int = 2
 
@@ -144,6 +155,16 @@ class VectorCanvas:
     ) -> None:
         self.add_polyline([p1, p2], stroke=stroke, width=width, opacity=opacity)
 
+    def add_group(self, shapes: list[dict[str, Any]], *, angle: float, cx: float, cy: float) -> None:
+        if shapes:
+            self.shapes.append({
+                "type": "group",
+                "shapes": shapes,
+                "angle": float(angle),
+                "cx": float(cx),
+                "cy": float(cy),
+            })
+
     def to_svg(self) -> str:
         parts = [
             '<?xml version="1.0" encoding="UTF-8"?>',
@@ -155,28 +176,7 @@ class VectorCanvas:
             '<g stroke-linecap="round" stroke-linejoin="round">',
         ]
         for shape in self.shapes:
-            stroke = escape(str(shape.get("stroke") or self.stroke))
-            fill = escape(str(shape.get("fill") or "none"))
-            width = float(shape.get("width") or 3.0)
-            opacity = float(shape.get("opacity") or 1.0)
-            common = (
-                f'stroke="{stroke}" fill="{fill}" stroke-width="{width:.3f}" '
-                f'opacity="{opacity:.3f}"'
-            )
-            if shape["type"] == "circle":
-                parts.append(
-                    f'<circle cx="{shape["cx"]:.3f}" cy="{shape["cy"]:.3f}" '
-                    f'r="{shape["r"]:.3f}" {common}/>'
-                )
-            elif shape["type"] == "polygon":
-                pts = " ".join(f"{x:.3f},{y:.3f}" for x, y in shape["points"])
-                parts.append(f'<polygon points="{pts}" {common}/>')
-            elif shape["type"] == "polyline":
-                pts_list = list(shape["points"])
-                if shape.get("close") and pts_list:
-                    pts_list.append(pts_list[0])
-                pts = " ".join(f"{x:.3f},{y:.3f}" for x, y in pts_list)
-                parts.append(f'<polyline points="{pts}" {common}/>')
+            parts.extend(_shape_to_svg_lines(shape, self.stroke))
         parts.extend(["</g>", "</svg>"])
         return "\n".join(parts) + "\n"
 
@@ -193,7 +193,7 @@ class VectorCanvas:
         def sc_color(color: str) -> str:
             return color
 
-        for shape in self.shapes:
+        def draw_shape(shape: dict[str, Any]) -> None:
             width = max(1, int(round(float(shape.get("width") or 3.0) * scale)))
             stroke = sc_color(str(shape.get("stroke") or self.stroke))
             fill = str(shape.get("fill") or "none")
@@ -201,7 +201,10 @@ class VectorCanvas:
                 fill_value = None
             else:
                 fill_value = sc_color(fill)
-            if shape["type"] == "circle":
+            if shape["type"] == "group":
+                for child in shape.get("shapes", []):
+                    draw_shape(_rotate_shape(child, math.radians(float(shape["angle"])), float(shape["cx"]), float(shape["cy"])))
+            elif shape["type"] == "circle":
                 cx = float(shape["cx"]) * scale
                 cy = float(shape["cy"]) * scale
                 r = float(shape["r"]) * scale
@@ -219,12 +222,114 @@ class VectorCanvas:
                     pts.append(pts[0])
                 draw.line(pts, fill=stroke, width=width, joint="curve")
 
+        for shape in self.shapes:
+            draw_shape(shape)
+
         if scale > 1:
             image = image.resize((self.width, self.height), Image.Resampling.LANCZOS)
         path.parent.mkdir(parents=True, exist_ok=True)
         tmp = path.with_suffix(path.suffix + ".tmp")
         image.save(tmp, "PNG", optimize=True)
         os.replace(tmp, path)
+
+
+def _shape_common_svg(shape: dict[str, Any], default_stroke: str) -> str:
+    stroke = escape(str(shape.get("stroke") or default_stroke))
+    fill = escape(str(shape.get("fill") or "none"))
+    width = float(shape.get("width") or 3.0)
+    opacity = float(shape.get("opacity") or 1.0)
+    return (
+        f'stroke="{stroke}" fill="{fill}" stroke-width="{width:.3f}" '
+        f'opacity="{opacity:.3f}"'
+    )
+
+
+def _shape_to_svg_lines(shape: dict[str, Any], default_stroke: str, *, indent: str = "") -> list[str]:
+    if shape["type"] == "group":
+        angle = float(shape["angle"])
+        cx = float(shape["cx"])
+        cy = float(shape["cy"])
+        lines = [f'{indent}<g transform="rotate({angle:.10f} {cx:.3f} {cy:.3f})">']
+        for child in shape.get("shapes", []):
+            lines.extend(_shape_to_svg_lines(child, default_stroke, indent=indent + "  "))
+        lines.append(f"{indent}</g>")
+        return lines
+    common = _shape_common_svg(shape, default_stroke)
+    if shape["type"] == "circle":
+        return [
+            (
+                f'{indent}<circle cx="{shape["cx"]:.3f}" cy="{shape["cy"]:.3f}" '
+                f'r="{shape["r"]:.3f}" {common}/>'
+            )
+        ]
+    if shape["type"] == "polygon":
+        pts = " ".join(f"{x:.3f},{y:.3f}" for x, y in shape["points"])
+        return [f'{indent}<polygon points="{pts}" {common}/>']
+    if shape["type"] == "polyline":
+        pts_list = list(shape["points"])
+        if shape.get("close") and pts_list:
+            pts_list.append(pts_list[0])
+        pts = " ".join(f"{x:.3f},{y:.3f}" for x, y in pts_list)
+        return [f'{indent}<polyline points="{pts}" {common}/>']
+    return []
+
+
+def _rotate_point(point: Point, angle: float, cx: float, cy: float) -> Point:
+    x, y = point
+    dx = x - cx
+    dy = y - cy
+    c = math.cos(angle)
+    s = math.sin(angle)
+    return (cx + dx * c - dy * s, cy + dx * s + dy * c)
+
+
+def _rotate_shape(shape: dict[str, Any], angle: float, cx: float, cy: float) -> dict[str, Any]:
+    shape = dict(shape)
+    if shape["type"] == "circle":
+        shape["cx"], shape["cy"] = _rotate_point((float(shape["cx"]), float(shape["cy"])), angle, cx, cy)
+    elif shape["type"] in {"polygon", "polyline"}:
+        shape["points"] = [_rotate_point(point, angle, cx, cy) for point in shape.get("points", [])]
+    elif shape["type"] == "group":
+        shape["shapes"] = [_rotate_shape(child, angle, cx, cy) for child in shape.get("shapes", [])]
+    return shape
+
+
+def _shape_polygon(points: list[Point], *, stroke: str | None = None, fill: str = "none", width: float | None = None, opacity: float = 1.0) -> dict[str, Any]:
+    return {"type": "polygon", "points": points, "stroke": stroke, "fill": fill, "width": width, "opacity": opacity}
+
+
+def _shape_polyline(points: list[Point], *, stroke: str | None = None, width: float | None = None, opacity: float = 1.0, close: bool = False) -> dict[str, Any]:
+    return {"type": "polyline", "points": points, "stroke": stroke, "fill": "none", "width": width, "opacity": opacity, "close": close}
+
+
+def _shape_circle(cx: float, cy: float, r: float, *, stroke: str | None = None, fill: str = "none", width: float | None = None, opacity: float = 1.0) -> dict[str, Any]:
+    return {"type": "circle", "cx": cx, "cy": cy, "r": r, "stroke": stroke, "fill": fill, "width": width, "opacity": opacity}
+
+
+def _shape_count(shapes: list[dict[str, Any]]) -> int:
+    total = 0
+    for shape in shapes:
+        if shape["type"] == "group":
+            total += _shape_count(shape.get("shapes", []))
+        else:
+            total += 1
+    return total
+
+
+def _shape_avg_radius(shape: dict[str, Any], cx: float, cy: float) -> float:
+    if shape["type"] == "group":
+        children = shape.get("shapes", [])
+        if not children:
+            return 0.0
+        angle = math.radians(float(shape.get("angle") or 0.0))
+        rotated = [_rotate_shape(child, angle, float(shape["cx"]), float(shape["cy"])) for child in children]
+        return sum(_shape_avg_radius(child, cx, cy) for child in rotated) / len(rotated)
+    if shape["type"] == "circle":
+        return math.hypot(float(shape["cx"]) - cx, float(shape["cy"]) - cy)
+    pts = shape.get("points", [])
+    if pts:
+        return sum(math.hypot(x - cx, y - cy) for x, y in pts) / len(pts)
+    return 0.0
 
 
 def _palette(name: str, style: str) -> dict[str, str]:
@@ -294,6 +399,254 @@ def _diamond_points(cx: float, cy: float, radius: float, theta: float) -> list[P
     ]
 
 
+def _regular_polygon_points(cx: float, cy: float, radius: float, sides: int, rotation: float) -> list[Point]:
+    sides = max(3, int(sides))
+    return [_polar(cx, cy, radius, rotation + math.tau * i / sides) for i in range(sides)]
+
+
+def _add_mandala_center(
+    canvas: VectorCanvas,
+    *,
+    style: str,
+    cx: float,
+    cy: float,
+    radius: float,
+    symmetry: int,
+    stroke: float,
+    palette: dict[str, str],
+) -> tuple[int, set[str]]:
+    before = len(canvas.shapes)
+    families: set[str] = set()
+    if style == "floral":
+        families.add("lotus-rosette")
+        for i in range(symmetry):
+            theta = -math.pi / 2 + math.tau * i / symmetry
+            canvas.add_polygon(_petal_points(cx, cy, radius * 0.06, radius * 0.24, theta, math.pi / symmetry * 0.62, steps=18), width=stroke * 0.72)
+        canvas.add_circle(cx, cy, radius * 0.07, width=stroke * 0.9)
+        canvas.add_circle(cx, cy, radius * 0.12, width=stroke * 0.34)
+    elif style == "geometric":
+        families.add("nested-polygons")
+        for sides, scale, rot in ((3, 0.25, -math.pi / 2), (4, 0.20, math.pi / 4), (6, 0.31, math.pi / 6), (symmetry, 0.36, -math.pi / 2)):
+            canvas.add_polygon(_regular_polygon_points(cx, cy, radius * scale, sides, rot), width=stroke * 0.65)
+    elif style == "sacred":
+        families.add("yantra-center")
+        canvas.add_polygon(_regular_polygon_points(cx, cy, radius * 0.34, 3, -math.pi / 2), width=stroke * 0.72)
+        canvas.add_polygon(_regular_polygon_points(cx, cy, radius * 0.34, 3, math.pi / 2), width=stroke * 0.72)
+        for scale in (0.11, 0.20, 0.42):
+            canvas.add_circle(cx, cy, radius * scale, width=stroke * (0.72 if scale == 0.42 else 0.42))
+        for i in range(symmetry):
+            theta = -math.pi / 2 + math.tau * i / symmetry
+            canvas.add_polygon(_petal_points(cx, cy, radius * 0.18, radius * 0.48, theta, math.pi / symmetry * 0.32, steps=12), width=stroke * 0.36)
+    elif style == "playful":
+        families.add("bubbles-stars")
+        for i in range(symmetry):
+            theta = -math.pi / 2 + math.tau * i / symmetry
+            p = _polar(cx, cy, radius * 0.24, theta)
+            canvas.add_circle(p[0], p[1], radius * 0.055, width=stroke * 0.72)
+            if i % 2 == 0:
+                canvas.add_polygon(_star_points(*_polar(cx, cy, radius * 0.34, theta), radius * 0.035, 5, theta), width=stroke * 0.42)
+        canvas.add_circle(cx, cy, radius * 0.13, width=stroke * 0.95)
+    elif style == "luxury":
+        families.add("filigree-jewel")
+        canvas.add_circle(cx, cy, radius * 0.12, fill=palette["accent"], width=stroke * 0.5)
+        for scale in (0.20, 0.31, 0.42):
+            canvas.add_polygon(_regular_polygon_points(cx, cy, radius * scale, symmetry, -math.pi / 2), width=stroke * 0.34)
+        for i in range(symmetry * 2):
+            theta = -math.pi / 2 + math.tau * i / (symmetry * 2)
+            p = _polar(cx, cy, radius * 0.36, theta)
+            canvas.add_circle(p[0], p[1], radius * 0.015, fill=palette["accent"], width=stroke * 0.22)
+    else:
+        families.add("fillable-rosette")
+        for i in range(symmetry):
+            theta = -math.pi / 2 + math.tau * i / symmetry
+            canvas.add_polygon(_petal_points(cx, cy, radius * 0.07, radius * 0.34, theta, math.pi / symmetry * 0.46, steps=10), width=stroke * 0.98)
+        canvas.add_circle(cx, cy, radius * 0.10, width=stroke * 1.0)
+    return len(canvas.shapes) - before, families
+
+
+def _add_mandala_ring_motif(
+    canvas: VectorCanvas,
+    *,
+    style: str,
+    cx: float,
+    cy: float,
+    inner: float,
+    outer: float,
+    theta: float,
+    local_sector: float,
+    ring_width: float,
+    ring: int,
+    detail: int,
+    stroke: float,
+    palette: dict[str, str],
+) -> tuple[int, set[str]]:
+    before = len(canvas.shapes)
+    mid = (inner + outer) / 2.0
+    families: set[str] = set()
+    if style == "floral":
+        families.add("floral-petals")
+        canvas.add_polygon(_petal_points(cx, cy, inner, outer, theta, local_sector * 0.27, pinch=0.72, steps=18 + detail * 2), width=stroke * 0.72)
+        for sign in (-1, 1):
+            leaf_theta = theta + sign * local_sector * 0.29
+            canvas.add_polygon(_petal_points(cx, cy, inner + ring_width * 0.10, outer - ring_width * 0.18, leaf_theta, local_sector * 0.11, pinch=0.85, steps=10), width=stroke * 0.42)
+        if detail >= 3:
+            canvas.add_polyline(_arc_points(cx, cy, mid, theta - local_sector * 0.36, theta + local_sector * 0.36, steps=18), width=stroke * 0.30)
+    elif style == "geometric":
+        families.add("geometric-lattice")
+        anchor = _polar(cx, cy, mid, theta)
+        sides = 3 + ((ring + detail) % 4)
+        canvas.add_polygon(_regular_polygon_points(anchor[0], anchor[1], ring_width * 0.22, sides, theta), width=stroke * 0.66)
+        canvas.add_polygon(_diamond_points(*_polar(cx, cy, outer - ring_width * 0.12, theta), ring_width * 0.18, theta), width=stroke * 0.54)
+        canvas.add_line(_polar(cx, cy, inner, theta), _polar(cx, cy, outer, theta), width=stroke * 0.35)
+        if detail >= 3:
+            canvas.add_line(_polar(cx, cy, mid, theta - local_sector * 0.42), _polar(cx, cy, mid, theta + local_sector * 0.42), width=stroke * 0.28)
+    elif style == "sacred":
+        families.add("yantra-lotus")
+        anchor = _polar(cx, cy, mid, theta)
+        canvas.add_polygon(_regular_polygon_points(anchor[0], anchor[1], ring_width * 0.24, 3, theta + (math.pi if ring % 2 else 0)), width=stroke * 0.58)
+        canvas.add_polygon(_petal_points(cx, cy, inner, outer, theta, local_sector * 0.16, pinch=1.15, steps=16), width=stroke * 0.44)
+        if detail >= 2:
+            canvas.add_circle(*_polar(cx, cy, inner + ring_width * 0.22, theta), ring_width * 0.032, width=stroke * 0.32)
+            canvas.add_circle(*_polar(cx, cy, outer - ring_width * 0.18, theta), ring_width * 0.026, width=stroke * 0.28)
+    elif style == "playful":
+        families.add("playful-scallops")
+        anchor = _polar(cx, cy, mid, theta)
+        canvas.add_circle(anchor[0], anchor[1], ring_width * 0.11, width=stroke * 0.68)
+        canvas.add_circle(*_polar(cx, cy, inner + ring_width * 0.18, theta), ring_width * 0.045, width=stroke * 0.42)
+        if (ring + detail) % 2:
+            canvas.add_polygon(_star_points(*_polar(cx, cy, outer - ring_width * 0.20, theta), ring_width * 0.085, 5, theta), width=stroke * 0.40)
+        else:
+            canvas.add_polygon(_petal_points(cx, cy, inner, inner + ring_width * 0.58, theta, local_sector * 0.18, steps=8), width=stroke * 0.46)
+    elif style == "luxury":
+        families.add("gold-filigree")
+        canvas.add_polyline(_arc_points(cx, cy, mid, theta - local_sector * 0.38, theta + local_sector * 0.38, steps=20), width=stroke * 0.28)
+        canvas.add_polyline(_arc_points(cx, cy, inner + ring_width * 0.18, theta - local_sector * 0.28, theta + local_sector * 0.28, steps=16), width=stroke * 0.20)
+        jewel = _polar(cx, cy, outer - ring_width * 0.16, theta)
+        canvas.add_circle(jewel[0], jewel[1], ring_width * 0.035, fill=palette["accent"], width=stroke * 0.20)
+        canvas.add_polygon(_diamond_points(*_polar(cx, cy, mid, theta), ring_width * 0.16, theta), width=stroke * 0.34)
+        if detail >= 4:
+            for sign in (-1, 1):
+                canvas.add_circle(*_polar(cx, cy, mid, theta + sign * local_sector * 0.30), ring_width * 0.020, width=stroke * 0.18)
+    else:
+        families.add("bold-coloring")
+        canvas.add_polygon(_petal_points(cx, cy, inner, outer, theta, local_sector * 0.21, steps=10 + detail * 2), width=stroke * 0.95)
+        if detail >= 2:
+            canvas.add_polygon(_diamond_points(*_polar(cx, cy, mid, theta), ring_width * 0.22, theta), width=stroke * 0.58)
+        if detail >= 4:
+            canvas.add_circle(*_polar(cx, cy, outer - ring_width * 0.13, theta), ring_width * 0.040, width=stroke * 0.42)
+    return len(canvas.shapes) - before, families
+
+
+def _strict_mandala_ring_template(
+    *,
+    style: str,
+    cx: float,
+    cy: float,
+    inner: float,
+    outer: float,
+    local_sector: float,
+    ring_width: float,
+    ring: int,
+    detail: int,
+    stroke: float,
+    palette: dict[str, str],
+) -> tuple[list[dict[str, Any]], set[str]]:
+    """One canonical motif in the top sector; SVG rotation groups copy it exactly."""
+    theta = -math.pi / 2
+    mid = (inner + outer) / 2.0
+    shapes: list[dict[str, Any]] = []
+    families: set[str] = set()
+    if style == "floral":
+        families.add("floral-petals")
+        shapes.append(_shape_polygon(_petal_points(cx, cy, inner, outer, theta, local_sector * 0.27, pinch=0.72, steps=24), width=stroke * 0.70))
+        for sign in (-1, 1):
+            leaf_theta = theta + sign * local_sector * 0.30
+            shapes.append(_shape_polygon(_petal_points(cx, cy, inner + ring_width * 0.12, outer - ring_width * 0.16, leaf_theta, local_sector * 0.10, pinch=0.85, steps=12), width=stroke * 0.38))
+        if detail >= 3:
+            shapes.append(_shape_circle(*_polar(cx, cy, mid, theta), ring_width * 0.030, width=stroke * 0.30))
+    elif style == "geometric":
+        families.add("geometric-lattice")
+        anchor = _polar(cx, cy, mid, theta)
+        shapes.append(_shape_polygon(_regular_polygon_points(anchor[0], anchor[1], ring_width * 0.23, 3 + ((ring + detail) % 4), theta), width=stroke * 0.60))
+        shapes.append(_shape_polygon(_diamond_points(*_polar(cx, cy, outer - ring_width * 0.13, theta), ring_width * 0.18, theta), width=stroke * 0.50))
+        shapes.append(_shape_polygon(_regular_polygon_points(*_polar(cx, cy, inner + ring_width * 0.24, theta), ring_width * 0.10, 4, theta + math.pi / 4), width=stroke * 0.34))
+        if detail >= 3:
+            shapes.append(_shape_circle(*_polar(cx, cy, mid, theta + local_sector * 0.34), ring_width * 0.020, width=stroke * 0.22))
+            shapes.append(_shape_circle(*_polar(cx, cy, mid, theta - local_sector * 0.34), ring_width * 0.020, width=stroke * 0.22))
+    elif style == "sacred":
+        families.add("yantra-lotus")
+        anchor = _polar(cx, cy, mid, theta)
+        shapes.append(_shape_polygon(_regular_polygon_points(anchor[0], anchor[1], ring_width * 0.23, 3, theta + (math.pi if ring % 2 else 0)), width=stroke * 0.54))
+        shapes.append(_shape_polygon(_petal_points(cx, cy, inner, outer, theta, local_sector * 0.15, pinch=1.12, steps=18), width=stroke * 0.40))
+        shapes.append(_shape_circle(*_polar(cx, cy, inner + ring_width * 0.24, theta), ring_width * 0.030, width=stroke * 0.30))
+        if detail >= 3:
+            shapes.append(_shape_circle(*_polar(cx, cy, outer - ring_width * 0.18, theta), ring_width * 0.024, width=stroke * 0.24))
+    elif style == "playful":
+        families.add("playful-scallops")
+        shapes.append(_shape_circle(*_polar(cx, cy, mid, theta), ring_width * 0.105, width=stroke * 0.62))
+        shapes.append(_shape_circle(*_polar(cx, cy, inner + ring_width * 0.18, theta), ring_width * 0.040, width=stroke * 0.38))
+        if (ring + detail) % 2:
+            shapes.append(_shape_polygon(_star_points(*_polar(cx, cy, outer - ring_width * 0.20, theta), ring_width * 0.078, 5, theta), width=stroke * 0.36))
+        else:
+            shapes.append(_shape_polygon(_petal_points(cx, cy, inner, inner + ring_width * 0.58, theta, local_sector * 0.17, steps=10), width=stroke * 0.42))
+    elif style == "luxury":
+        families.add("gold-filigree")
+        shapes.append(_shape_polygon(_diamond_points(*_polar(cx, cy, mid, theta), ring_width * 0.15, theta), width=stroke * 0.30))
+        shapes.append(_shape_circle(*_polar(cx, cy, outer - ring_width * 0.16, theta), ring_width * 0.032, fill=palette["accent"], width=stroke * 0.16))
+        for sign in (-1, 1):
+            shapes.append(_shape_circle(*_polar(cx, cy, mid, theta + sign * local_sector * 0.30), ring_width * 0.018, width=stroke * 0.16))
+        if detail >= 4:
+            shapes.append(_shape_circle(*_polar(cx, cy, inner + ring_width * 0.18, theta), ring_width * 0.014, width=stroke * 0.14))
+    else:
+        families.add("bold-coloring")
+        shapes.append(_shape_polygon(_petal_points(cx, cy, inner, outer, theta, local_sector * 0.20, steps=14), width=stroke * 0.90))
+        if detail >= 2:
+            shapes.append(_shape_polygon(_diamond_points(*_polar(cx, cy, mid, theta), ring_width * 0.21, theta), width=stroke * 0.54))
+        if detail >= 4:
+            shapes.append(_shape_circle(*_polar(cx, cy, outer - ring_width * 0.13, theta), ring_width * 0.038, width=stroke * 0.40))
+    return shapes, families
+
+
+def _strict_border_template(
+    *,
+    style: str,
+    cx: float,
+    cy: float,
+    max_radius: float,
+    border_sector: float,
+    stroke: float,
+    palette: dict[str, str],
+) -> tuple[list[dict[str, Any]], set[str]]:
+    theta = -math.pi / 2
+    shapes: list[dict[str, Any]] = []
+    families: set[str] = set()
+    if style == "geometric":
+        families.add("geometric-border")
+        shapes.append(_shape_polygon(_regular_polygon_points(*_polar(cx, cy, max_radius * 0.955, theta), max_radius * 0.030, 4, theta), width=stroke * 0.36))
+    elif style == "sacred":
+        families.add("lotus-border")
+        shapes.append(_shape_circle(*_polar(cx, cy, max_radius * 0.965, theta), max_radius * 0.010, width=stroke * 0.30))
+        shapes.append(_shape_polygon(_petal_points(cx, cy, max_radius * 0.90, max_radius * 0.99, theta, border_sector * 0.14, steps=12), width=stroke * 0.32))
+    elif style == "playful":
+        families.add("bubble-border")
+        shapes.append(_shape_circle(*_polar(cx, cy, max_radius * 0.965, theta), max_radius * 0.023, width=stroke * 0.38))
+        shapes.append(_shape_polygon(_star_points(*_polar(cx, cy, max_radius * 0.90, theta), max_radius * 0.018, 5, theta), width=stroke * 0.28))
+    elif style == "luxury":
+        families.add("jewel-border")
+        shapes.append(_shape_circle(*_polar(cx, cy, max_radius * 0.98, theta), max_radius * 0.010, fill=palette["accent"], width=stroke * 0.16))
+        shapes.append(_shape_polygon(_diamond_points(*_polar(cx, cy, max_radius * 0.925, theta), max_radius * 0.014, theta), width=stroke * 0.14))
+    elif style == "floral":
+        families.add("floral-border")
+        shapes.append(_shape_polygon(_petal_points(cx, cy, max_radius * 0.88, max_radius * 0.995, theta, border_sector * 0.22, steps=14), width=stroke * 0.44))
+        for sign in (-1, 1):
+            shapes.append(_shape_polygon(_petal_points(cx, cy, max_radius * 0.905, max_radius * 0.955, theta + sign * border_sector * 0.30, border_sector * 0.08, steps=10), width=stroke * 0.22))
+    else:
+        families.add("fillable-border")
+        shapes.append(_shape_circle(*_polar(cx, cy, max_radius * 0.985, theta), max_radius * 0.012, width=stroke * 0.50))
+        shapes.append(_shape_polygon(_petal_points(cx, cy, max_radius * 0.91, max_radius * 0.99, theta, border_sector * 0.18, steps=12), width=stroke * 0.54))
+    return shapes, families
+
+
 def _complexity_value(value: str) -> int:
     if value not in COMPLEXITY_LEVELS:
         raise ValueError(f"unknown complexity {value!r}; choose one of {', '.join(COMPLEXITY_LEVELS)}")
@@ -314,7 +667,6 @@ def _validate_mandala_config(config: MandalaConfig) -> None:
 
 def build_mandala(config: MandalaConfig) -> tuple[VectorCanvas, dict[str, Any]]:
     _validate_mandala_config(config)
-    rng = random.Random(config.seed)
     palette = _palette(config.palette, config.style)
     canvas = VectorCanvas(config.width, config.height, background=palette["background"], stroke=palette["stroke"])
     cx, cy = config.width / 2.0, config.height / 2.0
@@ -322,91 +674,89 @@ def build_mandala(config: MandalaConfig) -> tuple[VectorCanvas, dict[str, Any]]:
     sector = math.tau / config.symmetry
     detail = _complexity_value(config.complexity)
     stroke = max(1.0, float(config.stroke_width))
+    motif_families: set[str] = set()
 
-    # Concentric construction scaffold.
-    canvas.add_circle(cx, cy, max_radius * 0.045, width=stroke * 1.1)
-    canvas.add_circle(cx, cy, max_radius * 0.075, width=stroke * 0.8)
+    # Style-specific center and scaffold. These are intentionally not cosmetic:
+    # each style gets a different geometry grammar before ring repetition begins.
+    added, families = _add_mandala_center(
+        canvas,
+        style=config.style,
+        cx=cx,
+        cy=cy,
+        radius=max_radius,
+        symmetry=config.symmetry,
+        stroke=stroke,
+        palette=palette,
+    )
+    motif_count = added
+    motif_families.update(families)
     for k in range(1, config.rings + 2):
         r = max_radius * k / (config.rings + 1)
-        canvas.add_circle(cx, cy, r, width=stroke * (0.55 if k % 2 else 0.35), opacity=0.85)
+        if config.style == "geometric":
+            sides = config.symmetry if k % 2 else max(4, config.symmetry // 2)
+            canvas.add_polygon(_regular_polygon_points(cx, cy, r, sides, -math.pi / 2 + (k % 2) * sector / 2), width=stroke * 0.33)
+        elif config.style == "sacred" and k % 3 == 0:
+            canvas.add_polygon(_regular_polygon_points(cx, cy, r, 4, math.pi / 4), width=stroke * 0.28)
+            canvas.add_circle(cx, cy, r, width=stroke * 0.28)
+        elif config.style == "luxury":
+            canvas.add_circle(cx, cy, r, width=stroke * (0.24 if k % 2 else 0.14), opacity=0.85)
+        elif config.style == "playful" and k % 2 == 0:
+            canvas.add_circle(cx, cy, r, width=stroke * 0.48)
+        else:
+            canvas.add_circle(cx, cy, r, width=stroke * (0.62 if k % 2 else 0.34), opacity=0.85)
+        motif_count += 1
 
-    # Radial axes, subtle but useful for coloring pages.
-    for i in range(config.symmetry):
-        theta = -math.pi / 2 + i * sector
-        canvas.add_line(
-            _polar(cx, cy, max_radius * 0.08, theta),
-            _polar(cx, cy, max_radius, theta),
-            width=stroke * 0.28,
-            opacity=0.45,
-        )
-
-    motif_count = 0
     for ring in range(config.rings):
         inner = max_radius * (ring + 0.24) / (config.rings + 1)
         outer = max_radius * (ring + 0.96) / (config.rings + 1)
-        mid = (inner + outer) / 2.0
         ring_width = outer - inner
-        motif_style = (ring + rng.randrange(3)) % 4
-        count_multiplier = 2 if detail >= 3 and ring % 2 else 1
+        if config.style == "luxury":
+            count_multiplier = 2 if detail >= 2 else 1
+        elif config.style == "playful":
+            count_multiplier = 2 if detail >= 3 and ring % 2 == 0 else 1
+        elif config.style == "floral":
+            count_multiplier = 2 if detail >= 4 and ring % 2 else 1
+        elif config.style == "geometric":
+            count_multiplier = 2 if detail >= 3 and ring % 3 != 0 else 1
+        else:
+            count_multiplier = 2 if detail >= 3 and ring % 2 else 1
         count = config.symmetry * count_multiplier
         local_sector = math.tau / count
+        template, families = _strict_mandala_ring_template(
+            style=config.style,
+            cx=cx,
+            cy=cy,
+            inner=inner,
+            outer=outer,
+            local_sector=local_sector,
+            ring_width=ring_width,
+            ring=ring,
+            detail=detail,
+            stroke=stroke,
+            palette=palette,
+        )
+        motif_families.update(families)
 
         for i in range(count):
-            theta = -math.pi / 2 + i * local_sector
-            width_scale = 0.22 if count_multiplier == 1 else 0.16
-            if motif_style == 0:
-                canvas.add_polygon(
-                    _petal_points(cx, cy, inner, outer, theta, local_sector * width_scale, steps=14 + detail * 2),
-                    width=stroke * 0.82,
-                )
-            elif motif_style == 1:
-                canvas.add_polygon(
-                    _petal_points(cx, cy, mid - ring_width * 0.25, outer, theta, local_sector * 0.18, pinch=0.65),
-                    width=stroke * 0.72,
-                )
-                canvas.add_circle(*_polar(cx, cy, inner + ring_width * 0.25, theta), ring_width * 0.075, width=stroke * 0.55)
-            elif motif_style == 2:
-                canvas.add_polygon(_diamond_points(*_polar(cx, cy, mid, theta), ring_width * 0.28, theta), width=stroke * 0.72)
-                if detail >= 2:
-                    canvas.add_circle(*_polar(cx, cy, outer - ring_width * 0.12, theta), ring_width * 0.045, width=stroke * 0.45)
-            else:
-                a0 = theta - local_sector * 0.32
-                a1 = theta + local_sector * 0.32
-                canvas.add_polyline(_arc_points(cx, cy, mid, a0, a1, steps=16), width=stroke * 0.72)
-                canvas.add_polygon(
-                    _petal_points(cx, cy, inner, inner + ring_width * 0.55, theta, local_sector * 0.14, steps=10),
-                    width=stroke * 0.62,
-                )
-            motif_count += 1
+            canvas.add_group(template, angle=math.degrees(i * local_sector), cx=cx, cy=cy)
+            motif_count += len(template)
 
-            if detail >= 2:
-                for sign in (-1, 1):
-                    off = theta + sign * local_sector * 0.31
-                    canvas.add_circle(*_polar(cx, cy, mid, off), ring_width * 0.032, width=stroke * 0.42)
-                    motif_count += 1
-            if detail >= 3 and i % 2 == 0:
-                canvas.add_polyline(
-                    _arc_points(cx, cy, outer - ring_width * 0.08, theta - local_sector * 0.24, theta + local_sector * 0.24, steps=14),
-                    width=stroke * 0.36,
-                )
-                motif_count += 1
-            if detail >= 4:
-                canvas.add_polygon(
-                    _star_points(*_polar(cx, cy, inner + ring_width * 0.12, theta), ring_width * 0.08, 6, theta),
-                    width=stroke * 0.32,
-                )
-                motif_count += 1
-
-    # Outer lace border.
+    # Outer border, with each style using its own edge language.
     border_count = config.symmetry * (2 if detail >= 2 else 1)
+    border_template, border_families = _strict_border_template(
+        style=config.style,
+        cx=cx,
+        cy=cy,
+        max_radius=max_radius,
+        border_sector=math.tau / border_count,
+        stroke=stroke,
+        palette=palette,
+    )
+    motif_families.update(border_families)
     for i in range(border_count):
-        theta = -math.pi / 2 + math.tau * i / border_count
-        canvas.add_circle(*_polar(cx, cy, max_radius * 0.985, theta), max_radius * 0.012, width=stroke * 0.5)
-        canvas.add_polygon(
-            _petal_points(cx, cy, max_radius * 0.91, max_radius * 0.99, theta, math.tau / border_count * 0.18, steps=10),
-            width=stroke * 0.5,
-        )
-        motif_count += 2
+        canvas.add_group(border_template, angle=360.0 * i / border_count, cx=cx, cy=cy)
+        motif_count += len(border_template)
+    shape_count = _shape_count(canvas.shapes)
 
     qc = {
         "engine": "forge.procedural-mandala.v1",
@@ -416,10 +766,23 @@ def build_mandala(config: MandalaConfig) -> tuple[VectorCanvas, dict[str, Any]]:
         "dihedral_mirror": bool(config.mirror),
         "ring_count": config.rings,
         "motif_count": motif_count,
-        "shape_count": len(canvas.shapes),
+        "shape_count": shape_count,
         "center": [round(cx, 3), round(cy, 3)],
+        "style_grammar": {
+            "style": config.style,
+            "motif_families": sorted(motif_families),
+        },
+        "symmetry_contract": {
+            "construction": "canonical motifs copied by SVG rotate() group actions",
+            "rotation_group": f"C{config.symmetry}",
+            "dihedral_requested": bool(config.mirror),
+            "fundamental_sector_degrees": round(360.0 / config.symmetry, 10),
+            "recomputed_independent_copies": False,
+        },
         "notes": [
             "Geometry is generated from polar coordinates.",
+            "Repeated motifs are copied from canonical templates using SVG rotation transforms.",
+            "Each mandala style uses a distinct geometry grammar, not just a palette swap.",
             "All motif counts are exact multiples of the requested symmetry order.",
             "No generated text, signatures, or watermarks are emitted by this engine.",
         ],
@@ -449,6 +812,50 @@ def _add_flower(canvas: VectorCanvas, cx: float, cy: float, radius: float, petal
     canvas.add_circle(cx, cy, radius * 0.18, width=width * 0.6)
 
 
+def _spiral_points(cx: float, cy: float, radius: float, turns: float = 1.8, steps: int = 34) -> list[Point]:
+    points = []
+    for i in range(steps):
+        t = i / max(1, steps - 1)
+        r = radius * t
+        a = math.tau * turns * t
+        points.append((cx + r * math.cos(a), cy + r * math.sin(a)))
+    return points
+
+
+def _add_hatch_rect(canvas: VectorCanvas, x: float, y: float, w: float, h: float, *, spacing: float, width: float, mode: str = "vertical") -> int:
+    before = len(canvas.shapes)
+    if mode == "grid":
+        _add_hatch_rect(canvas, x, y, w, h, spacing=spacing, width=width, mode="vertical")
+        _add_hatch_rect(canvas, x, y, w, h, spacing=spacing, width=width, mode="horizontal")
+        return len(canvas.shapes) - before
+    steps = max(1, int((w if mode == "vertical" else h) / spacing))
+    for i in range(steps + 1):
+        if mode == "vertical":
+            xx = x + i * spacing
+            canvas.add_line((xx, y), (xx, y + h), width=width)
+        else:
+            yy = y + i * spacing
+            canvas.add_line((x, yy), (x + w, yy), width=width)
+    return len(canvas.shapes) - before
+
+
+def _add_dots_in_circle(canvas: VectorCanvas, cx: float, cy: float, radius: float, *, spacing: float, dot: float, width: float) -> int:
+    before = len(canvas.shapes)
+    rows = int(radius * 2 / spacing)
+    for iy in range(-rows, rows + 1):
+        y = cy + iy * spacing
+        span_sq = radius * radius - (y - cy) * (y - cy)
+        if span_sq <= 0:
+            continue
+        span = math.sqrt(span_sq)
+        cols = int(span / spacing)
+        for ix in range(-cols, cols + 1):
+            x = cx + ix * spacing + (spacing * 0.5 if iy % 2 else 0)
+            if (x - cx) ** 2 + (y - cy) ** 2 <= radius * radius:
+                canvas.add_circle(x, y, dot, fill=canvas.stroke, width=width)
+    return len(canvas.shapes) - before
+
+
 def _add_symmetric_border(canvas: VectorCanvas, *, symmetry: int, rings: int, complexity: str, seed: int, width: float) -> None:
     config = MandalaConfig(
         style="playful",
@@ -473,6 +880,8 @@ def _add_symmetric_border(canvas: VectorCanvas, *, symmetry: int, rings: int, co
             pts = shape["points"]
             avg = sum(math.hypot(x - cx, y - cy) for x, y in pts) / len(pts)
             keep = avg > keep_inner
+        elif shape["type"] == "group":
+            keep = _shape_avg_radius(shape, cx, cy) > keep_inner
         if keep:
             canvas.shapes.append(shape)
 
@@ -738,6 +1147,201 @@ def write_childrens_book(config: ChildrensBookConfig, out_dir: Path) -> dict[str
     manifest_path = out_dir / "manifest.json"
     _atomic_write_text(manifest_path, json.dumps(manifest, indent=2) + "\n")
     return manifest
+
+
+def _validate_folk_art_config(config: FolkArtConfig) -> None:
+    if config.theme not in FOLK_ART_THEMES:
+        raise ValueError(f"unknown folk-art theme {config.theme!r}; choose one of {', '.join(FOLK_ART_THEMES)}")
+    if config.width < 800 or config.height < 800:
+        raise ValueError("--width and --height must be at least 800 for folk-art pages")
+    _complexity_value(config.complexity)
+
+
+def _add_panel_patterns(canvas: VectorCanvas, *, width: float) -> int:
+    before = len(canvas.shapes)
+    w, h = canvas.width, canvas.height
+    s = min(w, h)
+    # Bottom woven borders.
+    canvas.add_polyline([(0, h * 0.795), (w, h * 0.795)], width=width * 1.1)
+    canvas.add_polyline([(0, h * 0.905), (w, h * 0.905)], width=width * 1.1)
+    _add_hatch_rect(canvas, 0, h * 0.795, w, h * 0.11, spacing=s * 0.025, width=width * 0.35, mode="grid")
+    for i in range(36):
+        x = w * i / 36
+        canvas.add_polygon([(x, h * 0.93), (x + w / 72, h * 0.99), (x + w / 36, h * 0.93)], width=width * 0.42)
+
+    # Dense side fields: herringbone-like line texture without using text.
+    for side in (-1, 1):
+        x0 = w * (0.04 if side < 0 else 0.72)
+        x1 = w * (0.30 if side < 0 else 0.96)
+        for j in range(24):
+            y = h * 0.05 + j * h * 0.027
+            canvas.add_polyline([(x0, y), ((x0 + x1) / 2, y + h * 0.018), (x1, y)], width=width * 0.22)
+            canvas.add_polyline([(x0, y + h * 0.018), ((x0 + x1) / 2, y), (x1, y + h * 0.018)], width=width * 0.22)
+    return len(canvas.shapes) - before
+
+
+def _add_folk_trees(canvas: VectorCanvas, *, width: float) -> int:
+    before = len(canvas.shapes)
+    w, h = canvas.width, canvas.height
+    s = min(w, h)
+    for side in (-1, 1):
+        trunk_x = w * (0.32 if side < 0 else 0.68)
+        y0 = h * 0.08
+        y1 = h * 0.78
+        canvas.add_polyline([(trunk_x, y1), (trunk_x - side * s * 0.04, h * 0.52), (trunk_x - side * s * 0.05, y0)], width=width * 4.0)
+        canvas.add_polyline([(trunk_x + side * s * 0.035, y1), (trunk_x + side * s * 0.015, h * 0.52), (trunk_x + side * s * 0.03, y0)], width=width * 2.0)
+        for k in range(34):
+            y = y0 + k * (y1 - y0) / 34
+            canvas.add_line((trunk_x - side * s * 0.035, y), (trunk_x + side * s * 0.030, y + s * 0.006), width=width * 0.22)
+        for branch in range(4):
+            by = h * (0.16 + branch * 0.12)
+            bx = trunk_x + side * s * 0.015
+            end = (trunk_x + side * s * (0.14 + branch * 0.025), by - s * (0.06 + branch * 0.01))
+            canvas.add_polyline([(bx, by), (bx + side * s * 0.09, by - s * 0.05), end], width=width * 1.0)
+            for leaf in range(5):
+                theta = -math.pi / 2 + side * (0.6 + leaf * 0.18)
+                lx = bx + side * s * (0.05 + leaf * 0.025)
+                ly = by - s * (0.03 + leaf * 0.016)
+                canvas.add_polygon(_petal_points(lx, ly, s * 0.002, s * 0.030, theta, 0.42, steps=8), width=width * 0.35)
+    return len(canvas.shapes) - before
+
+
+def _add_folk_peacock(canvas: VectorCanvas, cx: float, cy: float, *, mirror: bool, width: float) -> int:
+    before = len(canvas.shapes)
+    w, h = canvas.width, canvas.height
+    s = min(w, h)
+    sign = -1 if mirror else 1
+    fan_r = s * 0.155
+    for i in range(18):
+        theta = -math.pi / 2 + (i - 8.5) * 0.16 * sign
+        outer = _polar(cx, cy, fan_r, theta)
+        inner = _polar(cx, cy, fan_r * 0.35, theta)
+        canvas.add_line((cx, cy), outer, width=width * 0.45)
+        eye = _petal_points(outer[0], outer[1], s * 0.004, s * 0.026, theta, 0.50, steps=8)
+        canvas.add_polygon(eye, fill=canvas.stroke if i % 2 == 0 else "none", width=width * 0.52)
+        canvas.add_polygon(_petal_points(inner[0], inner[1], s * 0.002, s * 0.014, theta, 0.38, steps=7), width=width * 0.28)
+    body_y = cy + s * 0.06
+    canvas.add_polygon(_ellipse_points(cx, body_y, s * 0.042, s * 0.065, rotation=sign * 0.05), width=width * 0.85)
+    canvas.add_polyline([(cx, body_y - s * 0.02), (cx + sign * s * 0.012, body_y - s * 0.10), (cx + sign * s * 0.032, body_y - s * 0.14)], width=width * 0.85)
+    canvas.add_circle(cx + sign * s * 0.038, body_y - s * 0.145, s * 0.016, width=width * 0.6)
+    canvas.add_polygon([(cx + sign * s * 0.052, body_y - s * 0.145), (cx + sign * s * 0.086, body_y - s * 0.135), (cx + sign * s * 0.052, body_y - s * 0.127)], width=width * 0.45)
+    canvas.add_circle(cx + sign * s * 0.043, body_y - s * 0.15, s * 0.004, fill=canvas.stroke, width=width * 0.25)
+    for k in range(5):
+        x = cx + sign * s * (0.012 + k * 0.012)
+        canvas.add_line((x, body_y + s * 0.055), (x + sign * s * 0.014, body_y + s * 0.12), width=width * 0.35)
+    return len(canvas.shapes) - before
+
+
+def _add_folk_buddha(canvas: VectorCanvas, *, width: float) -> int:
+    before = len(canvas.shapes)
+    w, h = canvas.width, canvas.height
+    s = min(w, h)
+    cx = w / 2.0
+    halo_y = h * 0.33
+    face_y = h * 0.35
+    # Halo with lotus edge and dotted ring.
+    for r, scale in ((s * 0.205, 1.2), (s * 0.176, 0.75), (s * 0.145, 0.45)):
+        canvas.add_circle(cx, halo_y, r, width=width * scale)
+    for i in range(38):
+        theta = -math.pi / 2 + math.tau * i / 38
+        canvas.add_polygon(_petal_points(cx, halo_y, s * 0.205, s * 0.245, theta, 0.06, steps=8), width=width * 0.45)
+    for i in range(28):
+        p = _polar(cx, halo_y, s * 0.165, -math.pi / 2 + math.tau * i / 28)
+        canvas.add_circle(p[0], p[1], s * 0.008, width=width * 0.35)
+    _add_dots_in_circle(canvas, cx, halo_y, s * 0.13, spacing=s * 0.020, dot=s * 0.0018, width=width * 0.15)
+
+    # Head, ears, hair curls.
+    canvas.add_polygon(_ellipse_points(cx, face_y, s * 0.070, s * 0.105), fill=canvas.background, width=width * 1.2)
+    for side in (-1, 1):
+        canvas.add_polygon(_ellipse_points(cx + side * s * 0.078, face_y + s * 0.005, s * 0.020, s * 0.072), fill=canvas.background, width=width * 0.9)
+    hair_base_y = face_y - s * 0.075
+    for row in range(6):
+        count = 6 + row * 2
+        y = hair_base_y - row * s * 0.018
+        span = s * (0.055 + row * 0.009)
+        for col in range(count):
+            x = cx - span + 2 * span * col / max(1, count - 1)
+            if (x - cx) ** 2 / (s * 0.078) ** 2 + (y - (face_y - s * 0.096)) ** 2 / (s * 0.070) ** 2 < 1.1:
+                canvas.add_polyline(_spiral_points(x, y, s * 0.009, turns=1.5, steps=16), width=width * 0.32)
+    # Face.
+    for side in (-1, 1):
+        eye_y = face_y + s * 0.004
+        eye_x = cx + side * s * 0.032
+        canvas.add_polyline([(eye_x - side * s * 0.030, eye_y), (eye_x, eye_y - s * 0.012), (eye_x + side * s * 0.030, eye_y)], width=width * 0.8)
+        canvas.add_polyline([(eye_x - side * s * 0.026, eye_y + s * 0.004), (eye_x, eye_y + s * 0.012), (eye_x + side * s * 0.026, eye_y + s * 0.004)], width=width * 0.55)
+        canvas.add_circle(eye_x, eye_y + s * 0.004, s * 0.004, fill=canvas.stroke, width=width * 0.2)
+        canvas.add_polyline([(eye_x - side * s * 0.032, eye_y - s * 0.028), (eye_x, eye_y - s * 0.040), (eye_x + side * s * 0.032, eye_y - s * 0.028)], width=width * 0.45)
+    canvas.add_polyline([(cx, face_y - s * 0.010), (cx - s * 0.004, face_y + s * 0.045), (cx + s * 0.016, face_y + s * 0.052)], width=width * 0.70)
+    canvas.add_polyline([(cx - s * 0.026, face_y + s * 0.077), (cx, face_y + s * 0.087), (cx + s * 0.026, face_y + s * 0.077)], width=width * 0.65)
+    canvas.add_polyline([(cx - s * 0.020, face_y + s * 0.086), (cx, face_y + s * 0.096), (cx + s * 0.020, face_y + s * 0.086)], width=width * 0.45)
+
+    # Body and robe.
+    shoulder_y = h * 0.55
+    lap_y = h * 0.78
+    canvas.add_polygon(_ellipse_points(cx, h * 0.82, s * 0.235, s * 0.070), fill=canvas.background, width=width * 1.1)
+    robe = [
+        (cx - s * 0.050, shoulder_y - s * 0.020),
+        (cx + s * 0.190, shoulder_y + s * 0.020),
+        (cx + s * 0.180, lap_y),
+        (cx - s * 0.030, lap_y + s * 0.015),
+        (cx - s * 0.150, shoulder_y + s * 0.035),
+    ]
+    canvas.add_polygon(robe, fill=canvas.background, width=width * 1.0)
+    for k in range(28):
+        y = shoulder_y + k * (lap_y - shoulder_y) / 28
+        canvas.add_line((cx - s * 0.120 + k * s * 0.002, y), (cx + s * 0.170, y + s * 0.015), width=width * 0.25)
+    for k in range(15):
+        x = cx + s * (0.040 + k * 0.010)
+        canvas.add_line((x, shoulder_y + s * 0.005), (x + s * 0.020, lap_y - s * 0.015), width=width * 0.22)
+    # Hands.
+    canvas.add_polygon(_ellipse_points(cx - s * 0.060, shoulder_y + s * 0.040, s * 0.034, s * 0.055, rotation=-0.55), fill=canvas.background, width=width * 0.8)
+    canvas.add_polyline([(cx - s * 0.065, shoulder_y + s * 0.005), (cx - s * 0.095, shoulder_y + s * 0.050), (cx - s * 0.110, shoulder_y + s * 0.105)], width=width * 0.75)
+    canvas.add_polygon(_ellipse_points(cx + s * 0.020, lap_y - s * 0.035, s * 0.070, s * 0.020, rotation=0.02), fill=canvas.background, width=width * 0.8)
+    canvas.add_polygon(_ellipse_points(cx + s * 0.110, lap_y - s * 0.020, s * 0.060, s * 0.018, rotation=-0.12), fill=canvas.background, width=width * 0.8)
+    return len(canvas.shapes) - before
+
+
+def build_folk_art_page(config: FolkArtConfig) -> tuple[VectorCanvas, dict[str, Any]]:
+    _validate_folk_art_config(config)
+    palette = _palette(config.palette, "coloring")
+    canvas = VectorCanvas(config.width, config.height, background=palette["background"], stroke=palette["stroke"])
+    s = min(config.width, config.height)
+    stroke = max(1.0, float(config.stroke_width))
+    count = 0
+    count += _add_panel_patterns(canvas, width=stroke)
+    count += _add_folk_trees(canvas, width=stroke)
+    count += _add_folk_peacock(canvas, config.width * 0.165, config.height * 0.43, mirror=False, width=stroke)
+    count += _add_folk_peacock(canvas, config.width * 0.835, config.height * 0.43, mirror=True, width=stroke)
+    count += _add_folk_buddha(canvas, width=stroke)
+    canvas.add_polyline([(s * 0.02, s * 0.02), (config.width - s * 0.02, s * 0.02), (config.width - s * 0.02, config.height - s * 0.02), (s * 0.02, config.height - s * 0.02)], width=stroke * 0.75, close=True)
+    qc = {
+        "engine": "forge.procedural-folk-art.v1",
+        "config": asdict(config),
+        "theme": config.theme,
+        "construction_pass": True,
+        "shape_count": len(canvas.shapes),
+        "motif_count": count,
+        "symmetry_contract": {
+            "central_axis": "vertical",
+            "paired_side_motifs": ["peacocks", "trees", "background fields"],
+            "not_a_mandala": True,
+        },
+        "style_grammar": {
+            "lineage": "original folk devotional coloring page inspired by Madhubani/Gond line density",
+            "motif_families": ["central serene figure", "halo lotus ring", "paired peacocks", "tree arches", "woven border", "hatching", "stippling"],
+        },
+        "notes": [
+            "Original procedural line art; not a copy of the reference image.",
+            "No generated text, signatures, or watermarks are emitted.",
+            "SVG is the source artifact; PNG is a raster export.",
+        ],
+    }
+    return canvas, qc
+
+
+def write_folk_art_page(config: FolkArtConfig, out_path: Path) -> dict[str, Any]:
+    canvas, qc = build_folk_art_page(config)
+    return _write_artifact_bundle(canvas, qc, out_path, supersample=config.supersample, kind="folk-art")
 
 
 def _write_artifact_bundle(

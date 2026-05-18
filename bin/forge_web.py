@@ -240,9 +240,9 @@ def _watch_dirs_for(action: str, payload: dict[str, Any]) -> list[str]:
             paths.append(str(out.with_name(out.stem + "-bg.png")))
     elif action in {"edit", "voice", "video", "mandala", "folk-art"}:
         paths += _payload_paths(payload, "out")
-    elif action in {"brief", "episode", "audiobook", "audiobook-simple", "childrens-book", "engine", "coloring-page", "mandala-art-page", "indian-folk-page", "stylized-cinematic-page"}:
+    elif action in {"brief", "episode", "audiobook", "audiobook-simple", "childrens-book", "engine", "create", "coloring-page", "mandala-art-page", "indian-folk-page", "stylized-cinematic-page", "tshirt-page"}:
         paths += _payload_paths(payload, "out")
-        if action in {"engine", "coloring-page", "mandala-art-page", "indian-folk-page", "stylized-cinematic-page"} and not str(payload.get("out") or "").strip():
+        if action in {"engine", "create", "coloring-page", "mandala-art-page", "indian-folk-page", "stylized-cinematic-page", "tshirt-page"} and not str(payload.get("out") or "").strip():
             paths.append(str(DEFAULT_OUTPUT_ROOT / "engine-renders"))
         if action == "audiobook-simple" and not str(payload.get("out") or "").strip():
             paths.append(str(DEFAULT_OUTPUT_ROOT / "audiobook"))
@@ -334,7 +334,7 @@ def build_command(action: str, payload: dict[str, Any]) -> tuple[list[str], list
             cmd.append(engine_name)
     elif action == "create":
         # Unified Create page — dispatches to the per-engine handler based on
-        # payload.style. The 4 per-engine page handlers are kept as-is so the
+        # payload.style. The per-engine page handlers are kept as-is so the
         # legacy sidebar entries still work; "create" just routes to one of
         # them with the same payload.
         style = str(payload.get("style") or "").strip()
@@ -343,6 +343,7 @@ def build_command(action: str, payload: dict[str, Any]) -> tuple[list[str], list
             "mandala-art":              "mandala-art-page",
             "indian-classical":         "indian-folk-page",
             "stylized-cinematic":       "stylized-cinematic-page",
+            "minimalist-tshirt":        "tshirt-page",
         }
         target = dispatch.get(style)
         if not target:
@@ -456,6 +457,43 @@ def build_command(action: str, payload: dict[str, Any]) -> tuple[list[str], list
             ("light.atmospheric_medium",    payload.get("sc_atmosphere")),
         ])
         _add(cmd, "--config", sc_config)
+        _add(cmd, "--negative", payload.get("negative"))
+        _add(cmd, "--seeds", payload.get("seeds"))
+        _add(cmd, "--seed", payload.get("seed"))
+        _add(cmd, "--guidance", payload.get("guidance"))
+        _add_bool(cmd, "--refine", payload.get("refine"))
+        _add(cmd, "--refine-strength", payload.get("refine_strength"))
+        _add_bool(cmd, "--hi-res", payload.get("hi_res"))
+        _add_bool(cmd, "--ultra-res", payload.get("ultra_res"))
+        _add(cmd, "--width", payload.get("width"))
+        _add(cmd, "--height", payload.get("height"))
+        _add(cmd, "--from-image", payload.get("from_image"))
+        _add(cmd, "--from-image-strength", payload.get("from_image_strength"))
+        _add_bool(cmd, "--draft", payload.get("draft"))
+        _add(cmd, "--profile", payload.get("profile"))
+        _add(cmd, "--quantize", payload.get("quantize"))
+        _add(cmd, "--upscale", payload.get("upscale"))
+        _add_bool(cmd, "--no-default-loras", payload.get("no_default_loras"))
+        _add(cmd, "--out", payload.get("out"))
+    elif action == "tshirt-page":
+        cmd.extend(["engine", "render", "minimalist-tshirt"])
+        _add(cmd, "--recipe", payload.get("recipe"))
+        _add(cmd, "--subject", payload.get("subject"))
+        mt_config = _join_kv_pairs([
+            ("subject.motif",          payload.get("mt_motif")),
+            ("style.tradition",        payload.get("mt_tradition")),
+            ("style.detail",           payload.get("mt_detail")),
+            ("style.symmetry",         payload.get("mt_symmetry")),
+            ("style.accents",          payload.get("mt_accents")),
+            ("production.output",      payload.get("mt_output")),
+            ("production.ink",         payload.get("mt_ink")),
+            ("production.shirt_color", payload.get("mt_shirt_color")),
+            ("composition.placement",  payload.get("mt_placement")),
+            ("composition.layout",     payload.get("mt_layout")),
+            ("composition.background", payload.get("mt_background")),
+            ("composition.border",     payload.get("mt_border")),
+        ])
+        _add(cmd, "--config", mt_config)
         _add(cmd, "--negative", payload.get("negative"))
         _add(cmd, "--seeds", payload.get("seeds"))
         _add(cmd, "--seed", payload.get("seed"))
@@ -2544,6 +2582,7 @@ const groups = [
     ["mandala-art-page",         "  · Mandala art (legacy direct page)"],
     ["indian-folk-page",         "  · Indian folk art (legacy direct page)"],
     ["stylized-cinematic-page",  "  · Stylized cinematic (legacy direct page)"],
+    ["tshirt-page",              "  · Minimalist T-shirt design (legacy direct page)"],
   ]],
   ["EDIT", [
     ["edit",                     "Edit / restyle an existing image"],
@@ -2675,6 +2714,19 @@ const specs = {
         {name:"sc_sky_state",       label:"Sky state", type:"select", options:"scSkyStates", value:"from-prompt",             showWhen:{style:"stylized-cinematic"}},
         {name:"sc_twinkles",        label:"Twinkles + glow", type:"select", options:"scTwinkles", value:"from-prompt",        showWhen:{style:"stylized-cinematic"}},
         {name:"sc_atmosphere",      label:"Atmospheric medium", type:"select", options:"scAtmospheres", value:"from-prompt",  showWhen:{style:"stylized-cinematic"}},
+        // minimalist-tshirt
+        {name:"mt_motif",           label:"Motif", type:"select", options:"mtMotifs", value:"madhubani-folk-icon",            showWhen:{style:"minimalist-tshirt"}},
+        {name:"mt_tradition",       label:"Tradition", type:"select", options:"mtTraditions", value:"madhubani-contemporary", showWhen:{style:"minimalist-tshirt"}},
+        {name:"mt_detail",          label:"Detail level", type:"select", options:"mtDetails", value:"ornamental-balanced",    showWhen:{style:"minimalist-tshirt"}},
+        {name:"mt_symmetry",        label:"Symmetry", type:"select", options:"mtSymmetries", value:"handmade-balanced",       showWhen:{style:"minimalist-tshirt"}},
+        {name:"mt_accents",         label:"Accents", type:"select", options:"mtAccents", value:"small-floral-only",           showWhen:{style:"minimalist-tshirt"}},
+        {name:"mt_output",          label:"Output mode", type:"select", options:"mtOutputs", value:"print-art",               showWhen:{style:"minimalist-tshirt"}},
+        {name:"mt_ink",             label:"Ink palette", type:"select", options:"mtInks", value:"three-ink-popti-red-black",  showWhen:{style:"minimalist-tshirt"}},
+        {name:"mt_shirt_color",     label:"Shirt/base", type:"select", options:"mtShirtColors", value:"cream-or-black",       showWhen:{style:"minimalist-tshirt"}},
+        {name:"mt_placement",       label:"Placement", type:"select", options:"mtPlacements", value:"center-chest",           showWhen:{style:"minimalist-tshirt"}},
+        {name:"mt_layout",          label:"Layout", type:"select", options:"mtLayouts", value:"single-mark",                  showWhen:{style:"minimalist-tshirt"}},
+        {name:"mt_background",      label:"Background", type:"select", options:"mtBackgrounds", value:"no-background",        showWhen:{style:"minimalist-tshirt"}},
+        {name:"mt_border",          label:"Border", type:"select", options:"mtBorders", value:"none",                         showWhen:{style:"minimalist-tshirt"}},
       ]},
 
       {name:"_imgctrl", label:"▾ Image control — guidance, refine, negatives, LoRA", type:"expander", hint:"Affect HOW the engine paints. Defaults are tuned per style.", fields:[
@@ -2879,6 +2931,57 @@ const specs = {
       ]},
 
       {name:"_danger", label:"⚠ Danger zone — native hi-res / ultra-res", type:"expander", hint:"DO NOT use these with --from-image. Use Final Size upscale above.", fields:[
+        {name:"hi_res",    label:"Native Hi-res 1920×1080 (txt2img only)", type:"checkbox"},
+        {name:"ultra_res", label:"Native Ultra-res 2048×1152 (RISKY)", type:"checkbox"},
+        {name:"width",     label:"Width override (px)", type:"number"},
+        {name:"height",    label:"Height override (px)", type:"number"},
+      ]},
+    ]
+  },
+  "tshirt-page": {
+    title: "Minimalist T-shirt Design",
+    fields: [
+      {name:"subject", label:"Prompt — what to print", type:"textarea", required:true, value:"Minimalist Madhubani-inspired t-shirt design, single centered \"popti\" green parrot illustration, clean black ink outlines, subtle folk-art feather detailing, limited 3-color palette (popti green, deep red, ivory), balanced negative space, elegant handmade symmetry, modern ethnic aesthetic, screen-print friendly, no background, no border, vector-style composition, premium streetwear branding feel, small ornamental floral accents only, culturally authentic but contemporary, high contrast, ultra-clean silhouette, suitable for oversized cream or black t-shirt printing"},
+      {name:"recipe", label:"Recipe (optional — prefills prompt + production settings)", type:"select", options:"recipesTshirt"},
+      {name:"from_image", label:"Source image (optional — convert a sketch/photo into shirt art)", type:"path"},
+      {name:"profile", label:"Render mode", type:"select", options:"profiles", value:"balanced"},
+      {name:"upscale", label:"Final size (RealESRGAN upscale)", type:"select", options:"upscaleOptions"},
+      {name:"seed", label:"Seed", type:"number", value:"23"},
+      {name:"seeds", label:"Variants (best-of contact sheet)", type:"number", value:"1"},
+
+      {name:"_style", label:"▾ Design system — motif, tradition, print constraints", type:"expander", hint:"Production-oriented controls. These map directly to minimalist-tshirt engine config.", fields:[
+        {name:"mt_motif",       label:"Motif", type:"select", options:"mtMotifs", value:"madhubani-folk-icon"},
+        {name:"mt_tradition",   label:"Tradition", type:"select", options:"mtTraditions", value:"madhubani-contemporary"},
+        {name:"mt_detail",      label:"Detail level", type:"select", options:"mtDetails", value:"ornamental-balanced"},
+        {name:"mt_symmetry",    label:"Symmetry", type:"select", options:"mtSymmetries", value:"handmade-balanced"},
+        {name:"mt_accents",     label:"Accents", type:"select", options:"mtAccents", value:"small-floral-only"},
+        {name:"mt_output",      label:"Output mode", type:"select", options:"mtOutputs", value:"print-art"},
+        {name:"mt_ink",         label:"Ink palette", type:"select", options:"mtInks", value:"three-ink-popti-red-black"},
+        {name:"mt_shirt_color", label:"Shirt/base", type:"select", options:"mtShirtColors", value:"cream-or-black"},
+        {name:"mt_placement",   label:"Placement", type:"select", options:"mtPlacements", value:"center-chest"},
+        {name:"mt_layout",      label:"Layout", type:"select", options:"mtLayouts", value:"single-mark"},
+        {name:"mt_background",  label:"Background", type:"select", options:"mtBackgrounds", value:"no-background"},
+        {name:"mt_border",      label:"Border", type:"select", options:"mtBorders", value:"none"},
+      ]},
+
+      {name:"_imgctrl", label:"▾ Image control — guidance, refine, negatives, LoRA", type:"expander", hint:"Affect HOW the engine draws. Defaults are tuned for flat apparel marks.", fields:[
+        {name:"from_image_strength", label:"Source image strength", type:"number", value:"0.85", showWhen:{from_image:"__nonempty"}},
+        {name:"guidance",            label:"Guidance (5.5 default — strict but printable)", type:"number", value:"5.5"},
+        {name:"refine",              label:"Refine (extra ~30 s, micro-detail pass)", type:"checkbox"},
+        {name:"refine_strength",     label:"Refine strength (only if Refine is on)", type:"number", value:"0.25"},
+        {name:"negative",            label:"Extra negative terms — engine already bans mockups/text/noise", type:"text"},
+        {name:"no_default_loras",    label:"Skip engine's default LoRA stack", type:"checkbox"},
+      ]},
+
+      {name:"_output", label:"▾ Output", type:"expander", hint:"Where the file lands. Leave blank for the default.", fields:[
+        {name:"out", label:"Output path", type:"path"},
+      ]},
+
+      {name:"_perf", label:"▾ Performance — M5 Max specific", type:"expander", hint:"Quantization. Defaults (q8) are fine.", fields:[
+        {name:"quantize", label:"Quantize", type:"select", options:"quantizeOptions"},
+      ]},
+
+      {name:"_danger", label:"⚠ Danger zone — native hi-res / ultra-res", type:"expander", hint:"Use Final Size upscale for print. Native high-res is slower and riskier.", fields:[
         {name:"hi_res",    label:"Native Hi-res 1920×1080 (txt2img only)", type:"checkbox"},
         {name:"ultra_res", label:"Native Ultra-res 2048×1152 (RISKY)", type:"checkbox"},
         {name:"width",     label:"Width override (px)", type:"number"},
@@ -3144,7 +3247,7 @@ const FIELD_HELP = {
   lora_scales: "Strength per LoRA, one number per line, in same order as paths. 0.4-0.6 subtle, 0.7-0.9 strong, 1.0+ rarely improves.",
   out: "Where to save the output file. Leave blank to use the default (~/Desktop/forge-test/...).",
   output_path: "Where to save the output file. Leave blank to use the default (~/Desktop/forge-test/...).",
-  engine: "Domain-expert style engine. noir-cinema, wildlife-photo, impressionist, indian-classical, childrens-coloring-book, mandala-art. Each has its own vocabulary — see Engine details.",
+  engine: "Domain-expert style engine. noir-cinema, wildlife-photo, impressionist, indian-classical, childrens-coloring-book, mandala-art, stylized-cinematic, minimalist-tshirt. Each has its own vocabulary — see Engine details.",
   recipe: "Pre-vetted preset combo from brand/prompts/library.json. Browse all via the 'Engine recipes' action. Recipes pre-fill subject, config, seed.",
   config: "Engine knob overrides as comma-separated key=value (e.g. 'subject.character_archetype=brave-rabbit,style.tradition=mo-willems-minimal'). See Engine details for valid knobs.",
   seeds: "Render N variants with consecutive seeds (seed, seed+1, ...) into a gallery folder with an HTML contact sheet for picking the best.",
@@ -3257,6 +3360,19 @@ const FIELD_HELP = {
   sc_sky_state: "Sky as a character. clear-blue = smooth gradient. partly-cumulus = friendly cotton-puff sky. dramatic-cumulus = vertical stacks with crepuscular rays. cirrus-streak = high wispy ice clouds. overcast-blanket = featureless soft-shadow sky. sunset-pastel = magenta + amber gradient. starfield-rural / milky-way-band = deep-sky astronomy. aurora-curtain = green/magenta high-latitude. stormy-cloud-anvil = anvil-headed cumulonimbus.",
   sc_twinkles: "Small light sources. none = subject + major light only. scattered-fireflies = 8-20 warm-yellow specks. distant-city-lights = pin-prick window-lights at horizon. candle-cluster = warm 1850K candle flames. fairy-lights-string = even-spaced warm-white dots. lantern-cluster = paper lanterns (Diwali / Mid-Autumn register). sparse-stars = 30-80 visible stars (early evening). dense-star-field = 200+ stars (rural deep sky). bioluminescent-water = blue-green plankton glow.",
   sc_atmosphere: "Air medium. clear-dry = sharp colors + distance visibility. fog-low = ground-level dense fog, mystery+isolation register. mist-mid = waist-to-head-height mist, painterly depth (Ghibli classic). rain-streak = diagonal rain lines + wet surfaces. smoke-haze = warm-tinted hanging smoke (urban / fire / cigar register). dust-mote = floating particles caught in light shafts. snow-fall = active snowflakes + breath-puffs. volumetric-shaft = visible god-rays through windows / canopy / barn doors.",
+  // Minimalist T-shirt — friendly form fields
+  mt_motif: "Primary design grammar. madhubani-folk-icon pushes the subject into a clean Mithila-inspired icon; negative-space-symbol and geometric-silhouette are better for pure one-ink streetwear marks.",
+  mt_tradition: "Cultural visual register. madhubani-contemporary keeps folk-art cues but trims them for modern apparel; warli-minimal and gond-minimal are restrained variants for different Indian visual languages.",
+  mt_detail: "How much internal ornament survives. ultra-minimal is logo-like; ornamental-balanced is the sweet spot for folk detail that still screen-prints cleanly; maximal-but-printable is the upper limit.",
+  mt_symmetry: "Composition discipline. handmade-balanced keeps organic folk-art asymmetry while still feeling centered and premium; near-bilateral is stricter for badges or mascots.",
+  mt_accents: "Secondary ornaments. small-floral-only is tuned for the popti parrot prompt because it adds Madhubani flavor without creating a busy shirt graphic.",
+  mt_output: "print-art returns production artwork with no garment mockup. shirt-mockup renders the design on a blank shirt for previewing placement.",
+  mt_ink: "Screen-print palette constraint. three-ink-popti-red-black limits the design to popti green, deep red, and black/ivory ground; one-ink and two-ink options are safer for cheaper production.",
+  mt_shirt_color: "Target cotton/base color. cream-or-black gives the model permission to keep the art readable on both oversized cream and black tees.",
+  mt_placement: "Print position. center-chest is the default hero mark; left-pocket applies extra reduction pressure; back-large allows larger detail.",
+  mt_layout: "Shape of the graphic. single-mark is the cleanest for premium tees; icon-plus-caption-zone reserves blank space for exact text added later outside FLUX.",
+  mt_background: "Background rule. no-background keeps the art as isolated print artwork; transparent-feel asks for a plain flat field with no scene.",
+  mt_border: "Border treatment. none is best for the parrot prompt; hairline-badge is for emblem-style lockups.",
   upscale: "Post-render upscale via RealESRGAN-ncnn-vulkan. The SAFE path to high resolution on M5 Max — renders FLUX at default 1280×720 (low memory, ~3 min), then external upscaler boosts to 4× / 8× in ~6-15 seconds. 8× = 10240×5760 (59 MP), comfortably print-ready. Native Hi-res / Ultra-res checkboxes below are now SECONDARY — use upscale instead. (For --from-image / Kontext runs, native Hi-res is auto-clamped to default size because Kontext + high-res over-subscribes Metal memory and can freeze the GPU.)",
   quantize: "mflux model weight quantization (Apple Silicon). Lower bits = lower RAM + slightly faster. Default q8 is indistinguishable from fp16. q4 is ~10 % faster on M5 Max with mild face softening. q0 forces full fp16 (max quality, slowest, ~24 GB). Set FORGE_FLUX_QUANTIZE env var to change the default for all renders. NOTE: weight quantization is NOT the big speed lever on Apple Silicon — the activations stay fp16. The big levers are step count + resolution + schnell vs dev.",
   no_default_loras: "By default, each engine auto-applies its curated LoRA stack (see brand/loras/README.md) — RealismLora + add-details for wildlife, film-noir + add-details for noir-cinema, Coloring-Book LoRA for childrens-coloring-book, Van Gogh for impressionist, Indo-Realism for indian-classical. Check this box to render WITHOUT them (vanilla FLUX) — useful for A/B comparison or when iterating on a new prompt without LoRA bias. Engines without curated picks (mandala-art) ignore this flag.",
@@ -3282,6 +3398,7 @@ function optionsFor(field) {
   if (field.options === "recipesOptional") return [{value:"", label:"none"}, ...(cfg.recipes || []).map(v => ({value:v.id, label:v.engine ? `${v.id} · ${v.engine}` : v.id}))];
   if (field.options === "recipesColoring") return [{value:"", label:"(write your own prompt)"}, ...((cfg.recipes || []).filter(r => r.engine === "childrens-coloring-book").map(r => ({value:r.id, label:r.id})))];
   if (field.options === "recipesMandala") return [{value:"", label:"(write your own prompt)"}, ...((cfg.recipes || []).filter(r => r.engine === "mandala-art").map(r => ({value:r.id, label:r.id})))];
+  if (field.options === "recipesTshirt") return [{value:"", label:"(write your own prompt)"}, ...((cfg.recipes || []).filter(r => r.engine === "minimalist-tshirt").map(r => ({value:r.id, label:r.id})))];
   if (field.options === "voices") return (cfg.voices || []).map(v => ({value:v.id, label:v.label || v.id}));
   // Children's coloring book enums (mirror bin/style_engines.py)
   if (field.options === "cbTraditions") return ["mo-willems-minimal", "sandra-boynton-whimsical", "eric-carle-bold", "beatrix-potter-naturalistic", "miyazaki-storyboard", "hanna-barbera-flat-cartoon"].map(v => ({value:v, label:v}));
@@ -3310,12 +3427,26 @@ function optionsFor(field) {
   if (field.options === "scSkyStates") return [{value:"from-prompt", label:"(from prompt — let your text decide)"}, ...["clear-blue", "partly-cumulus", "dramatic-cumulus", "cirrus-streak", "overcast-blanket", "sunset-pastel", "starfield-rural", "milky-way-band", "aurora-curtain", "stormy-cloud-anvil"].map(v => ({value:v, label:v}))];
   if (field.options === "scTwinkles") return [{value:"from-prompt", label:"(from prompt — let your text decide)"}, ...["none", "scattered-fireflies", "distant-city-lights", "candle-cluster", "fairy-lights-string", "lantern-cluster", "sparse-stars", "dense-star-field", "bioluminescent-water"].map(v => ({value:v, label:v}))];
   if (field.options === "scAtmospheres") return [{value:"from-prompt", label:"(from prompt — let your text decide)"}, ...["clear-dry", "fog-low", "mist-mid", "rain-streak", "smoke-haze", "dust-mote", "snow-fall", "volumetric-shaft"].map(v => ({value:v, label:v}))];
+  // Minimalist T-shirt enums (mirror bin/style_engines.py)
+  if (field.options === "mtMotifs") return ["monoline-icon", "geometric-silhouette", "negative-space-symbol", "madhubani-folk-icon", "tiny-line-scene", "retro-minimal-badge", "abstract-type-safe"].map(v => ({value:v, label:v}));
+  if (field.options === "mtTraditions") return ["modern-minimal", "madhubani-contemporary", "warli-minimal", "gond-minimal"].map(v => ({value:v, label:v}));
+  if (field.options === "mtDetails") return ["ultra-minimal", "subtle-folk-detail", "ornamental-balanced", "maximal-but-printable"].map(v => ({value:v, label:v}));
+  if (field.options === "mtSymmetries") return ["none", "handmade-balanced", "near-bilateral"].map(v => ({value:v, label:v}));
+  if (field.options === "mtAccents") return ["none", "small-floral-only", "micro-folk-dots"].map(v => ({value:v, label:v}));
+  if (field.options === "mtOutputs") return ["print-art", "shirt-mockup"].map(v => ({value:v, label:v}));
+  if (field.options === "mtInks") return ["one-ink-black", "one-ink-white", "two-ink-earth", "two-ink-retro", "tonal-on-tonal", "three-ink-popti-red-black"].map(v => ({value:v, label:v}));
+  if (field.options === "mtShirtColors") return ["white", "black", "natural-cream", "heather-grey", "navy", "forest-green", "cream-or-black"].map(v => ({value:v, label:v}));
+  if (field.options === "mtPlacements") return ["center-chest", "left-pocket", "back-large"].map(v => ({value:v, label:v}));
+  if (field.options === "mtLayouts") return ["single-mark", "icon-plus-caption-zone", "circular-badge", "stacked-symbols", "repeat-mini-pattern"].map(v => ({value:v, label:v}));
+  if (field.options === "mtBackgrounds") return ["no-background", "transparent-feel"].map(v => ({value:v, label:v}));
+  if (field.options === "mtBorders") return ["none", "hairline-badge"].map(v => ({value:v, label:v}));
   // Unified Create page style picker — maps to engine names used by build_command.
   if (field.options === "styleOptions") return [
     {value:"childrens-coloring-book", label:"Children's coloring book — B&W line-art for kids"},
     {value:"mandala-art",             label:"Mandala art — ornamental B&W line-art"},
     {value:"indian-classical",        label:"Indian folk art — Madhubani / Warli / Tanjore / Pahari (colored)"},
     {value:"stylized-cinematic",      label:"Stylized cinematic — Tartakovsky / Mignola / McQuarrie / Ghibli"},
+    {value:"minimalist-tshirt",        label:"Minimalist T-shirt — screen-print apparel marks"},
   ];
   // Recipes filtered to currently-selected Style on the unified Create page.
   if (field.options === "recipesAll") {
@@ -3952,6 +4083,7 @@ function renderForm() {
     "mandala-art-page": "mandala-art",
     "indian-folk-page": "indian-classical",
     "stylized-cinematic-page": "stylized-cinematic",
+    "tshirt-page": "minimalist-tshirt",
   };
   const sugEngine = engineForAction[state.action];
   if (sugEngine !== undefined) {
@@ -4226,6 +4358,20 @@ const RECIPE_FIELD_MAP = {
     "light.sky_state":             "sc_sky_state",
     "light.twinkles_and_glow":     "sc_twinkles",
     "light.atmospheric_medium":    "sc_atmosphere",
+  },
+  "minimalist-tshirt": {
+    "subject.motif":           "mt_motif",
+    "style.tradition":         "mt_tradition",
+    "style.detail":            "mt_detail",
+    "style.symmetry":          "mt_symmetry",
+    "style.accents":           "mt_accents",
+    "production.output":       "mt_output",
+    "production.ink":          "mt_ink",
+    "production.shirt_color":  "mt_shirt_color",
+    "composition.placement":   "mt_placement",
+    "composition.layout":      "mt_layout",
+    "composition.background":  "mt_background",
+    "composition.border":      "mt_border",
   },
 };
 
