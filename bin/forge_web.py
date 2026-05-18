@@ -2471,7 +2471,7 @@ details.form-expander > .field { margin-top: 10px; }
         <button id="refreshConfig" type="button">Refresh</button>
       </div>
       <div id="toast" class="toast" hidden></div>
-      <form id="jobForm"></form>
+      <form id="jobForm" novalidate></form>
       <pre id="commandPreview" class="cmd"></pre>
     </section>
   </main>
@@ -2918,8 +2918,9 @@ const specs = {
   episode: {
     title: "Episode",
     fields: [
-      {name:"book", label:"Book path", type:"path"},
-      {name:"text", label:"Text", type:"textarea"},
+      {name:"_src", label:"SOURCE — pick EITHER book OR text (mutually exclusive at the CLI)", type:"section", hint:"Pick a file path OR paste raw text. Filling both is an error — the file path wins and the textarea is ignored."},
+      {name:"book", label:"Book path (or leave blank if pasting text below)", type:"path"},
+      {name:"text", label:"Text (or leave blank if using a book path above)", type:"textarea", showWhen:{book:"__empty"}},
       {name:"title", label:"Title", type:"text"},
       {name:"preset", label:"Preset", type:"select", options:"presets", value:"cinematic"},
       {name:"voice", label:"Voice", type:"select", options:"voices"},
@@ -3489,6 +3490,10 @@ function fieldElement(field) {
     el.value = field.value || "";
     el.required = !!field.required;
     el.spellcheck = false;
+    // type="number" defaults to step="1" which rejects decimal defaults like
+    // "6.5" / "0.25" / "0.85" — browser flags them as invalid and blocks form
+    // submission. step="any" allows any decimal.
+    if (el.type === "number") el.step = "any";
     wrap.appendChild(el);
   }
   return withShowWhen(wrap, field);
@@ -3951,10 +3956,14 @@ function renderForm() {
   const sugEngine = engineForAction[state.action];
   if (sugEngine !== undefined) {
     // On the Create page, derive engine from the Style picker.
+    // On the generic Engine page, derive from the engine select.
     let engine = sugEngine;
     if (state.action === "create") {
       const styleEl = form.querySelector('[name="style"]');
       engine = styleEl ? styleEl.value : "childrens-coloring-book";
+    } else if (state.action === "engine") {
+      const engineEl = form.querySelector('[name="name"]');
+      engine = engineEl ? engineEl.value : "";
     }
     fetchAndRenderSuggestion(engine || state.pendingEngineForSuggestion, form);
   }
@@ -4148,7 +4157,7 @@ function renderForm() {
     }
   }
   // On the Create page, the recipe dropdown is filtered by Style. When user
-  // switches Style, repopulate the recipe options to match.
+  // switches Style, repopulate the recipe options + refresh smart-suggestion.
   const styleEl = form.querySelector('[name="style"]');
   const recipeForStyle = form.querySelector('[name="recipe"]');
   if (styleEl && recipeForStyle) {
@@ -4165,6 +4174,15 @@ function renderForm() {
         recipeForStyle.appendChild(o);
       }
       if (!preserved) recipeForStyle.value = "";
+      // Re-fetch smart-suggestion banner for the new engine.
+      fetchAndRenderSuggestion(styleEl.value, form);
+    });
+  }
+  // On the generic Engine page, refresh smart-suggestion when engine select changes.
+  const engineSelEl = form.querySelector('[name="name"]');
+  if (engineSelEl && state.action === "engine") {
+    engineSelEl.addEventListener("change", () => {
+      fetchAndRenderSuggestion(engineSelEl.value, form);
     });
   }
   applyShowWhen();
