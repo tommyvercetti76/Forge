@@ -3536,59 +3536,77 @@ class MinimalistTShirtEngine(Engine):
             *tradition.masters,
         ]))
 
+        # ── ELEVATED PROMPT (mirrors the playbook that fixed coloring-book
+        # and mandala-art):
+        #   1) SCENE leads (strongest T5 attention zone)
+        #   2) FRAMING is explicit + concrete (defeats FLUX's "Etsy listing"
+        #      prior that puts a tiny subject inside a border on cream paper)
+        #   3) SILHOUETTE-FILL enforcement (decorations INSIDE the body, not
+        #      on a separate saddle/blanket)
+        #   4) Spot-color references (Saul Bass, Charley Harper) that FLUX
+        #      knows for bold silhouette + minimal palette on white
+        #   5) Trimmed total prompt to fit T5's ~2500-char attention budget
         prompt_parts = [
-            "MINIMALIST T-SHIRT DESIGN ENGINE — create a screen-printable apparel "
-            "graphic, not a poster, not a full illustration, not an e-commerce ad.",
+            # ── SCENE FIRST ──
+            f"SCENE: {clean_subject}.",
 
-            f"SUBJECT / IDEA: {clean_subject}.",
+            # ── FRAMING (concrete, suppresses Etsy-product-listing prior) ──
+            "FRAMING: this is a SCREEN-PRINT APPAREL GRAPHIC, NOT a poster, "
+            "NOT an Etsy product listing, NOT a framed illustration. The "
+            "subject FILLS 80-90% of the canvas edge-to-edge on a PURE "
+            "WHITE #FFFFFF background. NO cream, NO beige, NO antique paper, "
+            "NO off-white. NO outer border, NO frame, NO ornamental edge "
+            "decoration. NO signature, NO stamp, NO watermark, NO artist "
+            "tag. NO background scenery (no grass, no flowers, no stars, "
+            "no sky, no scattered ornaments). The subject is alone on white.",
 
-            f"MOTIF SYSTEM ({motif.key}): {motif.description}",
-            f"CULTURAL / STYLE REGISTER ({tradition.key}): {tradition.description}",
-            f"DETAIL DENSITY ({detail.key}): {detail.description}",
+            # ── SILHOUETTE-FILL TREATMENT (the body IS the canvas) ──
+            "SILHOUETTE-FILL TREATMENT: the subject's body silhouette is the "
+            "primary shape — bold, confident, recognizable at 50px thumbnail "
+            "size. ALL decorative motifs live INSIDE the body silhouette: "
+            "leaves on the flanks, dot bands across the chest/neck, "
+            "ornamental anklets on the legs, wave-ribbon midsection. "
+            "Decorations are NOT on a separate saddle blanket / sash / cape / "
+            "scarf draped on top of the subject — they are tattooed INTO the "
+            "body's own form. The Madhubani T-shirt grammar: body as canvas.",
+
+            # ── ENGINE KNOBS (compact form) ──
+            f"MOTIF ({motif.key}): {motif.description}",
+            f"REGISTER ({tradition.key}): {tradition.description}",
+            f"DETAIL ({detail.key}): {detail.description}",
             f"SYMMETRY ({symmetry.key}): {symmetry.description}",
-            f"ORNAMENTAL ACCENTS ({accents.key}): {accents.description}",
-            f"LAYOUT ({layout.key}): {layout.description}",
-            f"PLACEMENT ({placement.key}): {placement.description}",
-            f"BACKGROUND ({background.key}): {background.description}",
-            f"BORDER ({border.key}): {border.description}",
-            f"INK SYSTEM ({ink.key}): {ink.description}",
-            f"SHIRT / BASE COLOR ({shirt.key}): {shirt.description}",
+            f"ACCENTS ({accents.key}): {accents.description}",
+            f"INK ({ink.key}): {ink.description}",
             output_rule,
 
-            f"PRINT CONSTRAINTS: {ink_limit}, no gradients, "
-            "no photographic texture, no rendered lighting inside the artwork, no "
-            "thin hairlines, no tiny decorative debris. Every shape must be clean "
-            "enough to cut as vinyl or expose on a screen.",
+            # ── PRINT CONSTRAINTS (single tight block) ──
+            f"PRINT CONSTRAINTS: {ink_limit}. Flat color fills, hard edges, "
+            "no gradients, no photographic texture, no rendered lighting, "
+            "no thin hairlines (everything must survive 4-inch print). "
+            "Lines are vector-grade: a screen-print shop could cut these as "
+            "solid color separations directly.",
 
-            "MINIMALISM CONTRACT: keep large balanced negative space, but do not "
-            "erase culturally meaningful detail. The subject must be recognizable "
-            "from its outer silhouette first, then reward close inspection with "
-            "controlled interior folk linework. Use strong negative space. If an "
-            "ornament does not support the subject, remove it.",
+            # ── READABILITY ──
+            "READABILITY: design reads at three distances — phone thumbnail "
+            "(silhouette + 1-2 color hits), across-the-room shirt view "
+            "(body shape + accent color), close inspection (interior "
+            "ornamental linework). Silhouette clarity beats ornamental detail.",
 
-            "FOLK-APPAREL CONTRACT: when a folk register is active, preserve the "
-            "signature line grammar (double contour, almond eye, rhythmic feather "
-            "or leaf infill, tiny floral punctuation) while keeping every line "
-            "thick and open enough for screen printing. Culturally inspired, not "
-            "costume-like, not a museum copy, not generic tribal pattern.",
+            # ── TEXT POLICY ──
+            "TEXT: NO words, NO slogans, NO fake brand names, NO random "
+            "letters, NO decorative micro-type anywhere on the design. "
+            "Typography is added later in a separate compositing step.",
 
-            "TEXT POLICY: do not invent readable words, slogans, fake brand names, "
-            "random letters, or decorative micro-type. If text is conceptually "
-            "needed, reserve a clean blank caption zone so exact typography can be "
-            "added later by Forge/PIL/vector tooling.",
+            *(["POCKET-SIZE: " + pocket_reduction] if pocket_reduction else []),
 
-            "APPAREL READABILITY: the design must read at three distances: phone "
-            "thumbnail, across-the-room shirt view, and close inspection. Prioritize "
-            "silhouette clarity over detail.",
-
-            "COMPOSITION DISCIPLINE: centered balance, clean margins, no accidental "
-            "tangents, no cropped-off design parts, no background scene competing "
-            "with the mark. The graphic should feel like a premium merch mark from "
-            "a good design studio.",
-
-            *(["\n" + pocket_reduction] if pocket_reduction else []),
-
-            assemble_masters_line(selected_masters),
+            # ── REFERENCE STANDARD (B&W + spot-color masters) ──
+            "REFERENCE STANDARD: the production tier is Saul Bass title-card "
+            "silhouettes (Anatomy of a Murder 1959, The Man with the Golden "
+            "Arm 1955), Charley Harper minimal-realism wildlife prints, M.C. "
+            "Escher's bold-line woodcut animals, Paul Rand corporate marks, "
+            "and Etsy bestselling Madhubani screen-prints (Indian folk-art "
+            "T-shirts from Daram, Bombay Shirt Company, Suta). Every line "
+            "deliberate, every color load-bearing, zero filler.",
         ]
 
         prompt = "\n\n".join(prompt_parts)
