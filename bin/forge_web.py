@@ -1350,6 +1350,38 @@ class Handler(BaseHTTPRequestHandler):
         except Exception as e:
             self._json({"error": str(e)}, HTTPStatus.INTERNAL_SERVER_ERROR)
 
+    def do_DELETE(self) -> None:
+        parsed = urllib.parse.urlparse(self.path)
+        try:
+            if parsed.path.startswith("/api/gallery/"):
+                # DELETE /api/gallery/<id>?file=1 — drop the render row from
+                # the gallery DB. If ?file=1 is set, also remove the PNG +
+                # sidecar from disk.
+                tail = parsed.path[len("/api/gallery/"):]
+                try:
+                    render_id = int(tail)
+                except ValueError:
+                    self._json({"error": "invalid render id"}, HTTPStatus.BAD_REQUEST)
+                    return
+                row = forge_gallery.get_render(render_id)
+                if not row:
+                    self._json({"error": "render not found"}, HTTPStatus.NOT_FOUND)
+                    return
+                query = urllib.parse.parse_qs(parsed.query)
+                delete_file = query.get("file", ["0"])[0] in {"1", "true", "yes"}
+                forge_gallery.delete_render(render_id)
+                if delete_file:
+                    try:
+                        Path(row["png_path"]).unlink(missing_ok=True)
+                        Path(row["png_path"] + ".directive.json").unlink(missing_ok=True)
+                    except Exception:
+                        pass
+                self._json({"ok": True, "deleted_file": delete_file})
+            else:
+                self.send_error(HTTPStatus.NOT_FOUND)
+        except Exception as e:
+            self._json({"error": str(e)}, HTTPStatus.INTERNAL_SERVER_ERROR)
+
 
 INDEX_HTML = r"""<!doctype html>
 <html lang="en">
@@ -2580,7 +2612,7 @@ const specs = {
       {name:"config", label:"Config overrides", type:"text"},
       {name:"negative", label:"Extra negatives", type:"text"},
       {name:"from_image", label:"Source image", type:"path"},
-      {name:"from_image_strength", label:"Image strength", type:"number", value:"0.85"},
+      {name:"from_image_strength", label:"Image strength", type:"number", value:"0.85", showWhen:{from_image:"__nonempty"}},
       {name:"seeds", label:"Variants", type:"number", value:"1"},
       {name:"profile", label:"Render mode", type:"select", options:"profiles", value:"balanced"},
       {name:"seed", label:"Seed", type:"number", value:"1"},
@@ -2646,7 +2678,7 @@ const specs = {
       ]},
 
       {name:"_imgctrl", label:"▾ Image control — guidance, refine, negatives, LoRA", type:"expander", hint:"Affect HOW the engine paints. Defaults are tuned per style.", fields:[
-        {name:"from_image_strength", label:"Source image strength (only if you uploaded a photo)", type:"number", value:"0.85"},
+        {name:"from_image_strength", label:"Source image strength (only if you uploaded a photo)", type:"number", value:"0.85", showWhen:{from_image:"__nonempty"}},
         {name:"guidance",            label:"Guidance (leave blank = engine default)", type:"number"},
         {name:"refine",              label:"Refine (extra ~30 s, micro-detail pass)", type:"checkbox"},
         {name:"refine_strength",     label:"Refine strength", type:"number", value:"0.25"},
@@ -2696,7 +2728,7 @@ const specs = {
       ]},
 
       {name:"_imgctrl", label:"▾ Image control — guidance, refine, negatives, LoRA", type:"expander", hint:"Affect HOW the engine paints (not what). Defaults are tuned.", fields:[
-        {name:"from_image_strength", label:"Source image strength (only if you uploaded a photo above)", type:"number", value:"0.85"},
+        {name:"from_image_strength", label:"Source image strength (only if you uploaded a photo above)", type:"number", value:"0.85", showWhen:{from_image:"__nonempty"}},
         {name:"guidance",            label:"Guidance (prompt adherence — 6.5 default)", type:"number", value:"6.5"},
         {name:"refine",              label:"Refine (extra ~30 s, micro-detail pass)", type:"checkbox"},
         {name:"refine_strength",     label:"Refine strength (only if Refine is on)", type:"number", value:"0.25"},
@@ -2740,7 +2772,7 @@ const specs = {
       ]},
 
       {name:"_imgctrl", label:"▾ Image control — guidance, refine, negatives, LoRA", type:"expander", hint:"Affect HOW the engine paints (not what). Defaults are tuned.", fields:[
-        {name:"from_image_strength", label:"Source image strength", type:"number", value:"0.85"},
+        {name:"from_image_strength", label:"Source image strength", type:"number", value:"0.85", showWhen:{from_image:"__nonempty"}},
         {name:"guidance",            label:"Guidance (5.0 default — iconographic detail)", type:"number", value:"5.0"},
         {name:"refine",              label:"Refine (extra ~30 s, micro-detail pass)", type:"checkbox"},
         {name:"refine_strength",     label:"Refine strength (only if Refine is on)", type:"number", value:"0.25"},
@@ -2785,7 +2817,7 @@ const specs = {
       ]},
 
       {name:"_imgctrl", label:"▾ Image control — guidance, refine, negatives, LoRA", type:"expander", hint:"Affect HOW the engine paints (not what). Defaults are tuned.", fields:[
-        {name:"from_image_strength", label:"Source image strength", type:"number", value:"0.85"},
+        {name:"from_image_strength", label:"Source image strength", type:"number", value:"0.85", showWhen:{from_image:"__nonempty"}},
         {name:"guidance",            label:"Guidance (8.5 default — strict line-art adherence)", type:"number", value:"8.5"},
         {name:"refine",              label:"Refine (extra ~30 s, micro-detail pass)", type:"checkbox"},
         {name:"refine_strength",     label:"Refine strength (only if Refine is on)", type:"number", value:"0.25"},
@@ -2830,7 +2862,7 @@ const specs = {
       ]},
 
       {name:"_imgctrl", label:"▾ Image control — guidance, refine, negatives, LoRA", type:"expander", hint:"Affect HOW the engine paints (not what). Defaults are tuned.", fields:[
-        {name:"from_image_strength", label:"Source image strength", type:"number", value:"0.85"},
+        {name:"from_image_strength", label:"Source image strength", type:"number", value:"0.85", showWhen:{from_image:"__nonempty"}},
         {name:"guidance",            label:"Guidance (4.5 default — stylized register)", type:"number", value:"4.5"},
         {name:"refine",              label:"Refine (extra ~30 s, micro-detail pass)", type:"checkbox"},
         {name:"refine_strength",     label:"Refine strength (only if Refine is on)", type:"number", value:"0.25"},
@@ -3518,6 +3550,35 @@ async function renderGalleryPanel() {
   const form = document.getElementById("jobForm");
   form.innerHTML = "";
 
+  // Rating-system explainer — collapsed by default. Surfaces the
+  // "what happens when I rate?" question directly so users know
+  // the system isn't a black box.
+  const explainer = document.createElement("details");
+  explainer.className = "form-expander";
+  explainer.innerHTML = `
+    <summary>▾ What happens when I rate a render?</summary>
+    <div class="form-section-hint" style="margin-top:8px; line-height:1.5;">
+      Ratings drive a <strong>config-level learning loop</strong>, NOT FLUX weight retraining.
+      The FLUX model itself stays frozen — what we tune is the engine's <em>recipe defaults</em>:
+      <ul style="margin:8px 0 0 18px; padding:0;">
+        <li><strong>👍 / ⭐ Liked renders</strong> contribute to that engine's "top-rated config":
+            their seed family, guidance value, refine/hi-res flags get averaged into the
+            smart-suggestion banner that appears at the top of every Create form.</li>
+        <li><strong>👎 Disliked renders</strong> are downweighted — their seeds + configs are
+            avoided in future suggestions.</li>
+        <li><strong>Aggregate signal</strong>: after ~10 ratings per engine, the engine's
+            default seed shifts toward the modal liked seed, default guidance toward your
+            preferred mean, and refine/hi-res toggles toward your habits.</li>
+        <li><strong>Notes</strong> you write on a render are kept in the gallery DB but don't
+            currently feed back into prompt construction (planned: surface them when picking
+            recipes).</li>
+      </ul>
+      Bottom line: <em>rate ruthlessly — every 👍 / 👎 makes the next render closer to what
+      you actually want, at the engine level, without any model retraining.</em>
+    </div>
+  `;
+  form.appendChild(explainer);
+
   // Filter row + A/B compare control
   const filters = document.createElement("div");
   filters.className = "gallery-filters";
@@ -3636,6 +3697,7 @@ function renderGalleryGrid(renders) {
         ${ratingButton(r.id,  1, r.rating, '👍')}
         ${ratingButton(r.id,  2, r.rating, '⭐')}
         <button class="rate-btn rate-detail" data-detail="${r.id}" title="Details">⋯</button>
+        <button class="rate-btn rate-delete" data-delete="${r.id}" title="Delete this render">🗑</button>
       </div>
     `;
     // Click the small select-spot to toggle A/B selection
@@ -3667,6 +3729,38 @@ function renderGalleryGrid(renders) {
   // Detail buttons
   grid.querySelectorAll(".rate-detail").forEach(btn => {
     btn.onclick = () => openRenderDetail(parseInt(btn.dataset.detail));
+  });
+  // Delete buttons — two-step confirmation (first click = arm; second = delete).
+  // Also deletes the PNG file on disk (?file=1).
+  grid.querySelectorAll(".rate-delete").forEach(btn => {
+    btn.onclick = async (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      const rid = parseInt(btn.dataset.delete);
+      if (btn.dataset.armed !== "1") {
+        btn.dataset.armed = "1";
+        btn.textContent = "❌ confirm?";
+        btn.style.background = "var(--rose)";
+        btn.style.color = "var(--bg-deep)";
+        setTimeout(() => {
+          if (btn.dataset.armed === "1") {
+            btn.dataset.armed = "0";
+            btn.textContent = "🗑";
+            btn.style.background = "";
+            btn.style.color = "";
+          }
+        }, 3500);
+        return;
+      }
+      const res = await fetch(`/api/gallery/${rid}?file=1`, {method: "DELETE"});
+      if (res.ok) {
+        showToast(`Render #${rid} deleted (DB + file)`, "success");
+        loadGallery();
+      } else {
+        const body = await res.json().catch(() => ({}));
+        showToast(body.error || `Delete failed: HTTP ${res.status}`, "error");
+      }
+    };
   });
 }
 
@@ -3887,7 +3981,9 @@ function renderForm() {
     buffer = [];
   };
   for (const f of fields) {
-    if (f.type === "section" || f.type === "textarea") {
+    // Sections, textareas, and expander drawers always span full width.
+    // (Expanders contain their own nested fields — they can't share a row.)
+    if (f.type === "section" || f.type === "textarea" || f.type === "expander") {
       flush();
       form.appendChild(fieldElement(f));
     } else {
@@ -4032,14 +4128,20 @@ function renderForm() {
         for (const [key, expected] of Object.entries(spec)) {
           const probe = form.querySelector(`[name="${key}"]`);
           const val = probe ? (probe.type === "checkbox" ? String(probe.checked) : (probe.value || "")) : "";
-          if (Array.isArray(expected)) {
+          // Special tokens: "__nonempty" matches any non-empty value;
+          // "__empty" matches only the empty string.
+          if (expected === "__nonempty") {
+            if (!val) { visible = false; break; }
+          } else if (expected === "__empty") {
+            if (val) { visible = false; break; }
+          } else if (Array.isArray(expected)) {
             if (!expected.includes(val)) { visible = false; break; }
           } else if (val !== String(expected)) {
             visible = false; break;
           }
         }
         node.style.display = visible ? "" : "none";
-        // Disable the input inside so its value is skipped by gatherPayload
+        // Disable the input inside so its value is skipped by gatherPayload.
         const innerInput = node.querySelector("input, select, textarea");
         if (innerInput) innerInput.disabled = !visible || innerInput.dataset.gatedDisabled === "1";
       } catch (e) { /* malformed showWhen — skip */ }
