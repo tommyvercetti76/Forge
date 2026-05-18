@@ -1515,6 +1515,7 @@ button:focus-visible {
   font: 11px/1 var(--font-ui);
   letter-spacing: 0.5px;
   text-transform: none;
+  white-space: pre;   /* preserve leading spaces for "  ↳" nesting */
 }
 .action:hover { background: var(--surface); color: var(--ink-bright); border-color: var(--line); transform: none; }
 .action.active {
@@ -2479,54 +2480,58 @@ details.form-expander > .field { margin-top: 10px; }
 <script>
 const state = { config: null, action: "thumbnail", activeJob: null, pickerField: null, pickerPath: "", expandedRuns: new Set() };
 
+// Top-level nav — Gallery / Create / Edit / Pipelines / Library / System.
+// Coming in P2.3 we'll collapse the four per-engine entries into a single
+// "Create" surface with a Style picker. For now they sit under the same
+// CREATE group with consistent labels.
 const groups = [
   ["GALLERY", [
     ["gallery", "All renders + ratings"],
   ]],
-  ["CREATE — TYPE A PROMPT", [
-    ["coloring-page",            "▸ Children's coloring book"],
-    ["mandala-art-page",         "▸ Mandala art (subject-centred)"],
-    ["indian-folk-page",         "▸ Indian folk art (Madhubani / Warli / Tanjore)"],
-    ["stylized-cinematic-page",  "▸ Stylized cinematic (Tartakovsky / Mignola / McQuarrie / Ghibli)"],
-    ["thumbnail",                "▸ Thumbnail (preset + prompt)"],
-    ["engine",                   "▸ Other engine (advanced)"],
-    ["edit",                     "▸ Edit / restyle an image"],
+  ["CREATE", [
+    ["coloring-page",            "Children's coloring book"],
+    ["mandala-art-page",         "Mandala art"],
+    ["indian-folk-page",         "Indian folk art (Madhubani / Warli / Tanjore)"],
+    ["stylized-cinematic-page",  "Stylized cinematic (Tartakovsky / Mignola / Ghibli)"],
+    ["thumbnail",                "Thumbnail (preset + headline overlay)"],
+    ["engine",                   "Other engine (advanced)"],
   ]],
-  ["CONTENT PIPELINES", [
-    ["brief", "Episode kit"],
-    ["episode", "Episode"],
-    ["audiobook-simple", "Audiobook (book → en+hi+mr audio)"],
-    ["audiobook", "Audiobook (advanced)"],
-    ["audiobook-asmr", "ASMR audiobook (+ optional video)"],
-    ["voice", "Voiceover"],
-    ["video", "Mux image+audio → mp4"],
-    ["process-video-process", "Process video"],
-    ["process-video-warmup", "Video warmup"]
+  ["EDIT", [
+    ["edit",                     "Edit / restyle an existing image"],
   ]],
-  ["PROCEDURAL — NO PROMPT, PURE MATH", [
-    ["mandala", "Mandala (exact SVG)"],
-    ["childrens-book", "Children's pages (exact SVG)"],
-    ["folk-art", "Folk art page (exact SVG)"]
+  ["PIPELINES", [
+    ["brief",                    "Episode kit"],
+    ["episode",                  "Episode"],
+    ["audiobook-simple",         "Audiobook (book → en+hi+mr)"],
+    ["audiobook",                "Audiobook (advanced)"],
+    ["audiobook-asmr",           "ASMR audiobook (+ optional video)"],
+    ["voice",                    "Voiceover"],
+    ["video",                    "Mux image+audio → mp4"],
+    ["process-video-process",    "Process video"],
+    ["process-video-warmup",     "Video warmup"]
   ]],
-  ["BROWSE", [
-    ["engine-list", "Engines list"],
-    ["engine-recipes", "Engine recipes"],
-    ["engine-describe", "Engine details"],
-    ["list", "Presets + voices"],
-    ["show", "Show preset"],
-    ["series-list", "Series list"],
-    ["series-show", "Series show"],
-    ["series-new", "New series"],
+  ["LIBRARY", [
+    ["engine-list",              "Engines list"],
+    ["engine-recipes",           "Engine recipes"],
+    ["engine-describe",          "Engine details"],
+    ["list",                     "Presets + voices"],
+    ["show",                     "Show preset"],
+    ["series-list",              "Series list"],
+    ["series-show",              "Series show"],
+    ["series-new",               "New series"],
+    ["mandala",                  "Procedural mandala (SVG, no FLUX)"],
+    ["childrens-book",           "Procedural children's pages (SVG)"],
+    ["folk-art",                 "Procedural folk-art page (SVG)"],
   ]],
   ["SYSTEM", [
-    ["doctor", "Doctor"],
-    ["status", "Status"],
-    ["setup-voices", "Install Kokoro voices"],
-    ["models-list", "Models list"],
-    ["models-scan", "Models scan"],
-    ["models-clean", "Models clean"],
-    ["models-adopt", "Models adopt"],
-    ["bench", "Bench"]
+    ["doctor",                   "Doctor"],
+    ["status",                   "Status"],
+    ["setup-voices",             "Install Kokoro voices"],
+    ["models-list",              "Models list"],
+    ["models-scan",              "Models scan"],
+    ["models-clean",             "Models clean"],
+    ["models-adopt",             "Models adopt"],
+    ["bench",                    "Bench"]
   ]]
 ];
 
@@ -2578,82 +2583,94 @@ const specs = {
   "coloring-page": {
     title: "Children's Coloring Page",
     fields: [
+      // ── Always visible (the daily-driver controls) ──────────────────────
       {name:"subject", label:"Prompt — what to draw", type:"textarea", required:true, value:"a curious bear cub holding a balloon in a meadow"},
-      {name:"recipe", label:"Recipe (optional shortcut)", type:"select", options:"recipesColoring"},
-      {name:"cb_tradition", label:"Tradition", type:"select", options:"cbTraditions", value:"mo-willems-minimal"},
-      {name:"cb_age_range", label:"Age range", type:"select", options:"cbAgeRanges", value:"kids-6-9"},
-      {name:"cb_density", label:"Density", type:"select", options:"cbDensity", value:"balanced"},
-      {name:"cb_archetype", label:"Character (from-prompt = let prompt decide)", type:"select", options:"cbArchetypes", value:"from-prompt"},
-      {name:"cb_setting", label:"Setting (from-prompt = let prompt decide)", type:"select", options:"cbSettings", value:"from-prompt"},
-      {name:"cb_moment", label:"Narrative moment (from-prompt = let prompt decide)", type:"select", options:"cbMoments", value:"from-prompt"},
-      {name:"cb_emotion", label:"Emotion (from-prompt = let prompt decide)", type:"select", options:"cbEmotions", value:"from-prompt"},
-      {name:"cb_props", label:"Prop", type:"select", options:"cbProps", value:"no-prop"},
-      {name:"cb_character_count", label:"Characters in scene", type:"number", value:"1"},
-      {name:"seeds", label:"Variants", type:"number", value:"1"},
+      {name:"recipe", label:"Recipe (optional — prefills prompt + style details)", type:"select", options:"recipesColoring"},
+      {name:"from_image", label:"Source image (optional — turn your photo into a coloring page)", type:"path"},
+      {name:"profile", label:"Render mode", type:"select", options:"profiles", value:"balanced"},
+      {name:"upscale", label:"Final size (RealESRGAN upscale)", type:"select", options:"upscaleOptions"},
       {name:"seed", label:"Seed", type:"number", value:"1"},
-      {name:"guidance", label:"Guidance", type:"number", value:"6.5"},
-      {name:"profile", label:"Speed profile (balanced = dev @ 18 steps, ~2 min)", type:"select", options:"profiles", value:"balanced"},
-      {name:"refine", label:"Refine (extra ~30 s, micro-detail pass)", type:"checkbox"},
-      {name:"upscale", label:"Final resolution (RealESRGAN upscale — safe + fast)", type:"select", options:"upscaleOptions"},
-      {name:"hi_res", label:"Native Hi-res 1920×1080 (txt2img only — auto-clamped for --from-image)", type:"checkbox"},
-      {name:"ultra_res", label:"Native Ultra-res 2048×1152 (txt2img only — RISKY, may crash Metal)", type:"checkbox"},
-      {name:"no_default_loras", label:"Skip engine's default LoRA stack", type:"checkbox"},
+      {name:"seeds", label:"Variants (best-of contact sheet)", type:"number", value:"1"},
 
-      {name:"_adv", label:"Use your photo (optional)", type:"section", hint:"Pick a source image to restyle it into this engine's look (img2img via FLUX-Kontext). Leave blank to render fresh from the prompt above."},
-      {name:"from_image", label:"Source image", type:"path"},
-      {name:"from_image_strength", label:"Image strength (0.3 minor, 0.85 default, 0.95 near-replace)", type:"number", value:"0.85"},
-
-      {name:"_adv2", label:"▾ ADVANCED — power-user knobs (rarely needed)", type:"expander", hint:"Defaults are good. Tweak only when you know why — these can fight with the engine's discipline blocks.", fields:[
-        {name:"quantize",        label:"Quantize (FLUX weight precision — env default q8)", type:"select", options:"quantizeOptions"},
-        {name:"negative",        label:"Extra negative terms (comma-sep) — engine has 80+ baked-in already", type:"text"},
-        {name:"refine_strength", label:"Refine strength (only if Refine is on; default 0.25)", type:"number", value:"0.25"},
-        {name:"width",           label:"Width override (px) — bypasses Hi-res / Ultra-res", type:"number"},
-        {name:"height",          label:"Height override (px) — bypasses Hi-res / Ultra-res", type:"number"},
+      {name:"_style", label:"▾ Style details — tradition, age, density, character", type:"expander", hint:"Engine-specific knobs. Defaults are tuned. Leave any 'from-prompt' to let your prompt decide that aspect.", fields:[
+        {name:"cb_tradition",       label:"Tradition", type:"select", options:"cbTraditions", value:"mo-willems-minimal"},
+        {name:"cb_age_range",       label:"Age range", type:"select", options:"cbAgeRanges", value:"kids-6-9"},
+        {name:"cb_density",         label:"Density", type:"select", options:"cbDensity", value:"balanced"},
+        {name:"cb_archetype",       label:"Character", type:"select", options:"cbArchetypes", value:"from-prompt"},
+        {name:"cb_setting",         label:"Setting", type:"select", options:"cbSettings", value:"from-prompt"},
+        {name:"cb_moment",          label:"Narrative moment", type:"select", options:"cbMoments", value:"from-prompt"},
+        {name:"cb_emotion",         label:"Emotion", type:"select", options:"cbEmotions", value:"from-prompt"},
+        {name:"cb_props",           label:"Prop", type:"select", options:"cbProps", value:"no-prop"},
+        {name:"cb_character_count", label:"Characters in scene", type:"number", value:"1"},
       ]},
 
-      {name:"out", label:"Output path", type:"path"}
+      {name:"_imgctrl", label:"▾ Image control — guidance, refine, negatives, LoRA", type:"expander", hint:"Affect HOW the engine paints (not what). Defaults are tuned.", fields:[
+        {name:"from_image_strength", label:"Source image strength (only if you uploaded a photo above)", type:"number", value:"0.85"},
+        {name:"guidance",            label:"Guidance (prompt adherence — 6.5 default)", type:"number", value:"6.5"},
+        {name:"refine",              label:"Refine (extra ~30 s, micro-detail pass)", type:"checkbox"},
+        {name:"refine_strength",     label:"Refine strength (only if Refine is on)", type:"number", value:"0.25"},
+        {name:"negative",            label:"Extra negative terms — engine has 80+ baked in already", type:"text"},
+        {name:"no_default_loras",    label:"Skip engine's default LoRA stack", type:"checkbox"},
+      ]},
+
+      {name:"_output", label:"▾ Output", type:"expander", hint:"Where the file lands. Leave blank for the default (~/Desktop/forge-test/engine-renders/<engine>/<slug>.png).", fields:[
+        {name:"out", label:"Output path", type:"path"},
+      ]},
+
+      {name:"_perf", label:"▾ Performance — M5 Max specific", type:"expander", hint:"Quantization. Defaults (q8) are fine for nearly everything.", fields:[
+        {name:"quantize", label:"Quantize", type:"select", options:"quantizeOptions"},
+      ]},
+
+      {name:"_danger", label:"⚠ Danger zone — native hi-res / ultra-res", type:"expander", hint:"DO NOT use these with --from-image (Kontext) — auto-clamped because the combination crashed Metal on M5 Max. Use Final Size upscale above for high resolution.", fields:[
+        {name:"hi_res",    label:"Native Hi-res 1920×1080 (txt2img only)", type:"checkbox"},
+        {name:"ultra_res", label:"Native Ultra-res 2048×1152 (RISKY)", type:"checkbox"},
+        {name:"width",     label:"Width override (px)", type:"number"},
+        {name:"height",    label:"Height override (px)", type:"number"},
+      ]},
     ]
   },
 
   "indian-folk-page": {
     title: "Indian folk art (Madhubani / Warli / Tanjore / Pahari / Ravi Varma)",
     fields: [
-      {name:"_s1", label:"SUBJECT", type:"section", hint:"Describe what you want depicted. Be specific — naming deities, characters, attributes, and setting helps the engine. Examples: 'Rama, Lakshmana and Sita standing in a triple-figure portrait', 'a Warli tarpa dance with peacocks and a tree of life', 'Krishna playing flute by the Yamuna at dawn'."},
       {name:"subject", label:"Prompt — what to depict", type:"textarea", required:true, value:"Rama, Lakshmana and Sita standing side by side in a triple-figure portrait"},
-      {name:"recipe", label:"Recipe (optional shortcut)", type:"select", options:"recipesIndian"},
-
-      {name:"_s2", label:"TRADITION", type:"section", hint:"Each tradition has its own visual language. Madhubani = double-line borders + huge eyes + flat saturated colors. Warli = monochrome white-on-brown stick figures. Tanjore = gold-leaf hieratic deity panels. Pahari = delicate jewel-tone miniature. Ravi Varma = European-realist oleograph naturalism."},
-      {name:"ic_tradition", label:"Tradition", type:"select", options:"icTraditions", value:"madhubani"},
-
-      {name:"_s3", label:"COMPOSITION (from-prompt = let prompt decide)", type:"section", hint:"Leave any of these as 'from-prompt' and the engine won't override your text. Pick an explicit value only when you want to anchor that aspect — e.g. force a specific mudra regardless of prompt."},
-      {name:"ic_composition", label:"Composition", type:"select", options:"icCompositions", value:"from-prompt"},
-      {name:"ic_mudra", label:"Mudra / pose", type:"select", options:"icMudras", value:"from-prompt"},
-      {name:"ic_ground", label:"Ground / setting", type:"select", options:"icGrounds", value:"from-prompt"},
-
-      {name:"_s4", label:"RENDER", type:"section", hint:"Defaults render at 1280×720. Use --seeds 4 to get a best-of-4 contact sheet. Refine adds a low-denoise micro-detail pass."},
-      {name:"seeds", label:"Variants", type:"number", value:"1"},
+      {name:"recipe", label:"Recipe (optional — prefills prompt + style details)", type:"select", options:"recipesIndian"},
+      {name:"from_image", label:"Source image (optional — restyle your photo in the chosen tradition)", type:"path"},
+      {name:"profile", label:"Render mode", type:"select", options:"profiles", value:"balanced"},
+      {name:"upscale", label:"Final size (RealESRGAN upscale)", type:"select", options:"upscaleOptions"},
       {name:"seed", label:"Seed", type:"number", value:"7"},
-      {name:"guidance", label:"Guidance", type:"number", value:"5.0"},
-      {name:"profile", label:"Speed profile (balanced = dev @ 18 steps, ~2 min)", type:"select", options:"profiles", value:"balanced"},
-      {name:"refine", label:"Refine (extra ~30 s, micro-detail pass)", type:"checkbox"},
-      {name:"upscale", label:"Final resolution (RealESRGAN upscale — safe + fast)", type:"select", options:"upscaleOptions"},
-      {name:"hi_res", label:"Native Hi-res 1920×1080 (txt2img only — auto-clamped for --from-image)", type:"checkbox"},
-      {name:"ultra_res", label:"Native Ultra-res 2048×1152 (txt2img only — RISKY, may crash Metal)", type:"checkbox"},
-      {name:"no_default_loras", label:"Skip engine's default LoRA stack", type:"checkbox"},
+      {name:"seeds", label:"Variants (best-of contact sheet)", type:"number", value:"1"},
 
-      {name:"_adv", label:"Use your photo (optional)", type:"section", hint:"Pick a source image to restyle it into this tradition (Madhubani / Warli / Tanjore / Pahari / Ravi-Varma) via FLUX-Kontext. Leave blank to render fresh from the prompt above."},
-      {name:"from_image", label:"Source image", type:"path"},
-      {name:"from_image_strength", label:"Image strength (0.3 minor, 0.85 default, 0.95 near-replace)", type:"number", value:"0.85"},
-
-      {name:"_adv2", label:"▾ ADVANCED — power-user knobs (rarely needed)", type:"expander", hint:"Defaults are good. Tweak only when you know why — these can fight with the engine's discipline blocks.", fields:[
-        {name:"quantize",        label:"Quantize (FLUX weight precision — env default q8)", type:"select", options:"quantizeOptions"},
-        {name:"negative",        label:"Extra negative terms (comma-sep) — engine has 80+ baked-in already", type:"text"},
-        {name:"refine_strength", label:"Refine strength (only if Refine is on; default 0.25)", type:"number", value:"0.25"},
-        {name:"width",           label:"Width override (px) — bypasses Hi-res / Ultra-res", type:"number"},
-        {name:"height",          label:"Height override (px) — bypasses Hi-res / Ultra-res", type:"number"},
+      {name:"_style", label:"▾ Style details — tradition, composition, mudra, ground", type:"expander", hint:"Madhubani / Warli / Tanjore / Pahari / Ravi-Varma. Each has its own visual language. Leave any 'from-prompt' to let your prompt decide that aspect.", fields:[
+        {name:"ic_tradition",   label:"Tradition", type:"select", options:"icTraditions", value:"madhubani"},
+        {name:"ic_composition", label:"Composition", type:"select", options:"icCompositions", value:"from-prompt"},
+        {name:"ic_mudra",       label:"Mudra / pose", type:"select", options:"icMudras", value:"from-prompt"},
+        {name:"ic_ground",      label:"Ground / setting", type:"select", options:"icGrounds", value:"from-prompt"},
       ]},
 
-      {name:"out", label:"Output path", type:"path"}
+      {name:"_imgctrl", label:"▾ Image control — guidance, refine, negatives, LoRA", type:"expander", hint:"Affect HOW the engine paints (not what). Defaults are tuned.", fields:[
+        {name:"from_image_strength", label:"Source image strength", type:"number", value:"0.85"},
+        {name:"guidance",            label:"Guidance (5.0 default — iconographic detail)", type:"number", value:"5.0"},
+        {name:"refine",              label:"Refine (extra ~30 s, micro-detail pass)", type:"checkbox"},
+        {name:"refine_strength",     label:"Refine strength (only if Refine is on)", type:"number", value:"0.25"},
+        {name:"negative",            label:"Extra negative terms — engine has 50+ baked in already", type:"text"},
+        {name:"no_default_loras",    label:"Skip engine's default LoRA stack", type:"checkbox"},
+      ]},
+
+      {name:"_output", label:"▾ Output", type:"expander", hint:"Where the file lands. Leave blank for the default.", fields:[
+        {name:"out", label:"Output path", type:"path"},
+      ]},
+
+      {name:"_perf", label:"▾ Performance — M5 Max specific", type:"expander", hint:"Quantization. Defaults (q8) are fine.", fields:[
+        {name:"quantize", label:"Quantize", type:"select", options:"quantizeOptions"},
+      ]},
+
+      {name:"_danger", label:"⚠ Danger zone — native hi-res / ultra-res", type:"expander", hint:"DO NOT use these with --from-image. Use Final Size upscale above for high resolution.", fields:[
+        {name:"hi_res",    label:"Native Hi-res 1920×1080 (txt2img only)", type:"checkbox"},
+        {name:"ultra_res", label:"Native Ultra-res 2048×1152 (RISKY)", type:"checkbox"},
+        {name:"width",     label:"Width override (px)", type:"number"},
+        {name:"height",    label:"Height override (px)", type:"number"},
+      ]},
     ]
   },
 
@@ -2661,77 +2678,89 @@ const specs = {
     title: "Mandala Art (FLUX)",
     fields: [
       {name:"subject", label:"Prompt — what to mandalize", type:"textarea", required:true, value:"a humpback whale"},
-      {name:"recipe", label:"Recipe (optional shortcut)", type:"select", options:"recipesMandala"},
-      {name:"ma_tradition", label:"Tradition", type:"select", options:"maTraditions", value:"zentangle-organic"},
-      {name:"ma_treatment", label:"Treatment (from-prompt = let prompt decide)", type:"select", options:"maTreatments", value:"from-prompt"},
-      {name:"ma_symmetry", label:"Symmetry (from-prompt = let prompt decide)", type:"select", options:"maSymmetries", value:"from-prompt"},
-      {name:"ma_complexity", label:"Complexity (from-prompt = let prompt decide)", type:"select", options:"maComplexity", value:"from-prompt"},
-      {name:"ma_border", label:"Border (from-prompt = let prompt decide)", type:"select", options:"maBorders", value:"from-prompt"},
-      {name:"seeds", label:"Variants", type:"number", value:"1"},
+      {name:"recipe", label:"Recipe (optional — prefills prompt + style details)", type:"select", options:"recipesMandala"},
+      {name:"from_image", label:"Source image (optional — re-render your subject as ornamental mandala)", type:"path"},
+      {name:"profile", label:"Render mode", type:"select", options:"profiles", value:"balanced"},
+      {name:"upscale", label:"Final size (RealESRGAN upscale)", type:"select", options:"upscaleOptions"},
       {name:"seed", label:"Seed", type:"number", value:"1"},
-      {name:"guidance", label:"Guidance", type:"number", value:"7.5"},
-      {name:"profile", label:"Speed profile (balanced = dev @ 18 steps, ~2 min)", type:"select", options:"profiles", value:"balanced"},
-      {name:"refine", label:"Refine (extra ~30 s, micro-detail pass)", type:"checkbox"},
-      {name:"upscale", label:"Final resolution (RealESRGAN upscale — safe + fast)", type:"select", options:"upscaleOptions"},
-      {name:"hi_res", label:"Native Hi-res 1920×1080 (txt2img only — auto-clamped for --from-image)", type:"checkbox"},
-      {name:"ultra_res", label:"Native Ultra-res 2048×1152 (txt2img only — RISKY, may crash Metal)", type:"checkbox"},
-      {name:"no_default_loras", label:"Skip engine's default LoRA stack", type:"checkbox"},
+      {name:"seeds", label:"Variants (best-of contact sheet)", type:"number", value:"1"},
 
-      {name:"_adv", label:"Use your photo (optional)", type:"section", hint:"Pick a source image to mandalize — your subject's outline gets re-rendered as ornamental mandala line art via FLUX-Kontext."},
-      {name:"from_image", label:"Source image", type:"path"},
-      {name:"from_image_strength", label:"Image strength (0.3 minor, 0.85 default, 0.95 near-replace)", type:"number", value:"0.85"},
-
-      {name:"_adv2", label:"▾ ADVANCED — power-user knobs (rarely needed)", type:"expander", hint:"Defaults are good. Tweak only when you know why — these can fight with the engine's discipline blocks.", fields:[
-        {name:"quantize",        label:"Quantize (FLUX weight precision — env default q8)", type:"select", options:"quantizeOptions"},
-        {name:"negative",        label:"Extra negative terms (comma-sep) — engine has 80+ baked-in already", type:"text"},
-        {name:"refine_strength", label:"Refine strength (only if Refine is on; default 0.25)", type:"number", value:"0.25"},
-        {name:"width",           label:"Width override (px) — bypasses Hi-res / Ultra-res", type:"number"},
-        {name:"height",          label:"Height override (px) — bypasses Hi-res / Ultra-res", type:"number"},
+      {name:"_style", label:"▾ Style details — tradition, treatment, symmetry, complexity, border", type:"expander", hint:"Mandala-specific knobs. Defaults are tuned. Leave any 'from-prompt' to let your prompt decide that aspect.", fields:[
+        {name:"ma_tradition",   label:"Tradition", type:"select", options:"maTraditions", value:"zentangle-organic"},
+        {name:"ma_treatment",   label:"Treatment", type:"select", options:"maTreatments", value:"from-prompt"},
+        {name:"ma_symmetry",    label:"Symmetry", type:"select", options:"maSymmetries", value:"from-prompt"},
+        {name:"ma_complexity",  label:"Complexity", type:"select", options:"maComplexity", value:"from-prompt"},
+        {name:"ma_border",      label:"Border", type:"select", options:"maBorders", value:"from-prompt"},
       ]},
 
-      {name:"out", label:"Output path", type:"path"}
+      {name:"_imgctrl", label:"▾ Image control — guidance, refine, negatives, LoRA", type:"expander", hint:"Affect HOW the engine paints (not what). Defaults are tuned.", fields:[
+        {name:"from_image_strength", label:"Source image strength", type:"number", value:"0.85"},
+        {name:"guidance",            label:"Guidance (8.5 default — strict line-art adherence)", type:"number", value:"8.5"},
+        {name:"refine",              label:"Refine (extra ~30 s, micro-detail pass)", type:"checkbox"},
+        {name:"refine_strength",     label:"Refine strength (only if Refine is on)", type:"number", value:"0.25"},
+        {name:"negative",            label:"Extra negative terms — engine has 94 baked in already", type:"text"},
+        {name:"no_default_loras",    label:"Skip engine's default LoRA stack", type:"checkbox"},
+      ]},
+
+      {name:"_output", label:"▾ Output", type:"expander", hint:"Where the file lands. Leave blank for the default.", fields:[
+        {name:"out", label:"Output path", type:"path"},
+      ]},
+
+      {name:"_perf", label:"▾ Performance — M5 Max specific", type:"expander", hint:"Quantization. Defaults (q8) are fine.", fields:[
+        {name:"quantize", label:"Quantize", type:"select", options:"quantizeOptions"},
+      ]},
+
+      {name:"_danger", label:"⚠ Danger zone — native hi-res / ultra-res", type:"expander", hint:"DO NOT use these with --from-image. Use Final Size upscale above.", fields:[
+        {name:"hi_res",    label:"Native Hi-res 1920×1080 (txt2img only)", type:"checkbox"},
+        {name:"ultra_res", label:"Native Ultra-res 2048×1152 (RISKY)", type:"checkbox"},
+        {name:"width",     label:"Width override (px)", type:"number"},
+        {name:"height",    label:"Height override (px)", type:"number"},
+      ]},
     ]
   },
 
   "stylized-cinematic-page": {
     title: "Stylized cinematic (Tartakovsky / Darksiders / Mignola / McQuarrie / Ghibli)",
     fields: [
-      {name:"_s1", label:"SUBJECT", type:"section", hint:"Describe the scene. Examples: 'a lone samurai on a windswept hill at dusk', 'a knight kneeling in a cathedral with shafts of light from rose windows', 'a forest spirit standing in a misty bamboo grove'."},
       {name:"subject", label:"Prompt — describe the scene", type:"textarea", required:true, value:"a lone samurai on a windswept hill at dusk"},
-
-      {name:"_s2", label:"VISUAL TRADITION", type:"section", hint:"Each tradition is a different drawn / painted register. Tartakovsky = flat-color cel with thick ink; Darksiders = thick-ink heroic anatomy with apocalyptic palette; Mignola = black-mass + single accent color; McQuarrie = painterly skies dominating silhouettes; Ghibli = soft gouache+watercolor backgrounds. (from-prompt) lets your prompt name the register."},
-      {name:"sc_tradition", label:"Tradition", type:"select", options:"scTraditions", value:"tartakovsky-cel"},
-
-      {name:"_s3", label:"CINEMATOGRAPHY — LIGHT + SKY + ATMOSPHERE", type:"section", hint:"Cinematic light science (color temperature, sun-angle, sky state). Leave any field as 'from-prompt' to let your prompt set it; choose an explicit value to anchor that layer regardless of prompt."},
-      {name:"sc_time_of_day", label:"Time of day (Kelvin + sun angle)", type:"select", options:"scTimeOfDay", value:"from-prompt"},
-      {name:"sc_sky_state", label:"Sky state", type:"select", options:"scSkyStates", value:"from-prompt"},
-      {name:"sc_twinkles", label:"Twinkles + glow (fireflies, lanterns, city lights)", type:"select", options:"scTwinkles", value:"from-prompt"},
-      {name:"sc_atmosphere", label:"Atmospheric medium (fog, mist, dust, rain, snow)", type:"select", options:"scAtmospheres", value:"from-prompt"},
-
-      {name:"_s4", label:"RENDER", type:"section", hint:"Defaults render at 1280×720, 28 steps, guidance 4.5. Use --seeds 4 for a best-of-4 contact sheet."},
-      {name:"seeds", label:"Variants", type:"number", value:"1"},
+      {name:"recipe", label:"Recipe (optional — prefills prompt + style details)", type:"select", options:"recipesOptional"},
+      {name:"from_image", label:"Source image (optional — restyle your photo in chosen tradition)", type:"path"},
+      {name:"profile", label:"Render mode", type:"select", options:"profiles", value:"balanced"},
+      {name:"upscale", label:"Final size (RealESRGAN upscale)", type:"select", options:"upscaleOptions"},
       {name:"seed", label:"Seed", type:"number", value:"7"},
-      {name:"guidance", label:"Guidance", type:"number", value:"4.5"},
-      {name:"profile", label:"Speed profile (balanced = dev @ 18 steps, ~2 min)", type:"select", options:"profiles", value:"balanced"},
-      {name:"refine", label:"Refine (extra ~30 s, micro-detail pass)", type:"checkbox"},
-      {name:"upscale", label:"Final resolution (RealESRGAN upscale — safe + fast)", type:"select", options:"upscaleOptions"},
-      {name:"hi_res", label:"Native Hi-res 1920×1080 (txt2img only — auto-clamped for --from-image)", type:"checkbox"},
-      {name:"ultra_res", label:"Native Ultra-res 2048×1152 (txt2img only — RISKY, may crash Metal)", type:"checkbox"},
-      {name:"no_default_loras", label:"Skip engine's default LoRA stack", type:"checkbox"},
+      {name:"seeds", label:"Variants (best-of contact sheet)", type:"number", value:"1"},
 
-      {name:"_adv", label:"Use your photo (optional)", type:"section", hint:"Pick a source image to restyle it in the chosen tradition (Tartakovsky / Mignola / McQuarrie / Ghibli...) via FLUX-Kontext."},
-      {name:"from_image", label:"Source image", type:"path"},
-      {name:"from_image_strength", label:"Image strength (0.3 minor, 0.85 default, 0.95 near-replace)", type:"number", value:"0.85"},
-
-      {name:"_adv2", label:"▾ ADVANCED — power-user knobs (rarely needed)", type:"expander", hint:"Defaults are good. Tweak only when you know why — these can fight with the engine's discipline blocks.", fields:[
-        {name:"quantize",        label:"Quantize (FLUX weight precision — env default q8)", type:"select", options:"quantizeOptions"},
-        {name:"negative",        label:"Extra negative terms (comma-sep) — engine has 80+ baked-in already", type:"text"},
-        {name:"refine_strength", label:"Refine strength (only if Refine is on; default 0.25)", type:"number", value:"0.25"},
-        {name:"width",           label:"Width override (px) — bypasses Hi-res / Ultra-res", type:"number"},
-        {name:"height",          label:"Height override (px) — bypasses Hi-res / Ultra-res", type:"number"},
+      {name:"_style", label:"▾ Style details — tradition + cinematography (light / sky / atmosphere)", type:"expander", hint:"Tartakovsky / Darksiders / Mignola / McQuarrie / Ghibli — each is a different drawn-painted register. Cinematography knobs lock specific aspects (color temperature, sun angle) — leave any 'from-prompt' to let your prompt decide.", fields:[
+        {name:"sc_tradition",   label:"Tradition", type:"select", options:"scTraditions", value:"tartakovsky-cel"},
+        {name:"sc_time_of_day", label:"Time of day (Kelvin + sun angle)", type:"select", options:"scTimeOfDay", value:"from-prompt"},
+        {name:"sc_sky_state",   label:"Sky state", type:"select", options:"scSkyStates", value:"from-prompt"},
+        {name:"sc_twinkles",    label:"Twinkles + glow (fireflies, lanterns, city lights)", type:"select", options:"scTwinkles", value:"from-prompt"},
+        {name:"sc_atmosphere",  label:"Atmospheric medium (fog, mist, dust, rain, snow)", type:"select", options:"scAtmospheres", value:"from-prompt"},
       ]},
 
-      {name:"out", label:"Output path", type:"path"}
+      {name:"_imgctrl", label:"▾ Image control — guidance, refine, negatives, LoRA", type:"expander", hint:"Affect HOW the engine paints (not what). Defaults are tuned.", fields:[
+        {name:"from_image_strength", label:"Source image strength", type:"number", value:"0.85"},
+        {name:"guidance",            label:"Guidance (4.5 default — stylized register)", type:"number", value:"4.5"},
+        {name:"refine",              label:"Refine (extra ~30 s, micro-detail pass)", type:"checkbox"},
+        {name:"refine_strength",     label:"Refine strength (only if Refine is on)", type:"number", value:"0.25"},
+        {name:"negative",            label:"Extra negative terms — engine has 44 baked in already", type:"text"},
+        {name:"no_default_loras",    label:"Skip engine's default LoRA stack", type:"checkbox"},
+      ]},
+
+      {name:"_output", label:"▾ Output", type:"expander", hint:"Where the file lands. Leave blank for the default.", fields:[
+        {name:"out", label:"Output path", type:"path"},
+      ]},
+
+      {name:"_perf", label:"▾ Performance — M5 Max specific", type:"expander", hint:"Quantization. Defaults (q8) are fine.", fields:[
+        {name:"quantize", label:"Quantize", type:"select", options:"quantizeOptions"},
+      ]},
+
+      {name:"_danger", label:"⚠ Danger zone — native hi-res / ultra-res", type:"expander", hint:"DO NOT use these with --from-image. Use Final Size upscale above.", fields:[
+        {name:"hi_res",    label:"Native Hi-res 1920×1080 (txt2img only)", type:"checkbox"},
+        {name:"ultra_res", label:"Native Ultra-res 2048×1152 (RISKY)", type:"checkbox"},
+        {name:"width",     label:"Width override (px)", type:"number"},
+        {name:"height",    label:"Height override (px)", type:"number"},
+      ]},
     ]
   },
   edit: {
