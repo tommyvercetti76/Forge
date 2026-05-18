@@ -88,5 +88,11 @@
       "no face or critical detail below 60% vertical"
     ]
   },
-  "master_primer_policy": "full"
+  "master_primer_policy": "full",
+  "native_canvas": {
+    "width": 1280,
+    "height": 720,
+    "aspect": "16:9",
+    "rationale": "YouTube/Shorts thumbnail — 16:9 is the only aspect a video platform will display at full size"
+  }
 }

@@ -89,5 +89,11 @@
       "neutral journalistic palette (real skin tones, real-world hues)"
     ]
   },
-  "master_primer_policy": "photo_only"
+  "master_primer_policy": "photo_only",
+  "native_canvas": {
+    "width": 1248,
+    "height": 832,
+    "aspect": "3:2",
+    "rationale": "photojournalism (NYT / Magnum) — 3:2 is the 35mm / DSLR documentary register; 1248×832 = FLUX-trained 3:2 bucket, both dims /16"
+  }
 }

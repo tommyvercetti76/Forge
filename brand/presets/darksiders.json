@@ -95,5 +95,11 @@
       "Joe Madureira thick-ink anatomy register"
     ]
   },
-  "master_primer_policy": "style_safe"
+  "master_primer_policy": "style_safe",
+  "native_canvas": {
+    "width": 1280,
+    "height": 720,
+    "aspect": "16:9",
+    "rationale": "game key-art / cinematic cover — widescreen lets the foreshortened figure read across the full apocalyptic horizon"
+  }
 }

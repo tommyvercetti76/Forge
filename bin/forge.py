@@ -1286,8 +1286,14 @@ def flux_generate(
         eff_scales = [0.8] * len(eff_loras)
 
     tmp_out = _register_tmp(_tmp_sibling(out_path))
-    eff_w = int(width) if width else THUMB_W
-    eff_h = int(height) if height else THUMB_H
+    # Resolution priority:
+    #   explicit --width/--height  >  preset["native_canvas"]  >  THUMB_W/H
+    # Lets each preset declare its native aspect (movie-poster 16:9,
+    # editorial 3:2, comic-cover 2:3, etc.) without requiring every CLI
+    # caller to pass dimensions.
+    preset_native = preset.get("native_canvas") or {}
+    eff_w = int(width) if width else int(preset_native.get("width", THUMB_W))
+    eff_h = int(height) if height else int(preset_native.get("height", THUMB_H))
     # Profile can override quantize (e.g. "quality" profile forces fp16).
     if quantize is None and profile and "quantize" in PROFILES.get(profile, {}):
         quantize = PROFILES[profile]["quantize"]

@@ -95,5 +95,11 @@
       "jagged angular silhouette stylization"
     ]
   },
-  "master_primer_policy": "style_safe"
+  "master_primer_policy": "style_safe",
+  "native_canvas": {
+    "width": 832,
+    "height": 1216,
+    "aspect": "2:3",
+    "rationale": "comic-book cover (Mignola / Hellboy / Batman: Year One) — 2:3 portrait is the print-comic register; 832×1216 keeps both dims divisible by 16 for SDXL/FLUX alignment"
+  }
 }

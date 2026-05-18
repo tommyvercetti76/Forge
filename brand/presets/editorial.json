@@ -89,5 +89,11 @@
       "low background object density, breathing room around subject"
     ]
   },
-  "master_primer_policy": "photo_only"
+  "master_primer_policy": "photo_only",
+  "native_canvas": {
+    "width": 1248,
+    "height": 832,
+    "aspect": "3:2",
+    "rationale": "magazine-cover photography (Vogue / The New Yorker) — 3:2 is the editorial print register; 1248×832 = FLUX-trained 3:2 bucket, both dims /16"
+  }
 }

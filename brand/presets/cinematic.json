@@ -89,5 +89,11 @@
       "feature-film cinematography register (Roger Deakins, Gordon Willis)"
     ]
   },
-  "master_primer_policy": "full"
+  "master_primer_policy": "full",
+  "native_canvas": {
+    "width": 1280,
+    "height": 720,
+    "aspect": "16:9",
+    "rationale": "movie-poster / anamorphic still — the cinematic register reads as cinema only at widescreen"
+  }
 }
