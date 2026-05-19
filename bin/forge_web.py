@@ -2043,6 +2043,14 @@ form { padding: 18px; display: grid; gap: 14px; }
   text-transform: none;
   margin-top: 6px;
 }
+.field-hint {
+  font: 11px/1.4 var(--font-ui);
+  color: var(--muted);
+  letter-spacing: 0;
+  text-transform: none;
+  margin: 2px 0 6px 0;
+  opacity: 0.85;
+}
 
 /* Collapsed "power-user knobs" expander — wraps rarely-touched fields. */
 details.form-expander {
@@ -2687,7 +2695,7 @@ const specs = {
     title: "Create — any style",
     fields: [
       // ── Always visible ──────────────────────────────────────────────────
-      {name:"style",        label:"Style", type:"select", options:"styleOptions", value:"childrens-coloring-book"},
+      {name:"style",        label:"What are you making? (Style)", type:"select", options:"styleOptions", value:"childrens-coloring-book", hint:"Pick the OUTPUT you want. T-shirt is for simplified apparel marks only — pick Indian folk art for dense Madhubani panels."},
       {name:"subject",      label:"Prompt — describe what you want", type:"textarea", required:true, value:"a curious bear cub holding a balloon in a meadow"},
       {name:"recipe",       label:"Recipe (optional — prefills prompt + style details)", type:"select", options:"recipesAll"},
       {name:"from_image",   label:"Source image (optional — img2img / Kontext restyle)", type:"path"},
@@ -3453,11 +3461,11 @@ function optionsFor(field) {
   if (field.options === "mtBorders") return ["none", "hairline-badge"].map(v => ({value:v, label:v}));
   // Unified Create page style picker — maps to engine names used by build_command.
   if (field.options === "styleOptions") return [
-    {value:"childrens-coloring-book", label:"Children's coloring book — B&W line-art for kids"},
-    {value:"mandala-art",             label:"Mandala art — ornamental B&W line-art"},
-    {value:"indian-classical",        label:"Indian folk art — Madhubani / Warli / Tanjore / Pahari (colored)"},
-    {value:"stylized-cinematic",      label:"Stylized cinematic — Tartakovsky / Mignola / McQuarrie / Ghibli"},
-    {value:"minimalist-tshirt",        label:"Minimalist T-shirt — screen-print apparel marks"},
+    {value:"indian-classical",        label:"📜 Poster / wall art (Madhubani, Tanjore, Pahari, Ravi-Varma) — dense traditional panels"},
+    {value:"stylized-cinematic",      label:"🎬 Cinematic illustration (Tartakovsky, Mignola, Ghibli) — hero scenes, posters"},
+    {value:"mandala-art",             label:"🌀 Mandala / sacred geometry — ornamental B&W or colored"},
+    {value:"childrens-coloring-book", label:"📖 Children's coloring book — B&W line-art for kids"},
+    {value:"minimalist-tshirt",       label:"👕 T-shirt graphic (apparel only) — simplified mark, transparent BG, NOT for dense panels"},
   ];
   // Recipes filtered to currently-selected Style on the unified Create page.
   if (field.options === "recipesAll") {
@@ -3587,6 +3595,12 @@ function fieldElement(field) {
     labelRow.appendChild(info);
   }
   wrap.appendChild(labelRow);
+  if (field.hint) {
+    const hint = document.createElement("div");
+    hint.className = "field-hint";
+    hint.textContent = field.hint;
+    wrap.appendChild(hint);
+  }
   if (field.type === "textarea") {
     const el = document.createElement("textarea");
     el.id = `field-${field.name}`;
