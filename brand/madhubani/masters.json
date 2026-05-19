@@ -1,0 +1,64 @@
+{
+  "$schema": "./_schema/masters.schema.json",
+  "tradition": "Madhubani (Mithila) folk-painting",
+  "region": "Mithila region of Bihar, India",
+  "gi_status": "Geographically Indicated; protected as cultural heritage of Mithila's artisan community",
+  "honest_framing": "Designs in this catalog are Madhubani-INSPIRED. They are not authentic Mithila art. The living custodians of the authentic tradition are the artisans of Mithila — predominantly women working in family lineages. Customers who love these designs should also support practitioners directly through organizations like the Mithila Art Institute.",
+  "support_organizations": [
+    {
+      "name": "Mithila Art Institute",
+      "url": "https://mithilaartinstitute.org",
+      "note": "Trains and supports Mithila artisans"
+    }
+  ],
+
+  "version": "1.0.0",
+  "established": "2026-05-18",
+
+  "cited_influences": [
+    {
+      "name": "Sita Devi",
+      "lifespan": "1914–2005",
+      "honors": "Padma Shri (1981), National Award (1969)",
+      "style_school": "kohbar (bridal-chamber) wall paintings, kachni line-style",
+      "what_we_draw_from": "Mid-century kohbar wall-painting line grammar; the signature almond-eye treatment carried across our sets",
+      "use_in_engine": "Cited in motif and master-painter tradition descriptions"
+    },
+    {
+      "name": "Ganga Devi",
+      "lifespan": "1928–1991",
+      "honors": "Padma Shri (1984), National Award (1984)",
+      "style_school": "bharni (filled-color) style",
+      "what_we_draw_from": "Bharni-style fill rhythm; the dot-and-petal ornamental aura around figures",
+      "use_in_engine": "Cited in master-painter tradition description"
+    },
+    {
+      "name": "Baua Devi",
+      "lifespan": "1944–",
+      "honors": "Padma Shri (2017), National Award (1986)",
+      "style_school": "kachni line-style, narrative composition",
+      "what_we_draw_from": "Matsya (fish) and naga (serpent) compositional motifs visible in saddle decoration and ornamental panels",
+      "use_in_engine": "Cited in master-painter tradition description"
+    },
+    {
+      "name": "Mithila kohbar bridal-chamber tradition",
+      "lifespan": "centuries-old, living",
+      "honors": "Collective heritage of Mithila",
+      "style_school": "Wall-painting tradition tied to Madhubani weddings",
+      "what_we_draw_from": "Bird-and-animal motif vocabulary; the placement of decorative zones across figure bodies",
+      "use_in_engine": "Cited in motif description for bird and animal subjects"
+    }
+  ],
+
+  "registers": {
+    "madhubani-contemporary": {
+      "intent": "Translation of Mithila tradition adapted for contemporary apparel — restraint, vector-clean, mass-market premium",
+      "default_for": "broad-market tees, capsule basics"
+    },
+    "madhubani-master-painter": {
+      "intent": "Tradition rendered as if a Mithila master had painted it directly — hand-drawn line weight, composed palette, character-bearing eyes, controlled texture",
+      "default_for": "premium tier, expressive pieces, gallery-grade designs",
+      "established": "2026-05-18 per docs/catalog/PROMPT_GRAMMAR.md"
+    }
+  }
+}

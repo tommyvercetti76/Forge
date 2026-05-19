@@ -42,6 +42,7 @@ from forge_runtime import (
     language_name,
     parse_language_codes,
     print_ollama_token_usage,
+    require_metal_acceleration,
     translate_texts_ollama,
     validate_audio,
     validate_png,
@@ -60,6 +61,7 @@ from mandala_engine import (
     write_folk_art_page,
     write_mandala,
 )
+from minimal_animal_engine import MinimalAnimalConfig, write_minimal_animal
 
 HERE = Path(__file__).resolve().parent
 FORGE_HOME = Path(os.environ.get("FORGE_HOME") or HERE.parent).resolve()
@@ -290,15 +292,16 @@ PROFILES = {
     "cool":     {"flux_model": "schnell", "flux_steps": 4,  "flux_guidance": 0.0, "cooldown": 20.0},
     "balanced": {"flux_model": "dev",     "flux_steps": 18, "flux_guidance": None, "cooldown": 5.0},
     "max":      {"flux_model": "dev",     "flux_steps": 25, "flux_guidance": None, "cooldown": 0.0},
-    # Production-grade: 36 steps + fp16 (no quantization) for line-art /
-    # iconographic work where every pixel matters. Pairs with --hi-res /
-    # --ultra-res. ~12-15 min per render at ultra-res.
-    "quality":  {"flux_model": "dev",     "flux_steps": 36, "flux_guidance": None, "cooldown": 0.0, "quantize": 0},
+    # Production-grade: keep q8 by default. On Apple Silicon this preserves
+    # visual quality while avoiding the memory pressure that makes parallel
+    # FLUX jobs page/throttle. Use --quantize 0 only for explicit fp16 tests.
+    "quality":  {"flux_model": "dev",     "flux_steps": 36, "flux_guidance": None, "cooldown": 0.0, "quantize": 8},
 }
 
 _TMP_PATHS: set[Path] = set()
 _CHILD_PROCS: set[subprocess.Popen] = set()
 _RUNTIME_GUARDS_INSTALLED = False
+_FLUX_READY_CACHE: dict[str, tuple[bool, str]] = {}
 
 
 def _cmd_display(cmd: list[str]) -> str:
@@ -1044,11 +1047,16 @@ def build_flux_prompt(preset: dict, concept: str, series: dict | None = None) ->
 
 def _flux_model_ready(model_id: str) -> tuple[bool, str]:
     """Check the HF cache has a fully-downloaded FLUX model. Returns (ready, reason)."""
+    if model_id in _FLUX_READY_CACHE:
+        return _FLUX_READY_CACHE[model_id]
     repo = _FLUX_REPO_MAP.get(model_id, model_id)
     status = hf_model_status(repo)
     if status["ready"]:
-        return True, ""
-    return False, f"{status['reason']} at {status['path']}"
+        result = (True, "")
+    else:
+        result = (False, f"{status['reason']} at {status['path']}")
+    _FLUX_READY_CACHE[model_id] = result
+    return result
 
 
 def _resolve_flux_runtime(
@@ -1294,7 +1302,7 @@ def flux_generate(
     preset_native = preset.get("native_canvas") or {}
     eff_w = int(width) if width else int(preset_native.get("width", THUMB_W))
     eff_h = int(height) if height else int(preset_native.get("height", THUMB_H))
-    # Profile can override quantize (e.g. "quality" profile forces fp16).
+    # Profile can override quantize (e.g. "quality" keeps dev/36 on q8).
     if quantize is None and profile and "quantize" in PROFILES.get(profile, {}):
         quantize = PROFILES[profile]["quantize"]
     cmd = [
@@ -1318,10 +1326,14 @@ def flux_generate(
     if not draft and not profile and steps is not None and step_count < int(flux["steps"]):
         print(dim("  · lower steps reduce sustained Metal/GPU load and heat; quality may drop a bit"))
     try:
-        _preflight_memory(label=f"mflux {model}/{step_count} steps")
+        try:
+            require_metal_acceleration(label=f"mflux {model}/{step_count} steps")
+        except RuntimeError as e:
+            sys.exit(red(str(e)))
         with ResourceLock("metal-heavy") as lock:
             if lock.wait_seconds > 0.1:
                 print(dim(f"  · waited {lock.wait_seconds:.1f}s for Metal lock"))
+            _preflight_memory(label=f"mflux {model}/{step_count} steps")
             run_subprocess(
                 cmd, check=True, timeout=MFLUX_TIMEOUT_SEC,
                 heartbeat_label=f"mflux {model}/{step_count} steps",
@@ -2581,6 +2593,52 @@ def cmd_folk_art(args) -> int:
     return 0
 
 
+def cmd_minimal_animal(args) -> int:
+    """Beta closed-loop <=8-line animal mark generator."""
+    description = (getattr(args, "animal", None) or getattr(args, "description", None) or "").strip()
+    if not description:
+        sys.exit(red("minimal-animal needs --animal/--description text"))
+    slug = _slugify(description, max_len=44)
+    out = args.out or str(Path.home() / "Pictures" / "forge-minimal-animals" / f"{slug}.png")
+    out_path = Path(out).expanduser().resolve()
+
+    gpu_check: dict[str, Any] | None = None
+    if not getattr(args, "skip_gpu_check", False):
+        try:
+            gpu_check = require_metal_acceleration(label="minimal-animal workflow GPU guard", require_mflux=False)
+        except RuntimeError as e:
+            sys.exit(red(str(e)))
+
+    config = MinimalAnimalConfig(
+        description=description,
+        max_lines=args.max_lines,
+        seed=args.seed,
+        width=args.width,
+        height=args.height,
+        stroke_width=args.stroke_width,
+        background=args.background,
+        stroke=args.stroke,
+        supersample=args.supersample,
+    )
+    try:
+        artifact = write_minimal_animal(config, out_path)
+        validate_png(Path(artifact["png"]), width=args.width, height=args.height, min_bytes=1024)
+    except ValueError as e:
+        sys.exit(red(str(e)))
+    if gpu_check:
+        manifest_path = Path(artifact["manifest"])
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+        manifest["gpu_guard"] = gpu_check
+        write_json(manifest_path, manifest)
+    qc = json.loads(Path(artifact["qc"]).read_text(encoding="utf-8"))
+    print(green(f"✓ minimal animal mark: {artifact['png']}"))
+    print(dim(f"  type: {qc['animal_type']}  lines: {qc['line_count']}/{qc['max_lines']}  status: {'PASS' if qc['closed_loop_pass'] else 'FAIL'}"))
+    print(dim(f"  SVG:      {artifact['svg']}"))
+    print(dim(f"  QC:       {artifact['qc']}"))
+    print(dim(f"  manifest: {artifact['manifest']}"))
+    return 0
+
+
 # ─────────────── style engines (forge engine ...) ───────────────
 
 
@@ -2664,10 +2722,14 @@ def _engine_img2img(src_path: Path, prompt: str, dst_path: Path, *,
         ))
 
     print(dim(f"    · {mode_label} · steps={steps} seed={seed}"))
-    _preflight_memory(label=f"{cmd[0]} ({mode_label})")
+    try:
+        require_metal_acceleration(label=f"{cmd[0]} ({mode_label})")
+    except RuntimeError as e:
+        sys.exit(red(str(e)))
     with ResourceLock("metal-heavy") as lock:
         if lock.wait_seconds > 0.1:
             print(dim(f"    · waited {lock.wait_seconds:.1f}s for Metal lock"))
+        _preflight_memory(label=f"{cmd[0]} ({mode_label})")
         run_subprocess(
             cmd, check=True, timeout=MFLUX_TIMEOUT_SEC,
             heartbeat_label=f"{cmd[0]} render",
@@ -2702,10 +2764,14 @@ def _img2img_refine(src_path: Path, prompt: str, dst_path: Path, *,
         "--seed", str(seed),
         "--output", str(tmp),
     ]
-    _preflight_memory(label="mflux img2img refine")
+    try:
+        require_metal_acceleration(label="mflux img2img refine")
+    except RuntimeError as e:
+        sys.exit(red(str(e)))
     with ResourceLock("metal-heavy") as lock:
         if lock.wait_seconds > 0.1:
             print(dim(f"    · waited {lock.wait_seconds:.1f}s for Metal lock"))
+        _preflight_memory(label="mflux img2img refine")
         run_subprocess(
             cmd, check=True, timeout=MFLUX_TIMEOUT_SEC,
             heartbeat_label=f"{cmd[0]} render",
@@ -2994,6 +3060,7 @@ def cmd_engine_render(args) -> int:
         eff_w = getattr(args, "width", None) or directive.runtime.get("width")
         eff_h = getattr(args, "height", None) or directive.runtime.get("height")
     guidance_override = getattr(args, "guidance", None)
+    steps_override = getattr(args, "steps", None)
     if args.out:
         out_path = Path(args.out).expanduser().resolve()
         # mflux auto-appends .png when the output path has no image extension,
@@ -3087,6 +3154,26 @@ def cmd_engine_render(args) -> int:
         eff_w, eff_h = 1280, 720
         print(dim(f"  · from-image: {src_image_path}  strength: {from_image_strength}  res: 1280x720 (Kontext safe baseline)"))
 
+    actual_model, actual_steps, actual_guidance = _resolve_flux_runtime(
+        synth,
+        draft=args.draft,
+        profile=args.profile,
+        steps_override=steps_override,
+    )
+    if guidance_override is not None:
+        actual_guidance = float(guidance_override)
+    actual_quantize = _resolve_quantize(getattr(args, "quantize", None))
+    actual_runtime = {
+        **directive.runtime,
+        "model": actual_model,
+        "steps": int(actual_steps),
+        "guidance": float(actual_guidance),
+        "width": eff_w,
+        "height": eff_h,
+        "profile": args.profile or ("cool" if args.draft else None),
+        "quantize": actual_quantize if actual_quantize is not None else "fp16",
+    }
+
     variants: list[dict[str, Any]] = []
     base_seed = directive.seed
     from _engine_base import Directive  # type: ignore
@@ -3101,7 +3188,7 @@ def cmd_engine_render(args) -> int:
         per_dir = Directive(
             engine=directive.engine, positive=directive.positive,
             negatives=directive.negatives, palette_60_30_10=directive.palette_60_30_10,
-            runtime=directive.runtime, seed=this_seed, audit=directive.audit,
+            runtime=actual_runtime, seed=this_seed, audit=directive.audit,
             config=directive.config, masters=directive.masters,
         )
 
@@ -3116,10 +3203,14 @@ def cmd_engine_render(args) -> int:
             # Honor --profile / --draft to match the txt2img path (was using
             # engine runtime steps directly, ignoring both knobs).
             steps_count = int(directive.runtime.get("steps", 32))
-            if args.draft:
+            if steps_override is not None:
+                steps_count = int(steps_override)
+            elif args.draft:
                 steps_count = 4    # schnell-fast, even though Kontext uses dev base
             elif args.profile and args.profile in PROFILES:
                 steps_count = int(PROFILES[args.profile].get("flux_steps", steps_count))
+            if steps_count < 1:
+                sys.exit(red("--steps must be >= 1"))
             guidance_val = float(guidance_override if guidance_override is not None
                                  else directive.runtime.get("guidance", 3.5))
             _engine_img2img(
@@ -3132,7 +3223,7 @@ def cmd_engine_render(args) -> int:
             flux_generate(
                 synth, "", base_target,
                 seed=this_seed,
-                steps=args.profile and PROFILES.get(args.profile, {}).get("flux_steps"),
+                steps=steps_override,
                 series=None, draft=args.draft, profile=args.profile,
                 width=eff_w, height=eff_h, guidance_override=guidance_override,
                 quantize=getattr(args, "quantize", None),
@@ -3148,27 +3239,6 @@ def cmd_engine_render(args) -> int:
 
         sidecar = png_path.with_suffix(png_path.suffix + ".directive.json")
         write_json(sidecar, per_dir.to_dict())
-        # Gallery auto-capture — every successful engine render writes a row
-        # so the user can rate it later and the system learns preferred configs.
-        try:
-            import forge_gallery  # type: ignore
-            forge_gallery.capture_directive(
-                per_dir, png_path,
-                recipe=recipe_id,
-                refine=refine, hi_res=getattr(args, "hi_res", False),
-                ultra_res=getattr(args, "ultra_res", False),
-                guidance_override=guidance_override,
-                width=eff_w, height=eff_h,
-                lora_stack=synth.get("flux", {}).get("lora_paths") and [
-                    {"path": p, "scale": s} for p, s in zip(
-                        synth["flux"].get("lora_paths", []),
-                        synth["flux"].get("lora_scales", []),
-                    )
-                ] or [],
-                directive_json=sidecar,
-            )
-        except Exception as e:
-            print(dim(f"  · gallery capture skipped: {e}"))
         # Post-render upscale via RealESRGAN — replaces native hi-res / ultra-res
         # with the safe two-stage path: FLUX at base size, then external upscaler.
         upscale_spec = getattr(args, "upscale", None)
@@ -3205,6 +3275,30 @@ def cmd_engine_render(args) -> int:
                 print(green(f"    ✓ transparent → {transparent_path.name}"))
             except Exception as e:
                 print(dim(f"    · transparent-bg skipped — {e}"))
+        final_png_info = validate_png(png_path, min_bytes=4096)
+        # Gallery auto-capture — every successful engine render writes a row
+        # after post-processing so png_bytes and dimensions reflect the final
+        # artifact the user will rate.
+        try:
+            import forge_gallery  # type: ignore
+            forge_gallery.capture_directive(
+                per_dir, png_path,
+                recipe=recipe_id,
+                refine=refine, hi_res=getattr(args, "hi_res", False),
+                ultra_res=getattr(args, "ultra_res", False),
+                guidance_override=guidance_override,
+                width=int(final_png_info.get("width") or eff_w or 0),
+                height=int(final_png_info.get("height") or eff_h or 0),
+                lora_stack=synth.get("flux", {}).get("lora_paths") and [
+                    {"path": p, "scale": s} for p, s in zip(
+                        synth["flux"].get("lora_paths", []),
+                        synth["flux"].get("lora_scales", []),
+                    )
+                ] or [],
+                directive_json=sidecar,
+            )
+        except Exception as e:
+            print(dim(f"  · gallery capture skipped: {e}"))
         variants.append({"seed": this_seed, "png_name": png_path.name, "png_path": str(png_path)})
         print(green(f"    ✓ {png_path}"))
 
@@ -3906,10 +4000,14 @@ def cmd_edit(args) -> int:
     if args.steps < 25:
         print(dim("  · lower steps reduce sustained Metal/GPU load and heat; quality may drop a bit"))
     try:
-        _preflight_memory(label=f"{cmd[0]} edit/{mode}")
+        try:
+            require_metal_acceleration(label=f"{cmd[0]} edit/{mode}")
+        except RuntimeError as e:
+            sys.exit(red(str(e)))
         with ResourceLock("metal-heavy") as lock:
             if lock.wait_seconds > 0.1:
                 print(dim(f"  · waited {lock.wait_seconds:.1f}s for Metal lock"))
+            _preflight_memory(label=f"{cmd[0]} edit/{mode}")
             run_subprocess(
                 cmd, check=True, timeout=MFLUX_TIMEOUT_SEC,
                 heartbeat_label=f"{cmd[0]} render",
@@ -3995,8 +4093,9 @@ def cmd_series(args) -> int:
         if path.exists() and not args.force:
             sys.exit(red(f"{path} already exists — use --force to overwrite"))
         preset_id = args.preset or (prompt("which preset locks the look?", choices=list_preset_ids()) if _TTY else "tartakovsky")
-        # Deterministic-but-unique seed derived from the id (so re-creating the same id gives the same seed).
-        seed = abs(hash(args.id)) % ((1 << 31) - 1)
+        # Deterministic-but-unique seed derived from the id; Python's built-in hash
+        # is process-salted, so use a stable digest.
+        seed = int(hashlib.sha256(args.id.encode("utf-8")).hexdigest()[:8], 16) % ((1 << 31) - 1)
         scaffold = {
             "id": args.id,
             "preset": preset_id,
@@ -4321,6 +4420,13 @@ def _print_doctor_report(report: dict, *, verbose: bool = False) -> None:
         mark = green("OK") if tool["ok"] else red("NO")
         detail = tool.get("path") or tool.get("reason", "")
         print(f"  {mark:2s}  {tool['name']:15s} {dim(str(detail))}")
+    if report.get("metal_runtime"):
+        metal_runtime = report["metal_runtime"]
+        mark = green("OK") if metal_runtime.get("ok") else red("NO")
+        reason = metal_runtime.get("reason") or "ready"
+        probe = metal_runtime.get("mflux_probe") or {}
+        probe_path = probe.get("path") or ""
+        print(f"  {mark:2s}  {'mflux-metal':15s} {dim(str(reason))} {dim(str(probe_path))}")
     if report.get("ollama_models"):
         print()
         print(bold("Ollama Models"))
@@ -4401,9 +4507,10 @@ def cmd_bench(args) -> int:
         "real": args.real,
         "probes": {},
         "profiles": {
-            "cool": {"flux_model": "schnell", "flux_steps": 4, "whisper": "turbo", "metal_concurrency": 1},
-            "balanced": {"flux_model": "dev", "flux_steps": 18, "whisper": "turbo", "metal_concurrency": 1},
-            "max": {"flux_model": "dev", "flux_steps": 25, "whisper": "best", "metal_concurrency": 1},
+            "cool": {"flux_model": "schnell", "flux_steps": 4, "whisper": "turbo", "metal_concurrency": "FORGE_METAL_SLOTS"},
+            "balanced": {"flux_model": "dev", "flux_steps": 18, "whisper": "turbo", "metal_concurrency": "FORGE_METAL_SLOTS"},
+            "max": {"flux_model": "dev", "flux_steps": 25, "whisper": "best", "metal_concurrency": "FORGE_METAL_SLOTS"},
+            "quality": {"flux_model": "dev", "flux_steps": 36, "whisper": "best", "metal_concurrency": "FORGE_METAL_SLOTS", "quantize": 8},
         },
     }
     for name, executable, cmd in [
@@ -4436,6 +4543,8 @@ def cmd_bench(args) -> int:
 def cmd_web(args) -> int:
     from forge_web import run_server
 
+    if getattr(args, "metal_slots", None) is not None:
+        os.environ["FORGE_METAL_SLOTS"] = str(max(1, min(16, int(args.metal_slots))))
     run_server(host=args.host, port=args.port, open_browser=not args.no_open)
     return 0
 
@@ -5222,6 +5331,23 @@ def main() -> int:
     p_folk.add_argument("--out")
     p_folk.set_defaults(func=cmd_folk_art)
 
+    p_min = sub.add_parser("minimal-animal", help="beta closed-loop <=8-line animal T-shirt mark")
+    p_min.add_argument("--animal", "--description", dest="animal",
+                       help="animal description, e.g. 'alert snow leopard with a long tail'")
+    p_min.add_argument("--max-lines", type=int, default=8,
+                       help="maximum SVG stroke primitives allowed; hard range 1-8")
+    p_min.add_argument("--seed", type=int, default=1)
+    p_min.add_argument("--width", type=int, default=1280)
+    p_min.add_argument("--height", type=int, default=1280)
+    p_min.add_argument("--stroke-width", type=float, default=18.0)
+    p_min.add_argument("--background", default="#F5EFE3")
+    p_min.add_argument("--stroke", default="#111111")
+    p_min.add_argument("--supersample", type=int, default=2)
+    p_min.add_argument("--skip-gpu-check", action="store_true",
+                       help="skip the Metal readiness guard; exact 8-line construction itself is procedural")
+    p_min.add_argument("--out")
+    p_min.set_defaults(func=cmd_minimal_animal)
+
     # forge engine — domain-expert style engines (noir-cinema, wildlife-photo, etc.)
     p_eng = sub.add_parser("engine", help="domain-expert style engines (specialist FLUX prompt builders)")
     eng_sub = p_eng.add_subparsers(dest="engine_cmd", required=True)
@@ -5272,6 +5398,8 @@ def main() -> int:
                             help="disable the engine's curated default LoRA stack (see brand/loras/README.md). Useful for A/B comparison or when iterating on a new prompt without LoRA bias.")
     eng_render.add_argument("--draft", action="store_true", help="schnell @ 4 steps (cool/fast)")
     eng_render.add_argument("--profile", choices=list(PROFILES), default=None)
+    eng_render.add_argument("--steps", type=int, default=None,
+                            help="override FLUX inference steps; useful for faster engine batches. Overrides the profile step count.")
     eng_render.add_argument("--quantize", type=int, choices=[0, 3, 4, 5, 6, 8], default=None, dest="quantize",
                             help="mflux quantization (3/4/5/6/8 bits). 8=indistinguishable from fp16 +25%% speed (default), 4=~50%% faster with mild quality drop, 0=force fp16. Env: FORGE_FLUX_QUANTIZE.")
     eng_render.add_argument("--upscale", type=str, default=None, dest="upscale",
@@ -5472,6 +5600,8 @@ def main() -> int:
     p_web = sub.add_parser("web", help="browser wizard + run console")
     p_web.add_argument("--host", default="127.0.0.1")
     p_web.add_argument("--port", type=int, default=8765)
+    p_web.add_argument("--metal-slots", type=int, default=None,
+                       help="allow N concurrent heavy Metal jobs in this web session (e.g. 4 on 128 GB Macs)")
     p_web.add_argument("--no-open", action="store_true", help="serve without opening a browser")
     p_web.set_defaults(func=cmd_web)
 

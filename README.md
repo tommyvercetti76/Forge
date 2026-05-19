@@ -41,7 +41,7 @@ This section is intentionally blunt. Trust this over older notes.
 | Specialist image engines | `forge engine ...` | FLUX renders plus directive JSON and gallery metadata |
 | Image editing | `forge edit` | Edited variants from an existing image |
 | High-res via upscaler | `forge engine render ... --upscale {2x,3x,4x,6x,8x,12x,16x}` | RealESRGAN-ncnn-vulkan post-render upscale, safe on M5 Max |
-| Procedural art | `forge mandala`, `forge childrens-book`, `forge folk-art` | SVG/PNG line art and QC JSON |
+| Procedural art | `forge mandala`, `forge childrens-book`, `forge folk-art`, `forge minimal-animal` | SVG/PNG line art and QC JSON |
 | Voiceover | `forge voice`, `forge setup-voices` | English audio plus translated sidecars |
 | Episodes | `forge episode` | Mini-segment videos, scripts, stills, subtitles, QC manifests |
 | Audiobooks | `forge audiobook`, `bin/audiobook.py` | Chunked narration, translations, subtitles, optional video mux |
@@ -64,6 +64,10 @@ Each engine declares its native canvas — typing `forge engine render <name>` w
 | `stylized-cinematic` | 1280×720 widescreen (16:9) | Tartakovsky / Mignola / McQuarrie / Ghibli |
 | `minimalist-tshirt` | 1280×1280 square (1:1) | Screen-printable apparel graphics ([docs/MINIMALIST_TSHIRT_ENGINE.md](docs/MINIMALIST_TSHIRT_ENGINE.md)) |
 
+Beta minimalist line-art lane: `forge minimal-animal --animal "alert tiger in
+side profile" --max-lines 8` emits a construction-guaranteed SVG/PNG mark plus
+QC and manifest. See [docs/MINIMAL_ANIMAL_LINES.md](docs/MINIMAL_ANIMAL_LINES.md).
+
 Resolution priority chain: `--ultra-res` > `--hi-res` > explicit `--width`/`--height` > engine native canvas > 1280×720 fallback. The upscale path (next section) is the safest route to print-grade resolution on M5 Max.
 
 ## Repository Map
@@ -85,6 +89,7 @@ Forge/
 |   |-- style_engines.py              # specialist FLUX engines
 |   |-- _engine_base.py               # engine contracts
 |   |-- mandala_engine.py             # procedural mandala/line-art renderer
+|   |-- minimal_animal_engine.py      # beta <=8-line animal mark renderer
 |   |-- audiobook.py                  # multilingual book/video pipeline
 |   |-- process-video.py              # upload-ready video prep pipeline
 |   |-- migrate-models.sh             # adopt model files into ~/Models
@@ -146,6 +151,12 @@ Use `--no-open` if you only want the server:
 
 ```sh
 forge web --host 127.0.0.1 --port 5002 --no-open
+```
+
+Four concurrent FLUX slots on a 128 GB Apple Silicon machine:
+
+```sh
+forge web --host 127.0.0.1 --port 5002 --metal-slots 4
 ```
 
 The web UI is a control surface over the same CLI/runtime. When a web option
@@ -210,6 +221,18 @@ forge engine render wildlife-photo \
   --seed 7 \
   --out ~/Pictures/wildlife-tiger.png
 ```
+
+### Render An 8-Line Minimal Animal Mark
+
+```sh
+forge minimal-animal \
+  --animal "alert tiger in side profile with a long tail" \
+  --max-lines 8 \
+  --out ~/Pictures/tiger-eight-line.png
+```
+
+Forge writes `.png`, `.svg`, `.qc.json`, and `.manifest.json`. The SVG stroke
+count is the source of truth; the PNG is only the preview.
 
 ### High Resolution — The Upscale Path
 
@@ -392,10 +415,29 @@ Profiles are the shared speed/quality vocabulary across CLI and web UI.
 | `cool` | `schnell` | 4 | 0.0 | 20s | Preview/scouting pass, fastest and lowest heat |
 | `balanced` | `dev` | 18 | preset/default | 5s | Default production iteration |
 | `max` | `dev` | 25 | preset/default | 0s | Better final detail when time allows |
-| `quality` | `dev` | 36 | preset/default | 0s | Production-grade fp16 path for line art/iconic work |
+| `quality` | `dev` | 36 | preset/default | 0s | Production-grade q8 path for line art/iconic work |
 
 Resolution, step count, and model choice dominate speed. Quantization helps with
 memory pressure, but it is not the main speed lever on Apple Silicon.
+
+Parallel FLUX renders are opt-in. Set `FORGE_METAL_SLOTS=4` or
+`FORGE_FLUX_PARALLEL_JOBS=4` before starting `forge web` or launching CLI
+batches to request four simultaneous `metal-heavy` workers. Forge caps that
+request by total unified memory (`FORGE_METAL_SLOT_RAM_GB`, default 24 GB per
+slot) and runs the free-memory preflight after acquiring a slot. Keep
+`quality`/q8 or explicit `--quantize 8`; fp16 (`--quantize 0`) is intentionally
+manual because multiple fp16 FLUX-dev jobs can overrun unified memory and
+throttle hard.
+
+Madhubani set renders can request parallel pose workers directly:
+
+```sh
+python bin/forge_madhubani.py render tiger --all-poses --jobs 2
+```
+
+On a four-pose set, two jobs can cut ideal wall clock roughly in half when two
+Metal slots fit in memory. The runtime still serializes or caps work if the
+machine cannot safely hold it.
 
 Common pattern:
 
@@ -452,8 +494,15 @@ forge models clean --dry-run
 | `FORGE_SARVAM_SPEAKER_MR` | Marathi-specific Sarvam speaker override |
 | `FORGE_SARVAM_MODEL` | Sarvam model, default `bulbul:v3` |
 | `FORGE_FLUX_QUANTIZE` | mflux weight quantization, default `8`; use `0` for fp16 |
+| `FORGE_METAL_SLOTS` | Requested concurrent heavy Metal workers; default `1`, capped by memory |
+| `FORGE_FLUX_PARALLEL_JOBS` | Alias for `FORGE_METAL_SLOTS` focused on FLUX render batches |
+| `FORGE_METAL_MAX_SLOTS` | Hard cap for `metal-heavy` slots after env request |
+| `FORGE_METAL_SLOT_RAM_GB` | Memory budget per heavy Metal slot, default `24` |
+| `FORGE_MADHUBANI_JOBS` | Default parallel pose workers for `bin/forge_madhubani.py render`; equivalent to `--jobs` |
 | `FORGE_MFLUX_MIN_FREE_GB` | Free-memory guard before heavy FLUX renders |
 | `FORGE_MLX_CACHE_LIMIT_GB` | MLX/HF cache cleanup target |
+| `FORGE_ALLOW_CPU_ML` | Emergency override for Metal guard; unset by default so FLUX refuses CPU-only ML paths |
+| `FORGE_ALLOW_TEMP_ARTIFACT_FALLBACK` | Explicit emergency opt-in to redirect unwritable artifact receipts to temp; default is fail loudly |
 | `FORGE_CAPTION_LANGS` | Default caption languages for `process-video` |
 
 ## Documentation Map
@@ -468,11 +517,13 @@ Start here:
 | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | You need system/data-flow diagrams |
 | [docs/MECHANISMS.md](docs/MECHANISMS.md) | You need runtime mechanisms and quality contracts |
 | [docs/MINIMALIST_TSHIRT_ENGINE.md](docs/MINIMALIST_TSHIRT_ENGINE.md) | You are rendering minimalist screen-printable T-shirt graphics |
+| [docs/MINIMAL_ANIMAL_LINES.md](docs/MINIMAL_ANIMAL_LINES.md) | You are exploring exact <=8-line animal marks |
 
 Critical handoffs and audits:
 
 | Document | Use it when |
 | --- | --- |
+| [docs/FORGE_QUALITY_SPEED_AUDIT_2026-05-19.md](docs/FORGE_QUALITY_SPEED_AUDIT_2026-05-19.md) | You are checking the latest quality/speed audit and target math |
 | [docs/BOOK_LOCALIZATION_AUDIT_HANDOFF.md](docs/BOOK_LOCALIZATION_AUDIT_HANDOFF.md) | You are building near-perfect Hindi/English/Marathi book subtitles and audio |
 | [docs/PRESET_PRECISION_IMPROVEMENT_HANDOFF.md](docs/PRESET_PRECISION_IMPROVEMENT_HANDOFF.md) | You are improving preset precision by 40% or more |
 | [docs/PRESET_PROMPT_TEMPLATE.md](docs/PRESET_PROMPT_TEMPLATE.md) | You are authoring semantic preset tokens and dependency vectors |

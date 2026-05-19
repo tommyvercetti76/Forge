@@ -1,11 +1,14 @@
 from __future__ import annotations
 
 import json
+import contextlib
+import io
 import os
 import sys
 import tempfile
 import unittest
 from pathlib import Path
+from typing import Any
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -52,6 +55,149 @@ class RuntimeTests(unittest.TestCase):
                     self.assertGreaterEqual(lock.wait_seconds, 0)
             finally:
                 forge_runtime.FORGE_STATE_HOME = old_home
+
+    def test_resource_lock_falls_back_when_lock_file_open_is_blocked(self) -> None:
+        with tempfile.TemporaryDirectory() as td:
+            old_home = forge_runtime.FORGE_STATE_HOME
+            old_claim = forge_runtime.ResourceLock._claim_slot
+            blocked_dir = Path(td) / "locks"
+            forge_runtime.FORGE_STATE_HOME = Path(td)
+
+            def flaky_claim(self, lock_dir: Path, slot: int, *, blocking: bool):
+                if lock_dir == blocked_dir:
+                    raise PermissionError("blocked lock file")
+                return old_claim(self, lock_dir, slot, blocking=blocking)
+
+            forge_runtime.ResourceLock._claim_slot = flaky_claim
+            try:
+                with ResourceLock("unit-fallback") as lock:
+                    self.assertIn(str(Path(tempfile.gettempdir()) / "forge" / "locks"), str(lock.path))
+            finally:
+                forge_runtime.ResourceLock._claim_slot = old_claim
+                forge_runtime.FORGE_STATE_HOME = old_home
+
+    def test_resource_lock_honors_metal_slots_env(self) -> None:
+        with tempfile.TemporaryDirectory() as td:
+            old_home = forge_runtime.FORGE_STATE_HOME
+            old_slots = os.environ.get("FORGE_METAL_SLOTS")
+            old_slot_ram = os.environ.get("FORGE_METAL_SLOT_RAM_GB")
+            old_hard_cap = os.environ.get("FORGE_METAL_MAX_SLOTS")
+            old_total = forge_runtime._memory_total_gb
+            forge_runtime.FORGE_STATE_HOME = Path(td)
+            forge_runtime._memory_total_gb = lambda: 128.0
+            os.environ["FORGE_METAL_SLOTS"] = "2"
+            os.environ["FORGE_METAL_SLOT_RAM_GB"] = "32"
+            os.environ.pop("FORGE_METAL_MAX_SLOTS", None)
+            try:
+                with ResourceLock("metal-heavy") as lock:
+                    self.assertEqual(lock.slots, 2)
+                    self.assertIn(lock.slot, {1, 2})
+                    self.assertIn("metal-heavy.", lock.path.name)
+            finally:
+                forge_runtime.FORGE_STATE_HOME = old_home
+                forge_runtime._memory_total_gb = old_total
+                if old_slots is None:
+                    os.environ.pop("FORGE_METAL_SLOTS", None)
+                else:
+                    os.environ["FORGE_METAL_SLOTS"] = old_slots
+                if old_slot_ram is None:
+                    os.environ.pop("FORGE_METAL_SLOT_RAM_GB", None)
+                else:
+                    os.environ["FORGE_METAL_SLOT_RAM_GB"] = old_slot_ram
+                if old_hard_cap is None:
+                    os.environ.pop("FORGE_METAL_MAX_SLOTS", None)
+                else:
+                    os.environ["FORGE_METAL_MAX_SLOTS"] = old_hard_cap
+
+    def test_resource_slots_cap_metal_by_memory(self) -> None:
+        old_slots = os.environ.get("FORGE_METAL_SLOTS")
+        old_slot_ram = os.environ.get("FORGE_METAL_SLOT_RAM_GB")
+        old_hard_cap = os.environ.get("FORGE_METAL_MAX_SLOTS")
+        old_total = forge_runtime._memory_total_gb
+        os.environ["FORGE_METAL_SLOTS"] = "16"
+        os.environ["FORGE_METAL_SLOT_RAM_GB"] = "32"
+        os.environ.pop("FORGE_METAL_MAX_SLOTS", None)
+        forge_runtime._memory_total_gb = lambda: 128.0
+        try:
+            self.assertEqual(forge_runtime._resource_slot_count("metal-heavy"), 4)
+        finally:
+            forge_runtime._memory_total_gb = old_total
+            if old_slots is None:
+                os.environ.pop("FORGE_METAL_SLOTS", None)
+            else:
+                os.environ["FORGE_METAL_SLOTS"] = old_slots
+            if old_slot_ram is None:
+                os.environ.pop("FORGE_METAL_SLOT_RAM_GB", None)
+            else:
+                os.environ["FORGE_METAL_SLOT_RAM_GB"] = old_slot_ram
+            if old_hard_cap is None:
+                os.environ.pop("FORGE_METAL_MAX_SLOTS", None)
+            else:
+                os.environ["FORGE_METAL_MAX_SLOTS"] = old_hard_cap
+
+    def test_write_json_refuses_silent_temp_redirect_by_default(self) -> None:
+        old_writer = forge_runtime._write_atomic_text
+        old_fallback = os.environ.get("FORGE_ALLOW_TEMP_ARTIFACT_FALLBACK")
+
+        def blocked_writer(path: Path, text: str) -> None:
+            raise PermissionError("blocked")
+
+        forge_runtime._write_atomic_text = blocked_writer
+        os.environ.pop("FORGE_ALLOW_TEMP_ARTIFACT_FALLBACK", None)
+        try:
+            with self.assertRaisesRegex(PermissionError, "refusing to redirect"):
+                forge_runtime.write_json(Path("/blocked/receipt.json"), {"ok": True})
+        finally:
+            forge_runtime._write_atomic_text = old_writer
+            if old_fallback is None:
+                os.environ.pop("FORGE_ALLOW_TEMP_ARTIFACT_FALLBACK", None)
+            else:
+                os.environ["FORGE_ALLOW_TEMP_ARTIFACT_FALLBACK"] = old_fallback
+
+    def test_write_json_explicit_temp_fallback_returns_actual_path(self) -> None:
+        target = Path("/blocked/receipt.json")
+        old_writer = forge_runtime._write_atomic_text
+        old_fallback = os.environ.get("FORGE_ALLOW_TEMP_ARTIFACT_FALLBACK")
+        written: dict[str, Any] = {}
+
+        def fallback_writer(path: Path, text: str) -> None:
+            if path == target:
+                raise PermissionError("blocked")
+            written["path"] = path
+            written["text"] = text
+
+        forge_runtime._write_atomic_text = fallback_writer
+        os.environ["FORGE_ALLOW_TEMP_ARTIFACT_FALLBACK"] = "1"
+        try:
+            with contextlib.redirect_stderr(io.StringIO()):
+                actual = forge_runtime.write_json(target, {"ok": True})
+            self.assertEqual(actual, Path(tempfile.gettempdir()) / "forge" / "receipt.json")
+            self.assertEqual(written["path"], actual)
+            self.assertIn('"ok": true', written["text"])
+        finally:
+            forge_runtime._write_atomic_text = old_writer
+            if old_fallback is None:
+                os.environ.pop("FORGE_ALLOW_TEMP_ARTIFACT_FALLBACK", None)
+            else:
+                os.environ["FORGE_ALLOW_TEMP_ARTIFACT_FALLBACK"] = old_fallback
+
+    def test_metal_report_can_require_actual_mflux_probe(self) -> None:
+        old_system_cache = forge_runtime._METAL_REPORT_CACHE
+        old_probe_cache = forge_runtime._MFLUX_METAL_PROBE_CACHE
+        old_probe = forge_runtime._mflux_metal_probe
+        forge_runtime._METAL_REPORT_CACHE = {"ok": True, "chip": "Apple Test", "metal": "Supported", "reason": None}
+        forge_runtime._MFLUX_METAL_PROBE_CACHE = None
+        forge_runtime._mflux_metal_probe = lambda: {"ok": False, "path": "mflux-generate", "reason": "no actual Metal device"}
+        try:
+            report = forge_runtime.metal_acceleration_report(require_mflux=True)
+            self.assertFalse(report["ok"])
+            self.assertEqual(report["reason"], "no actual Metal device")
+            with self.assertRaisesRegex(RuntimeError, "requires Apple Metal acceleration"):
+                forge_runtime.require_metal_acceleration("unit render")
+        finally:
+            forge_runtime._METAL_REPORT_CACHE = old_system_cache
+            forge_runtime._MFLUX_METAL_PROBE_CACHE = old_probe_cache
+            forge_runtime._mflux_metal_probe = old_probe
 
     def test_ffmpeg_filter_escape(self) -> None:
         escaped = ffmpeg_filter_escape("/tmp/it won't:break.srt")

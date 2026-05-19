@@ -1126,7 +1126,7 @@ def config_payload() -> dict[str, Any]:
         "series": sorted(p.stem for p in SERIES_DIR.glob("*.json")) if SERIES_DIR.exists() else [],
         "engines": engines,
         "recipes": recipes,
-        "profiles": ["", "cool", "balanced", "max"],
+        "profiles": ["", "cool", "balanced", "max", "quality"],
         "process_qualities": PROCESS_VIDEO_QUALITIES,
         "audiobook_beds": AUDIOBOOK_BEDS,
         "audiobook_modes": AUDIOBOOK_MODES,
@@ -2146,7 +2146,7 @@ details.form-expander > .field { margin-top: 10px; }
 /* Process column — job cards, paths, logs, artifacts */
 .job-list { display: grid; gap: 6px; margin-bottom: 16px; }
 
-/* Active job (only one) — flat card, no collapse */
+/* Active jobs — flat cards, no collapse */
 .job {
   display: grid;
   gap: 4px;
@@ -2564,7 +2564,17 @@ details.form-expander > .field { margin-top: 10px; }
   </div>
 </div>
 <script>
-const state = { config: null, action: "thumbnail", activeJob: null, pickerField: null, pickerPath: "", expandedRuns: new Set() };
+const state = {
+  config: null,
+  action: "thumbnail",
+  activeJob: null,
+  activeJobs: new Set(),
+  jobStatuses: new Map(),
+  jobSnapshots: new Map(),
+  pickerField: null,
+  pickerPath: "",
+  expandedRuns: new Set()
+};
 
 // Top-level nav — Gallery / Create / Edit / Pipelines / Library / System.
 // Coming in P2.3 we'll collapse the four per-engine entries into a single
@@ -3239,7 +3249,7 @@ const FIELD_HELP = {
   steps: "FLUX denoising steps. Higher = more detail + slower. 25-32 is the sweet spot on dev. Schnell wants 2-4. Past 36 rarely helps.",
   steps_override: "Override the engine's default step count. Leave blank to use the recipe defaults (32 for childrens-coloring-book, 36 for mandala-art).",
   frame_offset: "When a series is set, each integer here gives a unique-but-consistent seed. Use it to render frame 0, 1, 2... of the same series with locked style.",
-  profile: "Speed profile: cool = schnell @ 4 steps (fastest, lowest quality), balanced = dev @ 18, max = dev @ 25. Leave as preset-default to use the engine's own runtime.",
+  profile: "Speed profile: cool = schnell @ 4 steps, balanced = dev @ 18, max = dev @ 25, quality = dev @ 36 q8. Leave as preset-default to use the engine's own runtime.",
   draft: "Use the schnell model @ 4 steps. Cool/fast preview mode. Output quality lower — use to scout compositions before final render.",
   lora: "LoRA file paths (one per line). Each LoRA adjusts FLUX's weights toward a particular trained style.",
   lora_paths: "LoRA file paths (one per line). Each LoRA adjusts FLUX's weights toward a particular trained style.",
@@ -3362,7 +3372,7 @@ const FIELD_HELP = {
   sc_atmosphere: "Air medium. clear-dry = sharp colors + distance visibility. fog-low = ground-level dense fog, mystery+isolation register. mist-mid = waist-to-head-height mist, painterly depth (Ghibli classic). rain-streak = diagonal rain lines + wet surfaces. smoke-haze = warm-tinted hanging smoke (urban / fire / cigar register). dust-mote = floating particles caught in light shafts. snow-fall = active snowflakes + breath-puffs. volumetric-shaft = visible god-rays through windows / canopy / barn doors.",
   // Minimalist T-shirt — friendly form fields
   mt_motif: "Primary design grammar. madhubani-folk-icon pushes the subject into a clean Mithila-inspired icon; negative-space-symbol and geometric-silhouette are better for pure one-ink streetwear marks.",
-  mt_tradition: "Cultural visual register. madhubani-contemporary keeps folk-art cues but trims them for modern apparel; warli-minimal and gond-minimal are restrained variants for different Indian visual languages.",
+  mt_tradition: "Cultural visual register. madhubani-contemporary keeps folk-art cues but trims them for modern apparel (mass-market polish). madhubani-master-painter is the premium expressive register: hand-drawn line weight, composed palette, character-bearing eyes, controlled hand-painted texture — cites Sita Devi / Ganga Devi / Baua Devi originals (see docs/catalog/PROMPT_GRAMMAR.md). warli-minimal and gond-minimal are restrained variants for different Indian visual languages.",
   mt_detail: "How much internal ornament survives. ultra-minimal is logo-like; ornamental-balanced is the sweet spot for folk detail that still screen-prints cleanly; maximal-but-printable is the upper limit.",
   mt_symmetry: "Composition discipline. handmade-balanced keeps organic folk-art asymmetry while still feeling centered and premium; near-bilateral is stricter for badges or mascots.",
   mt_accents: "Secondary ornaments. small-floral-only is tuned for the popti parrot prompt because it adds Madhubani flavor without creating a busy shirt graphic.",
@@ -3374,7 +3384,7 @@ const FIELD_HELP = {
   mt_background: "Background rule. no-background keeps the art as isolated print artwork; transparent-feel asks for a plain flat field with no scene.",
   mt_border: "Border treatment. none is best for the parrot prompt; hairline-badge is for emblem-style lockups.",
   upscale: "Post-render upscale via RealESRGAN-ncnn-vulkan. The SAFE path to high resolution on M5 Max — renders FLUX at default 1280×720 (low memory, ~3 min), then external upscaler boosts to 4× / 8× in ~6-15 seconds. 8× = 10240×5760 (59 MP), comfortably print-ready. Native Hi-res / Ultra-res checkboxes below are now SECONDARY — use upscale instead. (For --from-image / Kontext runs, native Hi-res is auto-clamped to default size because Kontext + high-res over-subscribes Metal memory and can freeze the GPU.)",
-  quantize: "mflux model weight quantization (Apple Silicon). Lower bits = lower RAM + slightly faster. Default q8 is indistinguishable from fp16. q4 is ~10 % faster on M5 Max with mild face softening. q0 forces full fp16 (max quality, slowest, ~24 GB). Set FORGE_FLUX_QUANTIZE env var to change the default for all renders. NOTE: weight quantization is NOT the big speed lever on Apple Silicon — the activations stay fp16. The big levers are step count + resolution + schnell vs dev.",
+  quantize: "mflux model weight quantization (Apple Silicon). Lower bits = lower RAM + slightly faster. Default q8 is indistinguishable from fp16 and much friendlier to parallel jobs. q0 forces full fp16 (slowest, highest RAM). Set FORGE_FLUX_QUANTIZE to change defaults and FORGE_METAL_SLOTS=4 to allow four concurrent FLUX workers. The big speed levers are step count + resolution + schnell vs dev.",
   no_default_loras: "By default, each engine auto-applies its curated LoRA stack (see brand/loras/README.md) — RealismLora + add-details for wildlife, film-noir + add-details for noir-cinema, Coloring-Book LoRA for childrens-coloring-book, Van Gogh for impressionist, Indo-Realism for indian-classical. Check this box to render WITHOUT them (vanilla FLUX) — useful for A/B comparison or when iterating on a new prompt without LoRA bias. Engines without curated picks (mandala-art) ignore this flag.",
 };
 
@@ -3390,7 +3400,7 @@ function optionsFor(field) {
     {value:"cool",      label:"Preview — schnell @ 4 steps (~25 s)"},
     {value:"balanced",  label:"Balanced — dev @ 18 steps (~3 min)"},
     {value:"max",       label:"Max — dev @ 25 steps (~5 min)"},
-    {value:"quality",   label:"Production — dev @ 36 steps + fp16 (~12 min)"},
+    {value:"quality",   label:"Production — dev @ 36 steps q8"},
   ];
   if (field.options === "seriesOptional") return [{value:"", label:"none"}, ...(cfg.series || []).map(v => ({value:v, label:v}))];
   if (field.options === "presetsOptional") return [{value:"", label:"none"}, ...(cfg.presets || []).map(v => ({value:v, label:v}))];
@@ -3429,7 +3439,7 @@ function optionsFor(field) {
   if (field.options === "scAtmospheres") return [{value:"from-prompt", label:"(from prompt — let your text decide)"}, ...["clear-dry", "fog-low", "mist-mid", "rain-streak", "smoke-haze", "dust-mote", "snow-fall", "volumetric-shaft"].map(v => ({value:v, label:v}))];
   // Minimalist T-shirt enums (mirror bin/style_engines.py)
   if (field.options === "mtMotifs") return ["monoline-icon", "geometric-silhouette", "negative-space-symbol", "madhubani-folk-icon", "tiny-line-scene", "retro-minimal-badge", "abstract-type-safe"].map(v => ({value:v, label:v}));
-  if (field.options === "mtTraditions") return ["modern-minimal", "madhubani-contemporary", "warli-minimal", "gond-minimal"].map(v => ({value:v, label:v}));
+  if (field.options === "mtTraditions") return ["modern-minimal", "madhubani-contemporary", "madhubani-master-painter", "warli-minimal", "gond-minimal"].map(v => ({value:v, label:v}));
   if (field.options === "mtDetails") return ["ultra-minimal", "subtle-folk-detail", "ornamental-balanced", "maximal-but-printable"].map(v => ({value:v, label:v}));
   if (field.options === "mtSymmetries") return ["none", "handmade-balanced", "near-bilateral"].map(v => ({value:v, label:v}));
   if (field.options === "mtAccents") return ["none", "small-floral-only", "micro-folk-dots"].map(v => ({value:v, label:v}));
@@ -4434,7 +4444,9 @@ async function startJob(event) {
     return;
   }
   state.activeJob = body.id;
-  state.lastStatus = body.status;
+  state.activeJobs.add(body.id);
+  state.jobStatuses.set(body.id, body.status);
+  state.jobSnapshots.set(body.id, body);
   renderJob(body);
   pollNow();
 }
@@ -4457,14 +4469,27 @@ function clearToast() {
 }
 
 function renderJob(job) {
+  state.jobSnapshots.set(job.id, job);
+  renderJobList();
+  renderProcess(job);
+}
+
+function renderJobList(jobs = null) {
   const list = document.getElementById("jobList");
   list.innerHTML = "";
-  const btn = document.createElement("button");
-  btn.type = "button";
-  btn.className = "job active";
-  btn.innerHTML = `<span class="status ${job.status}">${job.status.toUpperCase()} · #${job.id}</span><span>${job.action} · ${job.elapsed}s</span><span class="meta">${job.cmd_display || ""}</span>`;
-  list.appendChild(btn);
-  renderProcess(job);
+  const items = jobs || Array.from(state.jobSnapshots.values()).sort((a, b) => b.id - a.id);
+  for (const job of items) {
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "job" + (job.id === state.activeJob ? " active" : "");
+    btn.innerHTML = `<span class="status ${job.status}">${job.status.toUpperCase()} · #${job.id}</span><span>${job.action} · ${job.elapsed}s</span><span class="meta">${job.cmd_display || ""}</span>`;
+    btn.onclick = () => {
+      state.activeJob = job.id;
+      renderJobList();
+      renderProcess(job);
+    };
+    list.appendChild(btn);
+  }
 }
 
 function renderProcess(job) {
@@ -4594,27 +4619,46 @@ function previewFile(file) {
 }
 
 async function pollNow() {
-  if (!state.activeJob) return;
-  const res = await fetch(`/api/jobs/${state.activeJob}`);
+  if (!state.activeJobs.size && !state.activeJob) return;
+  const res = await fetch("/api/jobs");
   if (!res.ok) return;
-  const job = await res.json();
-  renderJob(job);
-  // Status-transition handling — surface the user-facing outcome
-  const prev = state.lastStatus;
-  if (prev === "running" && job.status === "ok") {
-    showToast("✓ Job completed — previewing first output", "success");
-    const arts = job.artifacts || [];
-    if (arts.length > 0) previewFile(arts[0]);
-  } else if (prev === "running" && job.status === "failed") {
-    const issues = (job.issues || []).slice(0, 1)[0] || `process exited ${job.returncode}`;
-    showToast("✗ Job failed: " + issues, "error");
+  const data = await res.json();
+  const recent = data.jobs || [];
+  const jobs = recent.filter(job => state.activeJobs.has(job.id) || job.status === "running");
+  if (!jobs.length) {
+    state.activeJob = null;
+    if (!state.activeJobs.size) loadRuns();
+    return;
   }
-  state.lastStatus = job.status;
-  if (job.status !== "running") loadRuns();
+  for (const job of jobs) {
+    state.jobSnapshots.set(job.id, job);
+    const prev = state.jobStatuses.get(job.id);
+    if (prev === "running" && job.status === "ok") {
+      showToast(`✓ Job #${job.id} completed — previewing first output`, "success");
+      const arts = job.artifacts || [];
+      if (arts.length > 0 && job.id === state.activeJob) previewFile(arts[0]);
+    } else if (prev === "running" && job.status === "failed") {
+      const issues = (job.issues || []).slice(0, 1)[0] || `process exited ${job.returncode}`;
+      showToast(`✗ Job #${job.id} failed: ${issues}`, "error");
+    }
+    state.jobStatuses.set(job.id, job.status);
+  }
+  const running = jobs.filter(job => job.status === "running");
+  state.activeJobs = new Set(running.map(job => job.id));
+  if (!state.activeJob || !jobs.some(job => job.id === state.activeJob)) {
+    state.activeJob = (running[0] || jobs[0] || {}).id || null;
+  }
+  renderJobList(jobs);
+  const selected = jobs.find(job => job.id === state.activeJob) || jobs[0];
+  if (selected) renderProcess(selected);
+  if (!state.activeJobs.size) {
+    loadRuns();
+    state.activeJob = null;
+  }
 }
 
 async function loadRuns() {
-  if (state.activeJob) return;
+  if (state.activeJobs.size) return;
   const res = await fetch("/api/runs");
   if (!res.ok) return;
   const data = await res.json();

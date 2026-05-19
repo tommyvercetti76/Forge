@@ -54,14 +54,36 @@ forge engine render minimalist-tshirt \
   --out ~/Pictures/tshirt-mountain.png
 ```
 
+Exact beta minimalism, no diffusion uncertainty:
+
+```sh
+forge minimal-animal \
+  --animal "alert tiger in side profile with a long tail" \
+  --max-lines 8 \
+  --out ~/Pictures/tiger-eight-line.png
+```
+
+Use this lane when the requirement is a hard stroke budget. It writes SVG/PNG,
+QC, and manifest receipts; see `docs/MINIMAL_ANIMAL_LINES.md`.
+
+For fast batches, keep the canvas square but lower the diffusion pass:
+
+```sh
+forge engine render minimalist-tshirt \
+  --subject "single centered Indian elephant in full-body side profile, Madhubani folk T-shirt mark" \
+  --config "subject.motif=madhubani-folk-icon,style.tradition=madhubani-contemporary,style.detail=maximal-but-printable,style.symmetry=handmade-balanced,style.accents=micro-folk-dots,production.output=print-art,production.ink=vibrant-folk,production.shirt_color=cream-or-black,composition.background=no-background,composition.border=none" \
+  --profile balanced \
+  --steps 14
+```
+
 ## Engine Vocabulary
 
 ### Subject
 
 | Knob | Values |
 | --- | --- |
-| `subject.motif` | `monoline-icon`, `geometric-silhouette`, `negative-space-symbol`, `tiny-line-scene`, `retro-minimal-badge`, `abstract-type-safe` |
-| `style.tradition` | `modern-minimal`, `madhubani-contemporary`, `warli-minimal`, `gond-minimal` |
+| `subject.motif` | `monoline-icon`, `geometric-silhouette`, `negative-space-symbol`, `madhubani-folk-icon`, `tiny-line-scene`, `retro-minimal-badge`, `abstract-type-safe` |
+| `style.tradition` | `modern-minimal`, `madhubani-contemporary`, `madhubani-master-painter`, `warli-minimal`, `gond-minimal` |
 | `style.detail` | `ultra-minimal`, `subtle-folk-detail`, `ornamental-balanced`, `maximal-but-printable` |
 | `style.symmetry` | `none`, `handmade-balanced`, `near-bilateral` |
 | `style.accents` | `none`, `small-floral-only`, `micro-folk-dots` |
@@ -71,7 +93,7 @@ forge engine render minimalist-tshirt \
 | Knob | Values |
 | --- | --- |
 | `production.output` | `print-art`, `shirt-mockup` |
-| `production.ink` | `one-ink-black`, `one-ink-white`, `two-ink-earth`, `two-ink-retro`, `tonal-on-tonal`, `three-ink-popti-red-black` |
+| `production.ink` | `one-ink-black`, `one-ink-white`, `two-ink-earth`, `two-ink-retro`, `tonal-on-tonal`, `three-ink-popti-red-black`, `vibrant-folk` |
 | `production.shirt_color` | `white`, `black`, `natural-cream`, `heather-grey`, `navy`, `forest-green`, `cream-or-black` |
 
 ### Composition
@@ -116,8 +138,8 @@ The engine asks for:
 
 Every render should obey:
 
-- One or two screen-print inks by default; approved three-ink palettes are
-  allowed for culturally specific premium designs.
+- One or two screen-print inks for minimalist designs; approved folk-art modes
+  can use richer flat palettes when the design remains printable.
 - No gradients.
 - No photorealistic background scene.
 - No tiny details that disappear at shirt scale.

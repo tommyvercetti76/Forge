@@ -1,0 +1,211 @@
+{
+  "$schema": "./_schema/animals.schema.json",
+  "name": "madhubani-tee-catalog",
+  "description": "The 60-animal catalog for Madhubani-inspired t-shirt designs. Split 20/20/20 across Indian wildlife, African wildlife, and Birds. Each entry carries the metadata needed for the engine to dispatch correct body-type and palette anchoring rules.",
+  "version": "1.0.0",
+  "established": "2026-05-18",
+
+  "body_types": {
+    "heavy-quadruped": {
+      "anatomy_rules": ["pillar-broad legs proportional to body mass", "broad shoulders and hips", "sturdy hocks and fetlocks", "all four legs clearly visible in side profile"],
+      "applies_to": ["elephant", "rhino", "hippo", "gaur", "buffalo"]
+    },
+    "lean-predator": {
+      "anatomy_rules": ["body fill is saturated color not silhouette", "all four legs visible as distinct outlines", "proportional muscular limbs", "long tail in natural position"],
+      "applies_to": ["tiger", "leopard", "snow-leopard", "lion", "cheetah", "wolf", "hyena", "dhole"]
+    },
+    "lean-quadruped": {
+      "anatomy_rules": ["slender legs proportional to body", "tail visible", "alert head carriage", "all four legs clearly visible"],
+      "applies_to": ["deer", "blackbuck", "gazelle", "nilgai", "sambar", "wildebeest", "springbok", "okapi"]
+    },
+    "serpent": {
+      "anatomy_rules": ["continuous coil, no broken segments", "hood proportional to body where applicable", "calm closed mouth as default", "no extended tongue unless action pose"],
+      "applies_to": ["cobra", "naga"]
+    },
+    "bird": {
+      "anatomy_rules": ["two sturdy legs on visible perch or ground line", "head and tail proportional", "wing visible against body in resting pose", "characteristic feather pattern simplified into folk panels"],
+      "applies_to": ["peacock", "hornbill", "kingfisher", "owl", "parrot", "eagle", "hummingbird", "crane", "flamingo", "stork", "duck", "macaw", "roller", "kite", "hoopoe"]
+    },
+    "primate": {
+      "anatomy_rules": ["almond eyes NOT round cartoon eyes", "proportional hands and feet", "tail length appropriate to species", "expressive face with intentional gravity"],
+      "applies_to": ["macaque", "langur", "gorilla"]
+    },
+    "armored-quadruped": {
+      "anatomy_rules": ["body plates simplified into folk panels", "all four legs visible", "characteristic tail visible"],
+      "applies_to": ["pangolin", "aardvark"]
+    },
+    "cetacean": {
+      "anatomy_rules": ["streamlined body silhouette", "fluke and dorsal fin visible", "water ground-mark of folk dots instead of land"],
+      "applies_to": ["dolphin", "whale-shark"]
+    }
+  },
+
+  "series": {
+    "indian": {
+      "display_name": "Indian Wildlife",
+      "color_anchor_preference": "indigo-or-walnut",
+      "seed_block": [8200, 8999]
+    },
+    "african": {
+      "display_name": "African Wildlife",
+      "color_anchor_preference": "walnut-or-forest-teal",
+      "seed_block": [9000, 9799]
+    },
+    "bird": {
+      "display_name": "Birds",
+      "color_anchor_preference": "varies-by-species",
+      "seed_block": [9800, 10599]
+    }
+  },
+
+  "animals": [
+    {
+      "slug": "rhino",
+      "display_name": "Great Indian One-horned Rhinoceros",
+      "binomial": "Rhinoceros unicornis",
+      "series": "indian",
+      "ordinal_in_series": 1,
+      "body_type": "heavy-quadruped",
+      "body_fill_color": "#1a2952",
+      "body_fill_color_name": "deep-indigo",
+      "signature_features": "single nose horn, armored skin plates simplified into folk panels, strong arched back",
+      "signature_action": "charging with focused power, head lowered horn forward",
+      "rest_pose_for_species": "reclining camel-fashion, front legs folded beneath body",
+      "anatomy_must_include": "EXACTLY ONE nose horn (Indian one-horned rhinoceros has a single horn, NEVER two); armored skin folds across shoulders and haunches; rectangular ears",
+      "iucn_status": "Vulnerable",
+      "conservation_note": "Recovering from near-extinction in early 20th century; protected in Kaziranga and Chitwan National Parks.",
+      "seed_block_start": 8200
+    },
+    {
+      "slug": "tiger",
+      "display_name": "Royal Bengal Tiger",
+      "binomial": "Panthera tigris tigris",
+      "series": "indian",
+      "ordinal_in_series": 2,
+      "body_type": "lean-predator",
+      "body_fill_color": "#5a3a1f",
+      "body_fill_color_name": "walnut-brown",
+      "signature_features": "stripes translated into multi-color folk panels, long curved tail, almond eye, whisker dots",
+      "signature_action": "crouched ready to leap, low body, intense gaze forward",
+      "rest_pose_for_species": "seated upright, forelimbs straight, tail wrapped around feet",
+      "iucn_status": "Endangered",
+      "conservation_note": "National animal of India; ~3000 wild individuals remain.",
+      "seed_block_start": 8300
+    },
+    {
+      "slug": "elephant",
+      "display_name": "Indian Elephant",
+      "binomial": "Elephas maximus indicus",
+      "series": "indian",
+      "ordinal_in_series": 3,
+      "body_type": "heavy-quadruped",
+      "body_fill_color": "#1a2952",
+      "body_fill_color_name": "deep-indigo",
+      "signature_features": "curved trunk, large decorated ear, small tusk, almond eye",
+      "signature_action": "trumpeting trunk raised high, mouth open in call",
+      "rest_pose_for_species": "standing relaxed, trunk curled, weight on three legs with one lifted",
+      "iucn_status": "Endangered",
+      "conservation_note": "Cultural icon across South and Southeast Asia; threatened by habitat loss.",
+      "seed_block_start": 8400
+    },
+    {
+      "slug": "peacock",
+      "display_name": "Indian Peacock",
+      "binomial": "Pavo cristatus",
+      "series": "bird",
+      "ordinal_in_series": 1,
+      "body_type": "bird",
+      "body_fill_color": "#1a2952",
+      "body_fill_color_name": "deep-indigo",
+      "signature_features": "crested head, long elegant neck, tail with feather-eye motifs",
+      "signature_action": "tail fanned in full radial display, head turned profile",
+      "rest_pose_for_species": "perched with tail trailing, head alert",
+      "iucn_status": "Least Concern",
+      "conservation_note": "National bird of India; foundational subject in Madhubani folk tradition.",
+      "seed_block_start": 9800
+    },
+    {
+      "slug": "cobra",
+      "display_name": "Indian King Cobra",
+      "binomial": "Ophiophagus hannah",
+      "series": "indian",
+      "ordinal_in_series": 4,
+      "body_type": "serpent",
+      "body_fill_color": "#1f4a3f",
+      "body_fill_color_name": "forest-teal",
+      "signature_features": "hood with spectacle pattern, S-curve body, almond eyes, mouth CLOSED default",
+      "signature_action": "rearing with hood fully spread, head high",
+      "rest_pose_for_species": "coiled with hood lowered, head resting on coils",
+      "iucn_status": "Vulnerable",
+      "conservation_note": "Sacred in many South Asian traditions; the naga of mythology.",
+      "seed_block_start": 8500
+    },
+    {
+      "slug": "blackbuck",
+      "display_name": "Indian Blackbuck",
+      "binomial": "Antilope cervicapra",
+      "series": "indian",
+      "ordinal_in_series": 5,
+      "body_type": "lean-quadruped",
+      "body_fill_color": "#1a2952",
+      "body_fill_color_name": "deep-indigo",
+      "signature_features": "elegant spiral horns, white cheek patch, slender neck, almond eye",
+      "signature_action": "leaping mid-stride, all four legs off ground",
+      "rest_pose_for_species": "kneeling on forelegs, hindquarters tucked",
+      "iucn_status": "Least Concern",
+      "conservation_note": "Vehicle of the goddess Saraswati in Hindu iconography.",
+      "seed_block_start": 8600
+    },
+    {
+      "slug": "snow-leopard",
+      "display_name": "Snow Leopard",
+      "binomial": "Panthera uncia",
+      "series": "indian",
+      "ordinal_in_series": 6,
+      "body_type": "lean-predator",
+      "body_fill_color": "#5a3a1f",
+      "body_fill_color_name": "walnut-brown",
+      "signature_features": "rosettes as SPARSE folk medallions (max 4-5 zones, NOT all-over pattern), flowing long tail held low, rounded ears",
+      "signature_action": "crouched on a Himalayan ledge, tail flicked",
+      "rest_pose_for_species": "seated with tail wrapped around body for warmth",
+      "iucn_status": "Vulnerable",
+      "conservation_note": "Ghost of the Himalayas; subject of intensive camera-trap conservation.",
+      "seed_block_start": 8700
+    },
+    {
+      "slug": "macaque",
+      "display_name": "Lion-tailed Macaque",
+      "binomial": "Macaca silenus",
+      "series": "indian",
+      "ordinal_in_series": 7,
+      "body_type": "primate",
+      "body_fill_color": "#1a2952",
+      "body_fill_color_name": "deep-indigo",
+      "signature_features": "silver mane halo as folk sunburst, dark face, ALMOND eye NOT round cartoon eye, leaf-tuft tail",
+      "signature_action": "leaping between branches, mane visible in motion",
+      "rest_pose_for_species": "seated calmly, hands folded, tail curved",
+      "iucn_status": "Endangered",
+      "conservation_note": "Endemic to the Western Ghats; <4000 remaining.",
+      "seed_block_start": 8800
+    },
+    {
+      "slug": "whale-shark",
+      "display_name": "Whale Shark",
+      "binomial": "Rhincodon typus",
+      "series": "indian",
+      "ordinal_in_series": 9,
+      "body_type": "cetacean",
+      "body_fill_color": "#1a2952",
+      "body_fill_color_name": "deep-indigo",
+      "signature_features": "broad flat head, gentle slit mouth (not a smile), white spot constellations across the back translated into Madhubani dot-and-circle motifs as folk decoration, long body in a graceful curve, large pectoral fins, distinctive heterocercal caudal fin (upper lobe longer than lower)",
+      "signature_action": "gliding peacefully through deep water with mouth slightly open as a filter feeder, body in a wide graceful curve",
+      "rest_pose_for_species": "suspended motionless in deep water, body fully extended straight, fins relaxed at sides",
+      "anatomy_must_include": "broad flat head (NOT pointed shark snout); small eye positioned at front of head; white spot constellations rendered as folk dot patterns NOT as photographic markings; no scenery, no ocean background, no bubbles — the figure is isolated on the cream/black tee field",
+      "iucn_status": "Endangered",
+      "conservation_note": "The largest fish in the world; gentle filter feeder. Found in Indian waters off the Gujarat coast (Saurashtra). Protected in India under the Wildlife (Protection) Act, 1972 since 2001.",
+      "seed_block_start": 8900
+    }
+  ],
+
+  "_collaborator_notes": "The above 8 animals are seeded from the v1-v3 Indian wildlife work. The remaining 52 animals (12 more Indian, 20 African, 20 Birds) are TO BE FILLED as the catalog grows. Each new entry MUST include: slug, display_name, binomial, series, body_type, body_fill_color, signature_features, signature_action, rest_pose_for_species, iucn_status, conservation_note, seed_block_start. seed_block_start increments by 100 per animal within the series block (Indian: 8200-8999, African: 9000-9799, Bird: 9800-10599)."
+}

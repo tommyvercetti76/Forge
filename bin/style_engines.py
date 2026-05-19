@@ -685,6 +685,8 @@ class WildlifePhotorealismEngine(Engine):
         "doll face", "plastic skin", "porcelain feathers",
         # Page-format killers
         "watermark", "stock photo logo", "subtitle bar",
+        "artist signature", "fake photographer signature", "lower corner initials",
+        "caption text", "date stamp",
         "jpeg compression artifacts", "moire pattern",
     )
     # Curated LoRAs per brand/loras/README.md — the verified-best stack for
@@ -3141,8 +3143,10 @@ _MT_MOTIF = EnumBank("motif", [
         "Madhubani / Mithila-inspired folk icon reduced for apparel: clean "
         "double-contour black keylines, almond eye, side-profile folk bird or "
         "animal silhouette, fine interior feather/leaf linework, tiny floral "
-        "ornaments used sparingly. Contemporary and print-safe, not a dense "
-        "wall painting and not a generic logo.",
+        "ornaments used sparingly. For animal sets, prefer one complete "
+        "full-body side-profile mark so tiger, elephant, deer, bird, snake, "
+        "and primate designs feel like siblings. Contemporary and print-safe, "
+        "not a dense wall painting and not a generic logo.",
         masters=("Sita Devi Mithila painting", "Ganga Devi Madhubani line grammar"),
     ),
     EnumValue(
@@ -3310,6 +3314,61 @@ _MT_TRADITION = EnumBank("tradition", [
         masters=("Sita Devi Madhubani painting", "Ganga Devi linework", "Mithila kohbar bird motifs"),
     ),
     EnumValue(
+        "madhubani-master-painter",
+        # MADHUBANI MASTER-PAINTER REGISTER (added 2026-05-18, REVISED
+        # 2026-05-18 after v1 chat-test review). Layered on top of the
+        # madhubani-folk-icon motif and vibrant-folk ink path: where
+        # 'madhubani-contemporary' translates the tradition FOR apparel,
+        # this register adds expressive character on top while staying
+        # firmly in flat folk-icon territory.
+        #
+        # REVISION NOTE: Original 6-shift version (with hand-painted
+        # texture cues + wall-painting references) destabilized the
+        # prompt — FLUX read it as license to render naturalistic
+        # illustration / textured wall-painting style instead of flat
+        # apparel folk-art. Texture shift fully REMOVED; wall-painting
+        # references softened to "folk-icon" framing. Down to 5 shifts.
+        "Madhubani master-painter register: a Mithila folk-icon "
+        "rendered with the expressive character of a master practitioner. "
+        "Stays firmly in FLAT FOLK-ICON territory for apparel — never "
+        "naturalistic illustration, never textured wall-painting style, "
+        "never photo-realistic, never a framed wall-art piece. Five "
+        "concrete shifts apply: "
+        "(1) DOUBLE-CONTOUR KEYLINES are HAND-DRAWN with deliberate weight "
+        "variation along their length — thicker at natural pressure points "
+        "(jaw, hip, knee, base of feathers), thinner at trailing strokes; "
+        "lines feel confident but never mechanically uniform, never the "
+        "look of stroked vector paths. "
+        "(2) COMPOSED PALETTE: all six folk-art hues present and used in "
+        "deliberate relationships — saffron and vermillion as warm dialogue, "
+        "indigo and forest-teal as cool counterpoint, gold as accent jewelry, "
+        "cream as breath. Color is composed, not just spread. Body fills "
+        "are FLAT SATURATED color fields, never textured, never gradient. "
+        "(3) HAND-DRAWN ORNAMENT: each zone's motif is hand-drawn with "
+        "small irregularities — petals slightly different sizes, dot spacing "
+        "organically uneven, vine curls each unique. Decoration looks "
+        "painted, never rubber-stamped. "
+        "(4) CHARACTER-BEARING EYES: the almond eye carries specific "
+        "character appropriate to the species and pose — watchful intensity "
+        "for a predator standing alert, proud display for a peacock in "
+        "signature action, gentle contemplation for a primate at rest, "
+        "ancient ceremonial gravity for an elephant in frontal portrait. "
+        "Eyes are NOT interchangeable across animals. "
+        "(5) FOLK-ICON REFERENCE STANDARD: the work draws stylistic "
+        "intention from Sita Devi, Ganga Devi, Baua Devi and the Mithila "
+        "kohbar tradition, but rendered AS a single isolated folk-icon "
+        "for apparel — NOT as a full wall-painting composition, NOT with "
+        "a background scene, NOT in a frame or border. Aim for the "
+        "MASTERS' QUALITY OF INTENTION per stroke, translated to the "
+        "single-icon apparel format.",
+        masters=(
+            "Sita Devi — folk-icon line grammar, almond-eye treatment",
+            "Ganga Devi — bharni-style fill rhythm, dot-and-petal aura",
+            "Baua Devi — matsya and naga compositional motifs",
+            "Mithila kohbar tradition — bird and animal motif vocabulary",
+        ),
+    ),
+    EnumValue(
         "warli-minimal",
         "Warli-inspired minimal apparel translation: simple geometric human/"
         "animal forms, triangular bodies, rhythmic line movement, restrained "
@@ -3439,13 +3498,18 @@ class MinimalistTShirtConfig:
 class MinimalistTShirtEngine(Engine):
     name: ClassVar[str] = "minimalist-tshirt"
     config_cls: ClassVar[type] = MinimalistTShirtConfig
-    masters: ClassVar[tuple[str, ...]] = (
-        "Paul Rand — IBM / ABC logo reduction: idea compressed into unforgettable simple geometry",
-        "Saul Bass — title-card silhouettes: cut-paper clarity, flat forms, instant read",
-        "Josef Müller-Brockmann — Swiss grid discipline: alignment, negative space, restraint",
-        "Otl Aicher — Munich pictograms: human-readable icon grammar at tiny sizes",
-        "Japanese mon crests — negative-space emblem logic: one-color identity through silhouette",
-    )
+    # NOTE (2026-05-18): Western design-logo masters (Paul Rand / Saul Bass /
+    # Müller-Brockmann / Otl Aicher / Japanese mon crests) were REMOVED here
+    # because in the vibrant-folk Madhubani path they were pulling the model
+    # toward black-silhouette mascot logos and away from saturated multi-color
+    # folk-art (observed regression: v1 tiger, peacock, cobra, snow leopard
+    # rendered as 2-tone marks instead of the seven-zone palette specified
+    # by the prompt). Folk-tradition masters (Sita Devi, Ganga Devi, kohbar
+    # bird motifs) still surface here because they are attached to the
+    # motif/tradition vocabulary and are merged into selected_masters at
+    # build-time. If a non-folk T-shirt project needs the Swiss-logo register
+    # back, fork a separate engine — do NOT re-add these names here.
+    masters: ClassVar[tuple[str, ...]] = ()
     palette_60_30_10 = {
         "dominant":  {"hex": "#F5EFE3", "role": "shirt / background field or blank cotton base"},
         "secondary": {"hex": "#111111", "role": "primary screen-print ink"},
@@ -3453,7 +3517,9 @@ class MinimalistTShirtEngine(Engine):
     }
     # T-shirt graphics are SQUARE (print files are 4500×4500 typically).
     # 1280×1280 matches the print aspect; FLUX centers the design naturally.
-    default_runtime = {"model": "dev", "steps": 28, "guidance": 5.5,
+    # Keep the engine default at the shared "balanced" iteration profile.
+    # Final passes can still use --profile max/quality or explicit --steps.
+    default_runtime = {"model": "dev", "steps": 18, "guidance": 5.5,
                        "width": 1280, "height": 1280}
     engine_negatives: ClassVar[tuple[str, ...]] = (
         "photorealistic scene", "full illustration background", "poster art",
@@ -3466,6 +3532,19 @@ class MinimalistTShirtEngine(Engine):
         "photo of a person wearing shirt", "model posing", "hanger", "store rack",
         "wrinkled fabric covering the design", "folded shirt obscuring print",
         "large blank poster border", "mockup template watermark",
+        "sports mascot logo", "glossy sticker vector", "tattoo flash",
+        "generic tiger mascot", "aggressive esports logo",
+        # 2026-05-18 additions — vibrant-folk regression negatives.
+        # These names are blocked to keep the model from collapsing
+        # Madhubani folk subjects into Western single-mark logo grammar.
+        "western mascot logo", "vector mascot head", "flat sticker decal",
+        "sports team logo style", "single-color logo reduction",
+        "Saul Bass silhouette mark", "Paul Rand reduction mark",
+        "monochrome silhouette of an animal", "black silhouette body fill",
+        "blank-body silhouette", "two-tone screen-print mark only",
+        # Stray painter marks: v1 cobra had a tiny squiggle bottom-right.
+        "artist signature glyph", "painter mark in corner",
+        "hand-drawn signature squiggle", "calligraphic monogram",
     )
     default_lora_stack: ClassVar[tuple[tuple[str, float], ...]] = ()
 
@@ -3556,11 +3635,100 @@ class MinimalistTShirtEngine(Engine):
             *tradition.masters,
         ]))
 
+        # When the vibrant-folk Madhubani register is active, we PROMOTE the
+        # color-floor and body-fill rules to the very top of the prompt so the
+        # model anchors on "saturated multi-color folk-art" before it ever
+        # reads "minimalist". This is the single biggest fix for the v1
+        # mascot-logo regression observed on tiger / peacock / cobra /
+        # snow leopard.
+        is_vibrant_folk_madhubani = (
+            ink.key == "vibrant-folk"
+            and motif.key == "madhubani-folk-icon"
+        )
+        color_floor_preamble = (
+            (
+                "COLOR FLOOR — NON-NEGOTIABLE: this is a SATURATED MULTI-COLOR "
+                "Madhubani folk-art print, NOT a single-ink logo. The rendered "
+                "image MUST contain at least FOUR of these six folk hues "
+                "visibly: deep indigo #1a2952, saffron orange #e87722, leaf "
+                "green #3d7d3d, vermillion red #c8261f, cream white #f2e8d5, "
+                "gold yellow #e8b827. The animal's BODY FILL is a saturated "
+                "color (indigo, walnut #5a3a1f, or forest-teal #1f4a3f) — "
+                "NEVER blank cream, NEVER pure black silhouette, NEVER empty "
+                "outline only. If the result looks like a two-tone screen-"
+                "print mascot or a single-color logo, it has FAILED."
+            )
+            if is_vibrant_folk_madhubani else ""
+        )
+        body_fill_override = (
+            (
+                "BODY FILL OVERRIDE FOR LEAN PREDATORS: tigers, leopards, "
+                "snakes, peacocks, deer, monkeys and other narrow-bodied "
+                "subjects must NOT be drawn as a flat black mascot silhouette. "
+                "Their bodies are filled with a saturated folk-art color and "
+                "decorated INSIDE with leaf-vein panels, fish-scale rows, "
+                "lotus medallions, and dot-bands following the seven-zone "
+                "system below. Stripes, rosettes and feathers are translated "
+                "INTO multi-color folk panels — they are not just dark marks "
+                "on a blank body."
+            )
+            if is_vibrant_folk_madhubani else ""
+        )
+
+        # v3 additions (2026-05-18, after v2 regression review):
+        # ANATOMY FIRST and NO SIGNATURE are PROMOTED to top-level positive
+        # constraints (not just negatives) because v2 showed:
+        #   - tiger lost a foreleg in walking pose (anatomy collapse)
+        #   - snow leopard became an all-over patterned blob (decoration
+        #     consumed anatomy)
+        #   - macaque got round cartoon "surprise" eyes (no expression rule)
+        #   - cobra still had a small painter mark in the corner despite
+        #     signature negatives being in a 60-item negatives list
+        anatomy_first = (
+            "ANATOMY FIRST: render a clean, anatomically correct animal "
+            "silhouette FIRST; decoration goes ON TOP. Decoration must "
+            "NEVER replace, consume, or obscure the underlying anatomy. "
+            "For quadrupeds in side profile, ALL FOUR LEGS must be clearly "
+            "visible — overlapping legs show as two distinct outlines, "
+            "never a single merged shape, never one leg hidden behind a "
+            "blanket. Tail, ears, and any signature anatomical features "
+            "(horns, trunk, hood, crest, mane) are present and "
+            "proportional BEFORE any ornament is applied."
+        )
+        no_signature = (
+            "NO SIGNATURE, NO MARK, NO MONOGRAM: the composition contains "
+            "ZERO artist marks, painter signatures, chop seals, decorative "
+            "glyphs, calligraphic flourishes, or text-like squiggles in "
+            "any corner or edge. The four corners of the print remain "
+            "clean negative space."
+        )
+        expression_rule = (
+            (
+                "FACE & EXPRESSION: the almond eye conveys alertness, "
+                "calm dignity, and folk-icon presence. NEVER cartoonish "
+                "surprise, NEVER blank stare, NEVER round Western-cartoon "
+                "eyes with tiny dot pupils, NEVER comic-book wide eyes. "
+                "The face has the quiet intentional gravity of a Mithila "
+                "wall-painting subject — looking forward or slightly to "
+                "one side, mouth closed or barely parted, no exaggerated "
+                "snarl, no protruding tongue, no open jaws unless the "
+                "subject explicitly requires it (e.g., a roaring lion). "
+                "Default to a dignified closed-mouth folk-icon expression."
+            )
+            if is_vibrant_folk_madhubani else ""
+        )
+
         prompt_parts = [
             "MINIMALIST T-SHIRT DESIGN ENGINE — create a screen-printable apparel "
             "graphic, not a poster, not a full illustration, not an e-commerce ad.",
 
             f"SUBJECT / IDEA: {clean_subject}.",
+
+            anatomy_first,
+            no_signature,
+            expression_rule,
+            color_floor_preamble,
+            body_fill_override,
 
             f"MOTIF SYSTEM ({motif.key}): {motif.description}",
             f"CULTURAL / STYLE REGISTER ({tradition.key}): {tradition.description}",
@@ -3617,7 +3785,17 @@ class MinimalistTShirtEngine(Engine):
                 "HIP or HAUNCH — circular floral medallion. (7) LEG ANKLETS "
                 "— rhythmic stripe bands at every joint. Each zone uses a "
                 "different color combination from the six-color palette so "
-                "the eye finds new detail across the body."
+                "the eye finds new detail across the body. "
+                # v3 zone-confinement clarifier: prevents the v2 snow-leopard
+                # "patterned-blob" failure where decoration covered every
+                # square millimetre of the body and erased the silhouette.
+                "ZONE CONFINEMENT: decoration is CONFINED to these seven "
+                "zones — the body silhouette BETWEEN the zones remains a "
+                "clean saturated color field, NEVER an all-over fabric "
+                "pattern, NEVER a uniform mosaic, NEVER a textile swatch "
+                "shaped like an animal. The viewer must still read an "
+                "animal shape first, then notice the seven decorated "
+                "zones as distinct ornamental incidents on a clean body."
 
                 if ink.key == "vibrant-folk" else ""
             ),
@@ -3636,11 +3814,57 @@ class MinimalistTShirtEngine(Engine):
                 if ink.key == "vibrant-folk" else ""
             ),
 
-            "MINIMALISM CONTRACT: keep large balanced negative space, but do not "
-            "erase culturally meaningful detail. The subject must be recognizable "
-            "from its outer silhouette first, then reward close inspection with "
-            "controlled interior folk linework. Use strong negative space. If an "
-            "ornament does not support the subject, remove it.",
+            # ── GROUND MARK (vibrant-folk Madhubani only) ──
+            # Anchors the figure as a folk-art icon rather than a floating
+            # logo. v1 elephant and blackbuck already had this organically;
+            # making it explicit so every animal in the series gets it.
+            (
+                "GROUND MARK: place a small Madhubani ground anchor below "
+                "the figure — a short dotted line, paired peepal leaves, "
+                "or a slender vine band — rendered in saffron or leaf-"
+                "green. This grounds the figure as a folk icon. For "
+                "subjects in a coiled or aerial pose (cobra rearing, bird "
+                "perched), the ground mark may be replaced with a small "
+                "decorative platform of dots."
+
+                if is_vibrant_folk_madhubani else ""
+            ),
+
+            (
+                "MADHUBANI ANIMAL-SERIES CONSISTENCY: animal subjects in this "
+                "folk T-shirt mode should feel like a matched set: one centered "
+                "complete side-profile animal mark, similar scale on the same "
+                "cream field, the same bold black double-contour line weight, "
+                "the same matte flat-color finish, and comparable ornamental "
+                "density. Do NOT let one animal become a glossy Western sports "
+                "mascot, tattoo flash, sticker logo, or photoreal head while "
+                "the others are full-body folk icons. If the subject explicitly "
+                "asks for a head-only or bust mark, keep the same Madhubani "
+                "line grammar, body-fill palette, matte texture, and ornament "
+                "density as the full-body animals."
+
+                if motif.key == "madhubani-folk-icon" else ""
+            ),
+
+            # The MINIMALISM CONTRACT is appropriate for one-/two-ink screen-
+            # print marks but actively HURTS vibrant-folk Madhubani density
+            # (it competes with the seven-zone decoration block). Gated.
+            (
+                "DENSITY CONTRACT (vibrant-folk Madhubani): the subject is "
+                "FILLED with culturally meaningful Madhubani decoration. "
+                "Negative space around the subject stays balanced and "
+                "uncrowded, but the SUBJECT ITSELF is densely ornamented "
+                "across the seven body zones. Recognizable silhouette first, "
+                "then a rewarding multi-color interior — never a blank "
+                "shape, never a logo reduction."
+
+                if is_vibrant_folk_madhubani else
+                "MINIMALISM CONTRACT: keep large balanced negative space, but do not "
+                "erase culturally meaningful detail. The subject must be recognizable "
+                "from its outer silhouette first, then reward close inspection with "
+                "controlled interior folk linework. Use strong negative space. If an "
+                "ornament does not support the subject, remove it."
+            ),
 
             "FOLK-APPAREL CONTRACT: when a folk register is active, preserve the "
             "signature line grammar (double contour, almond eye, rhythmic feather "

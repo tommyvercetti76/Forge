@@ -90,6 +90,32 @@ class MinimalistTShirtEngineTests(unittest.TestCase):
         self.assertIn("Sita Devi", directive.positive)
         self.assertIn("No border", directive.positive)
 
+    def test_vibrant_madhubani_animal_series_locks_runtime_and_avoids_mascot_drift(self) -> None:
+        directive = MinimalistTShirtEngine.build(
+            MinimalistTShirtConfig(
+                subject=MTSubjectConfig(
+                    subject="single centered Royal Bengal tiger in full-body side profile",
+                    motif="madhubani-folk-icon",
+                ),
+                style=MTStyleConfig(
+                    tradition="madhubani-contemporary",
+                    detail="maximal-but-printable",
+                    symmetry="handmade-balanced",
+                    accents="micro-folk-dots",
+                ),
+                production=MTProductionConfig(
+                    output="print-art",
+                    ink="vibrant-folk",
+                    shirt_color="cream-or-black",
+                ),
+            )
+        )
+        self.assertEqual(directive.runtime["steps"], 18)
+        self.assertIn("MADHUBANI ANIMAL-SERIES CONSISTENCY", directive.positive)
+        self.assertIn("complete side-profile animal mark", directive.positive)
+        self.assertIn("sports mascot logo", directive.negatives)
+        self.assertIn("glossy sticker vector", directive.negatives)
+
 
 if __name__ == "__main__":
     unittest.main()

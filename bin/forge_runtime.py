@@ -38,6 +38,8 @@ TRANSLATE_MODEL = os.environ.get(
     "hf.co/mradermacher/sarvam-translate-GGUF:Q4_K_M",
 )
 TOKEN_USAGE_ENABLED = os.environ.get("FORGE_TOKEN_USAGE", "1").lower() not in {"0", "false", "no", "off"}
+_METAL_REPORT_CACHE: dict[str, Any] | None = None
+_MFLUX_METAL_PROBE_CACHE: dict[str, Any] | None = None
 
 LANGUAGE_NAMES: dict[str, str] = {
     "en": "English",
@@ -596,6 +598,81 @@ def ffmpeg_filter_escape(value: str | Path) -> str:
     return text.replace("\\", "\\\\").replace(":", "\\:").replace("'", "\\'")
 
 
+def _memory_total_gb() -> float | None:
+    """Best-effort physical memory total for capacity-aware local scheduling."""
+    with contextlib.suppress(Exception):
+        pages = os.sysconf("SC_PHYS_PAGES")
+        page_size = os.sysconf("SC_PAGE_SIZE")
+        if pages and page_size:
+            return (int(pages) * int(page_size)) / (1024 ** 3)
+    if sys.platform == "darwin":
+        with contextlib.suppress(Exception):
+            out = subprocess.run(
+                ["/usr/sbin/sysctl", "-n", "hw.memsize"],
+                capture_output=True,
+                text=True,
+                check=True,
+                timeout=2,
+            ).stdout.strip()
+            if out:
+                return int(out) / (1024 ** 3)
+    return None
+
+
+def _positive_float_env(key: str, default: float) -> float:
+    raw = os.environ.get(key)
+    if raw is None:
+        return default
+    try:
+        value = float(raw)
+    except ValueError:
+        return default
+    return value if value > 0 else default
+
+
+def _capacity_aware_resource_slots(name: str, requested: int) -> int:
+    requested = max(1, min(16, requested))
+    if name != "metal-heavy":
+        return requested
+
+    hard_cap = os.environ.get("FORGE_METAL_MAX_SLOTS")
+    if hard_cap is not None:
+        try:
+            requested = min(requested, max(1, int(hard_cap)))
+        except ValueError:
+            requested = 1
+
+    total_gb = _memory_total_gb()
+    slot_ram_gb = _positive_float_env("FORGE_METAL_SLOT_RAM_GB", 24.0)
+    if total_gb is not None and slot_ram_gb > 0:
+        requested = min(requested, max(1, int(total_gb // slot_ram_gb)))
+    return max(1, min(16, requested))
+
+
+def _resource_slot_count(name: str) -> int:
+    """Return how many concurrent holders a named resource allows.
+
+    Default is one slot, preserving the original exclusive lock behavior. Heavy
+    FLUX users can opt into parallel mflux renders with FORGE_METAL_SLOTS=4 or
+    FORGE_FLUX_PARALLEL_JOBS=4. Metal slots are capped by total memory and
+    FORGE_METAL_SLOT_RAM_GB so optimistic env settings cannot schedule 16 large
+    renders onto a machine that cannot hold them.
+    """
+    normalized = name.upper().replace("-", "_")
+    keys = [f"FORGE_{normalized}_SLOTS", f"FORGE_RESOURCE_SLOTS_{normalized}"]
+    if name == "metal-heavy":
+        keys = ["FORGE_METAL_SLOTS", "FORGE_FLUX_PARALLEL_JOBS", *keys]
+    for key in keys:
+        raw = os.environ.get(key)
+        if raw is None:
+            continue
+        try:
+            return _capacity_aware_resource_slots(name, int(raw))
+        except ValueError:
+            return 1
+    return 1
+
+
 class ResourceLock:
     """Cross-process advisory lock for expensive local resources."""
 
@@ -604,22 +681,69 @@ class ResourceLock:
         self.path = FORGE_STATE_HOME / "locks" / f"{name}.lock"
         self._fh = None
         self.wait_seconds = 0.0
+        self.slot: int | None = None
+        self.slots = 1
 
-    def __enter__(self) -> "ResourceLock":
+    def _lock_dir(self) -> Path:
+        lock_dir = FORGE_STATE_HOME / "locks"
+        try:
+            lock_dir.mkdir(parents=True, exist_ok=True)
+        except PermissionError:
+            lock_dir = self._fallback_lock_dir()
+        return lock_dir
+
+    def _fallback_lock_dir(self) -> Path:
+        lock_dir = Path(tempfile.gettempdir()) / "forge" / "locks"
+        lock_dir.mkdir(parents=True, exist_ok=True)
+        return lock_dir
+
+    def _claim_slot(self, lock_dir: Path, slot: int, *, blocking: bool):
         import fcntl
 
+        path = lock_dir / (f"{self.name}.lock" if self.slots == 1 else f"{self.name}.{slot}.lock")
+        fh = path.open("a+")
+        flags = fcntl.LOCK_EX if blocking else fcntl.LOCK_EX | fcntl.LOCK_NB
         try:
-            self.path.parent.mkdir(parents=True, exist_ok=True)
-        except PermissionError:
-            self.path = Path(tempfile.gettempdir()) / "forge" / "locks" / f"{self.name}.lock"
-            self.path.parent.mkdir(parents=True, exist_ok=True)
-        self._fh = self.path.open("a+")
+            fcntl.flock(fh, flags)
+        except BlockingIOError:
+            fh.close()
+            return None
+        self.path = path
+        self._fh = fh
+        self.slot = slot
+        return fh
+
+    def __enter__(self) -> "ResourceLock":
         start = time.monotonic()
-        fcntl.flock(self._fh, fcntl.LOCK_EX)
+        self.slots = _resource_slot_count(self.name)
+        lock_dir = self._lock_dir()
+
+        while self._fh is None:
+            try:
+                if self.slots == 1:
+                    self._claim_slot(lock_dir, 1, blocking=True)
+                else:
+                    for slot in range(1, self.slots + 1):
+                        if self._claim_slot(lock_dir, slot, blocking=False) is not None:
+                            break
+                    if self._fh is None:
+                        time.sleep(0.25)
+            except PermissionError:
+                if lock_dir == self._fallback_lock_dir():
+                    raise
+                lock_dir = self._fallback_lock_dir()
+
         self.wait_seconds = time.monotonic() - start
+        assert self._fh is not None
         self._fh.seek(0)
         self._fh.truncate()
-        self._fh.write(json.dumps({"resource": self.name, "pid": os.getpid(), "acquired_at": now_iso()}) + "\n")
+        self._fh.write(json.dumps({
+            "resource": self.name,
+            "pid": os.getpid(),
+            "slot": self.slot,
+            "slots": self.slots,
+            "acquired_at": now_iso(),
+        }) + "\n")
         self._fh.flush()
         return self
 
@@ -759,11 +883,103 @@ def hardware_summary() -> dict[str, Any]:
     fields: dict[str, Any] = {"ok": True}
     for line in out.splitlines():
         stripped = line.strip()
-        for key in ("Chip", "Total Number of Cores", "Memory", "Metal"):
+        for key in ("Chip", "Total Number of Cores", "Memory", "Metal", "Metal Support"):
             if stripped.startswith(key + ":"):
                 value = stripped.split(":", 1)[1].strip()
                 fields.setdefault(key, value)
     return fields
+
+
+def _mflux_metal_probe() -> dict[str, Any]:
+    """Check that the mflux/MLX runtime can actually see a Metal device."""
+    global _MFLUX_METAL_PROBE_CACHE
+    if _MFLUX_METAL_PROBE_CACHE is not None:
+        return dict(_MFLUX_METAL_PROBE_CACHE)
+    env = child_env()
+    path = shutil.which("mflux-generate", path=env["PATH"])
+    if not path:
+        _MFLUX_METAL_PROBE_CACHE = {
+            "ok": False,
+            "path": None,
+            "reason": "mflux-generate not on PATH",
+        }
+        return dict(_MFLUX_METAL_PROBE_CACHE)
+    try:
+        proc = subprocess.run(
+            [path, "--help"],
+            capture_output=True,
+            text=True,
+            timeout=20,
+            env=env,
+        )
+    except Exception as exc:
+        _MFLUX_METAL_PROBE_CACHE = {
+            "ok": False,
+            "path": path,
+            "reason": f"mflux Metal probe failed: {exc}",
+        }
+        return dict(_MFLUX_METAL_PROBE_CACHE)
+    combined = f"{proc.stdout}\n{proc.stderr}"
+    if proc.returncode != 0:
+        reason = combined.strip().splitlines()[-1] if combined.strip() else f"mflux-generate --help exited {proc.returncode}"
+        _MFLUX_METAL_PROBE_CACHE = {
+            "ok": False,
+            "path": path,
+            "reason": reason,
+        }
+    elif "No Metal device available" in combined:
+        _MFLUX_METAL_PROBE_CACHE = {
+            "ok": False,
+            "path": path,
+            "reason": "mflux/MLX reports no Metal device available",
+        }
+    else:
+        _MFLUX_METAL_PROBE_CACHE = {
+            "ok": True,
+            "path": path,
+            "reason": "mflux/MLX Metal probe passed",
+        }
+    return dict(_MFLUX_METAL_PROBE_CACHE)
+
+
+def metal_acceleration_report(*, require_mflux: bool = False) -> dict[str, Any]:
+    """Return whether Forge can use Apple Metal for local ML image work."""
+    global _METAL_REPORT_CACHE
+    if _METAL_REPORT_CACHE is not None:
+        result = dict(_METAL_REPORT_CACHE)
+    else:
+        report = hardware_summary()
+        metal = str(report.get("Metal") or report.get("Metal Support") or "").lower()
+        chip = str(report.get("Chip") or "")
+        ok = bool(report.get("ok")) and ("metal" in metal or "supported" in metal or chip.startswith("Apple "))
+        _METAL_REPORT_CACHE = {
+            "ok": ok,
+            "chip": chip,
+            "metal": report.get("Metal") or report.get("Metal Support"),
+            "reason": None if ok else report.get("reason") or "Metal acceleration not detected",
+        }
+        result = dict(_METAL_REPORT_CACHE)
+    if require_mflux:
+        probe = _mflux_metal_probe()
+        result["mflux_probe"] = probe
+        if not probe["ok"]:
+            result["ok"] = False
+            result["reason"] = probe["reason"]
+    return result
+
+
+def require_metal_acceleration(label: str = "Forge ML render", *, require_mflux: bool = True) -> dict[str, Any]:
+    """Fail loudly instead of silently using a CPU-only ML path."""
+    if os.environ.get("FORGE_ALLOW_CPU_ML", "").lower() in {"1", "true", "yes", "on"}:
+        return {"ok": True, "override": "FORGE_ALLOW_CPU_ML", "label": label}
+    report = metal_acceleration_report(require_mflux=require_mflux)
+    if not report["ok"]:
+        raise RuntimeError(
+            f"{label} requires Apple Metal acceleration; refusing CPU-only ML path "
+            f"({report.get('reason')})"
+        )
+    report["label"] = label
+    return report
 
 
 def doctor(deep: bool = False, repair: bool = False) -> dict[str, Any]:
@@ -794,6 +1010,7 @@ def doctor(deep: bool = False, repair: bool = False) -> dict[str, Any]:
         "ollama_models": [],
         "models": [],
         "hardware": hardware_summary() if deep else {},
+        "metal_runtime": metal_acceleration_report(require_mflux=True),
         "issues": [],
         "repairs": [],
     }
@@ -819,6 +1036,10 @@ def doctor(deep: bool = False, repair: bool = False) -> dict[str, Any]:
     for tool in report["tools"]:
         if not tool["ok"] and tool["name"] in {"ffmpeg", "ffprobe", "mflux-generate", "mlx_whisper"}:
             report["issues"].append(f"{tool['name']} is not healthy: {tool.get('reason', 'not found')}")
+    if not report["metal_runtime"].get("ok"):
+        report["issues"].append(
+            f"mflux/MLX Metal runtime is not available: {report['metal_runtime'].get('reason')}"
+        )
     for spec in MODEL_REGISTRY:
         if spec.backend == "hf":
             status = hf_model_status(spec.repo)
@@ -840,28 +1061,51 @@ def doctor(deep: bool = False, repair: bool = False) -> dict[str, Any]:
     return report
 
 
-def write_json(path: Path, obj: Any) -> Path:
-    try:
-        path.parent.mkdir(parents=True, exist_ok=True)
-    except PermissionError:
-        path = Path(tempfile.gettempdir()) / "forge" / path.name
-        path.parent.mkdir(parents=True, exist_ok=True)
-    tmp = path.with_suffix(path.suffix + ".tmp")
-    tmp.write_text(json.dumps(obj, indent=2) + "\n", encoding="utf-8")
-    os.replace(tmp, path)
-    return path
+def _allow_temp_artifact_fallback() -> bool:
+    return os.environ.get("FORGE_ALLOW_TEMP_ARTIFACT_FALLBACK", "").lower() in {"1", "true", "yes", "on"}
 
 
-def write_text(path: Path, text: str) -> Path:
-    try:
-        path.parent.mkdir(parents=True, exist_ok=True)
-    except PermissionError:
-        path = Path(tempfile.gettempdir()) / "forge" / path.name
-        path.parent.mkdir(parents=True, exist_ok=True)
+def _artifact_fallback_path(path: Path) -> Path:
+    return Path(tempfile.gettempdir()) / "forge" / path.name
+
+
+def _write_atomic_text(path: Path, text: str) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
     tmp = path.with_suffix(path.suffix + ".tmp")
     tmp.write_text(text, encoding="utf-8")
     os.replace(tmp, path)
-    return path
+
+
+def _write_artifact_text(path: Path, text: str) -> Path:
+    try:
+        _write_atomic_text(path, text)
+        return path
+    except PermissionError as exc:
+        if not _allow_temp_artifact_fallback():
+            raise PermissionError(
+                f"cannot write artifact to {path}; refusing to redirect it to temp. "
+                "Fix the output directory or set FORGE_ALLOW_TEMP_ARTIFACT_FALLBACK=1 "
+                "for an explicit emergency fallback."
+            ) from exc
+        fallback = _artifact_fallback_path(path)
+        _write_atomic_text(fallback, text)
+        print(
+            f"warning: artifact write redirected from {path} to {fallback} "
+            "(FORGE_ALLOW_TEMP_ARTIFACT_FALLBACK=1)",
+            file=sys.stderr,
+        )
+        return fallback
+
+
+def write_json(path: Path, obj: Any) -> Path:
+    path = Path(path)
+    payload = json.dumps(obj, indent=2) + "\n"
+    return _write_artifact_text(path, payload)
+
+
+def write_text(path: Path, text: str) -> Path:
+    path = Path(path)
+    return _write_artifact_text(path, text)
 
 
 configure_environment()

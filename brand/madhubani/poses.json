@@ -1,0 +1,113 @@
+{
+  "$schema": "./_schema/poses.schema.json",
+  "name": "madhubani-animal-tee-poses",
+  "description": "The four canonical poses used across every animal in the Madhubani tee catalog. Each animal × pose pair produces one design. The set of four for any one animal is the standard 'mini-collection' unit.",
+  "version": "1.0.0",
+  "established": "2026-05-18",
+  "rationale": "These four poses generalize across mammals, birds, reptiles, and primates. Each species can be rendered in all four states. 'Walking' is deliberately NOT a pose because v2 testing showed walking quadrupeds in side profile drop the far legs more often than they keep them.",
+
+  "poses": [
+    {
+      "slug": "standing-alert",
+      "ordinal": 1,
+      "display_name": "Standing Alert",
+      "role": "hero-pose",
+      "summary": "Full-body side profile, all legs/limbs planted, head looking forward or slightly toward camera, calm dignified expression. The catalog's flagship pose — every animal must be recognizable from this image alone.",
+      "eye_character_intent": "watchful ceremonial gravity",
+      "anatomy_emphasis": [
+        "all four legs visible (quadrupeds)",
+        "both legs visible on visible perch (birds)",
+        "extended straight body (serpents)",
+        "head proud, not lowered",
+        "tail held in resting position"
+      ],
+      "subject_template": "single centered {animal_subject} STANDING ALERT in complete full-body side profile facing right, [body_type_anatomy_clause], [eye_character_clause: watchful ceremonial gravity], mouth closed, [body_fill_color_clause], decorated INSIDE with seven distinct zones of hand-drawn multi-color Madhubani ornament, body BETWEEN zones remains clean color field, bold hand-drawn double-contour keylines with weight variation, dotted Mithila ground line below the feet, 8-12 small ornamental flourishes in negative space"
+    },
+    {
+      "slug": "seated-rest",
+      "ordinal": 2,
+      "display_name": "Seated Rest",
+      "role": "contemplative-pose",
+      "summary": "Resting position appropriate to the species: cats and primates seated with forelimbs upright; serpents coiled with hood lowered; birds perched with feet folded; large herbivores reclining (camel-fold for hooved animals). Quieter, more contemplative.",
+      "eye_character_intent": "contemplative stillness",
+      "anatomy_emphasis": [
+        "weight distributed in rest position",
+        "no awkward limb intersection",
+        "tail visible in natural rest curl",
+        "head still alert (resting, not sleeping)"
+      ],
+      "subject_template": "single centered {animal_subject} [rest_pose_for_species] in side profile facing right, [body_type_anatomy_clause], [eye_character_clause: contemplative stillness], mouth closed, [body_fill_color_clause], decorated INSIDE with seven distinct zones of hand-drawn Madhubani ornament, body BETWEEN zones remains clean color field, bold hand-drawn double-contour keylines with weight variation, dotted Mithila ground mark of paired peepal leaves beneath the body"
+    },
+    {
+      "slug": "signature-action",
+      "ordinal": 3,
+      "display_name": "Signature Action",
+      "role": "wow-shot",
+      "summary": "The single most iconic action for that species. Tiger crouched ready to leap. Peacock fanned tail. Cobra reared with hood spread. Elephant trumpeting trunk raised. Eagle wings spread. Hummingbird hovering. Rhino charging.",
+      "eye_character_intent": "focused intensity of the action",
+      "anatomy_emphasis": [
+        "dynamic motion but anatomically clear",
+        "no merged limbs in motion",
+        "characteristic action read instantly from silhouette",
+        "balance preserved even in mid-action"
+      ],
+      "subject_template": "single centered {animal_subject} [signature_action_for_species] in dynamic side profile facing right, [body_type_anatomy_clause], [eye_character_clause: focused {action_intensity}], [body_fill_color_clause], decorated INSIDE with seven zones of hand-drawn Madhubani ornament emphasizing forward motion, body BETWEEN zones remains clean color field, bold hand-drawn double-contour keylines with weight variation, dotted Mithila ground mark appropriate to action (dust dots for charging, water dots for diving, etc.)"
+    },
+    {
+      "slug": "frontal-portrait",
+      "ordinal": 4,
+      "display_name": "Frontal Portrait",
+      "role": "close-detail",
+      "summary": "Head-and-shoulders frontal mark facing the viewer directly. Both almond eyes visible, decorative crown/halo motif above. Rewards close inspection. Best for back-of-tee placement or as a pocket companion to a full-body pose.",
+      "eye_character_intent": "ancient ritual presence",
+      "anatomy_emphasis": [
+        "full frontal symmetric composition",
+        "both eyes visible looking forward",
+        "ears/horns/crest visible flanking head",
+        "shoulders visible at bottom of frame",
+        "symmetric ornament left-right with handmade folk irregularity"
+      ],
+      "subject_template": "single centered {animal_subject} FRONTAL PORTRAIT head-and-shoulders facing the viewer directly (full frontal symmetric composition), [signature_features_clause], both almond eyes carrying ANCIENT RITUAL PRESENCE (sacred ceremonial gaze, temple-icon gravity), mouth closed in dignified composure, [body_fill_color_clause], decorated INSIDE with symmetric tikka/medallion/leaf-vein/dot-band ornaments, decoration is SYMMETRIC left-right with handmade folk-art irregularity (not mechanical mirror), bold hand-drawn double-contour keylines with weight variation, decorative aura halo of dots and small petals radiating outward from the head, no ground line (frontal portrait floats)"
+    }
+  ],
+
+  "body_type_overrides": {
+    "_purpose": "Per-body-type pose customizations. Mammalian default poses don't work for serpents, birds, cetaceans, etc. When forge_madhubani.py builds the subject string, it checks this map first — if a body-type-specific override exists for the (body_type, pose_slug) pair, that override REPLACES the generic action clause. Otherwise the generic clause from poses[].subject_template applies.",
+    "cetacean": {
+      "standing-alert": "GLIDING ALERT in horizontal side profile facing right, body extended straight, fins outstretched, head looking forward",
+      "seated-rest": "SUSPENDED MOTIONLESS in horizontal posture, body fully extended straight, fins relaxed, eye calm and contemplative",
+      "signature-action": "in characteristic swimming action — body in a wide graceful curve, gliding forward, fins extended",
+      "frontal-portrait": "HEAD-ON FRONTAL VIEW from directly in front of the animal, broad flat head facing the viewer, mouth visible at center, both eyes visible flanking the head, pectoral fins visible at the sides — NOT a side profile, NOT a 3/4 view, fully frontal and symmetric"
+    },
+    "serpent": {
+      "standing-alert": "REARED ALERT with hood spread frontal-facing, body coiled below, head high",
+      "seated-rest": "COILED at rest with hood lowered, head resting on the coils, body in concentric circles",
+      "signature-action": "STRIKING POSE with hood fully spread, body in S-curve",
+      "frontal-portrait": "HEAD-ON FRONTAL VIEW of the hood spread wide, both eyes visible, spectacle pattern centered on the hood, mouth closed dignified"
+    },
+    "bird": {
+      "standing-alert": "STANDING ALERT in side profile on a perch or ground line, both legs visible, head looking forward",
+      "seated-rest": "PERCHED with feet folded under the body, head turned slightly, tail held at rest",
+      "signature-action": "in characteristic display action (fanned tail / spread wings / etc. per species), all features visible",
+      "frontal-portrait": "HEAD-AND-CHEST FRONTAL VIEW facing the viewer directly, head centered, both eyes visible, crest visible if applicable, both wings folded against body visible at sides"
+    },
+    "primate": {
+      "standing-alert": "STANDING ALERT in side profile, both legs and arms visible and proportional",
+      "seated-rest": "SEATED CALMLY in side profile, hands folded or resting, tail curved at rest",
+      "signature-action": "in characteristic action (leaping / climbing / etc.), all four limbs visible",
+      "frontal-portrait": "HEAD-AND-SHOULDERS FRONTAL VIEW facing the viewer directly, both eyes visible, characteristic mane/face features symmetric"
+    }
+  },
+
+  "seed_allocation": {
+    "rationale": "Per-set seed range gives 4 seeds per animal (one per pose), with room for one retry seed per pose. 100 seeds per animal supports 25 animals per 1000-seed block. Indian wildlife block: 8200-8999. African wildlife block: 9000-9799. Bird block: 9800-10599. Mythological/stretch block: 10600-10999.",
+    "per_animal_block_size": 100,
+    "ordinal_offset_in_block": {
+      "standing-alert": 1,
+      "seated-rest": 2,
+      "signature-action": 3,
+      "frontal-portrait": 4,
+      "retry-offset": 50
+    }
+  }
+}

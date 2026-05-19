@@ -21,6 +21,9 @@ locations.
 
 Generated files are written to temporary siblings first and moved into place
 with `os.replace()`. This keeps crashes from leaving half-written final outputs.
+If a destination is not writable, Forge fails loudly by default instead of
+quietly moving the receipt to temp. `FORGE_ALLOW_TEMP_ARTIFACT_FALLBACK=1` is
+the explicit emergency escape hatch, and callers must use the returned path.
 
 Used by:
 
@@ -38,6 +41,11 @@ Forge validates generated artifacts before reporting success:
 - `validate_video()`
 - ffprobe-backed stream and duration checks.
 
+FLUX/MLX image paths call the Metal guard before launch. The guard checks both
+hardware support and an actual `mflux-generate --help` import/probe, so
+headless sessions that can see Apple hardware but cannot load an MLX Metal
+device fail before spending a render attempt.
+
 Known direction: episode QC needs blocker aggregation so validation failures and
 publishability warnings produce `qc/blockers.json`.
 
@@ -51,6 +59,13 @@ publishability warnings produce `qc/blockers.json`.
 
 Locks are advisory and cross-process. `forge status` reads lock files, but stale
 lock file labeling should be improved.
+
+`metal-heavy` defaults to one slot. If `FORGE_METAL_SLOTS` or
+`FORGE_FLUX_PARALLEL_JOBS` requests parallel FLUX work, the runtime caps slots
+by `FORGE_METAL_MAX_SLOTS` and total memory divided by
+`FORGE_METAL_SLOT_RAM_GB` (24 GB default). FLUX memory preflight runs after a
+slot is acquired, so concurrent jobs cannot all pass preflight before entering
+the GPU-heavy section.
 
 ## Job Store
 
@@ -122,6 +137,10 @@ FLUX generation is used for:
 - Image editing.
 - Specialist engine renders.
 
+Forge now runs a Metal acceleration guard before FLUX/mflux work. If Metal is
+not detected, the command fails loudly instead of drifting into a CPU-only ML
+path. `FORGE_ALLOW_CPU_ML=1` is the explicit emergency override.
+
 Profiles:
 
 - `cool`: schnell, 4 steps.
@@ -143,8 +162,13 @@ Used by:
 
 - `forge mandala`
 - `forge childrens-book`
+- `forge minimal-animal`
 
 This is the correct mechanism when symmetry must be mathematical.
+
+`minimal_animal_engine.py` uses the same philosophy for exact-stroke minimalist
+animal marks: SVG stroke primitives are the source of truth, and QC verifies the
+line count is at or below the requested maximum.
 
 Mandala styles use distinct geometry grammars:
 

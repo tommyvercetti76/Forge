@@ -1,0 +1,80 @@
+{
+  "$schema": "./_schema/palette.schema.json",
+  "name": "vibrant-folk-madhubani",
+  "description": "The six-color hand-painted folk register used by the Madhubani tee catalog. Body fill is one of three saturated colors; the remaining five appear as ornament across the seven decoration zones.",
+  "version": "1.0.0",
+  "established": "2026-05-17",
+
+  "colors": [
+    {
+      "name": "deep-indigo",
+      "hex": "#1a2952",
+      "role": "body-fill-primary",
+      "notes": "Default body fill for most subjects. Provides the strongest cool anchor."
+    },
+    {
+      "name": "walnut-brown",
+      "hex": "#5a3a1f",
+      "role": "body-fill-alt",
+      "notes": "Body fill for predators, large mammals, ground-dwellers. Warmer alternative to indigo."
+    },
+    {
+      "name": "forest-teal",
+      "hex": "#1f4a3f",
+      "role": "body-fill-alt",
+      "notes": "Body fill for serpents, reptiles, occasionally cats. Cool but distinct from indigo."
+    },
+    {
+      "name": "saffron-orange",
+      "hex": "#e87722",
+      "role": "ornament-warm",
+      "notes": "Primary warm decoration. Lotus medallions, saddle accents, ground-mark dots."
+    },
+    {
+      "name": "vermillion-red",
+      "hex": "#c8261f",
+      "role": "ornament-warm",
+      "notes": "Sacred red — used sparingly for centers, hooves, sindoor accents."
+    },
+    {
+      "name": "leaf-green",
+      "hex": "#3d7d3d",
+      "role": "ornament-cool",
+      "notes": "Vine motifs, leaf-vein panels, ground sprigs."
+    },
+    {
+      "name": "cream-white",
+      "hex": "#f2e8d5",
+      "role": "ornament-light",
+      "notes": "Breath color — used for negative space and ventral scales, cheek patches, eye whites."
+    },
+    {
+      "name": "gold-yellow",
+      "hex": "#e8b827",
+      "role": "ornament-accent",
+      "notes": "Jewelry accent — small dot-bands, jewelry, sun-ray plumes."
+    },
+    {
+      "name": "outline-black",
+      "hex": "#000000",
+      "role": "outline",
+      "notes": "Double-contour keylines — hand-drawn with weight variation in master-painter register."
+    }
+  ],
+
+  "background": {
+    "hex": "#F5EFE3",
+    "role": "shirt-base-cream",
+    "notes": "Cream cotton blank assumption. Renders use this as the background so the design is print-ready."
+  },
+
+  "rules": {
+    "color_floor_minimum_present": 4,
+    "color_floor_max_distance_delta_e": 15,
+    "body_fill_must_be_one_of": ["#1a2952", "#5a3a1f", "#1f4a3f"],
+    "body_fill_must_not_be": ["#000000", "#F5EFE3"],
+    "outlines_use": "#000000",
+    "outlines_weight_register": "hand-drawn-variable",
+    "negatives": ["gradients", "soft-shading", "photographic-lighting", "watercolor-wash", "airbrush"]
+  }
+}

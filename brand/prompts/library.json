@@ -122,6 +122,114 @@
     "seed": 17
   },
 
+  "_about_bird_pose_series": "Blue Jay and Red Finch pose-series recipes. Render with: forge engine render --recipe <id> --no-default-loras --steps 14 --out <path>. Each recipe pins species, pose, habitat, config, and seed for reproducible re-renders.",
+
+  "wildlife-blue-jay-pose-01-alert-perch": {
+    "engine": "wildlife-photo",
+    "description": "Blue Jay pose 1 of 4: same adult blue jay, alert side-profile perch with raised crest.",
+    "subject": "same adult blue jay pose-series bird, alert side-profile perch on a mossy oak branch, crest raised, black necklace marking crisp, barred blue wings folded, long tail angled slightly downward, one eye sharply visible, identical plumage pattern across the series",
+    "config": {
+      "subject.species_class": "bird",
+      "subject.behavior": "alert-watching",
+      "optics.lens": "500mm-long",
+      "optics.light": "dappled-forest",
+      "optics.habitat": "branch-perch"
+    },
+    "seed": 5301
+  },
+  "wildlife-blue-jay-pose-02-landing": {
+    "engine": "wildlife-photo",
+    "description": "Blue Jay pose 2 of 4: same adult blue jay landing, wings open and feet reaching.",
+    "subject": "same adult blue jay pose-series bird landing on the same mossy oak branch, wings spread in a controlled braking pose, feet extended toward the bark, crest raised, black necklace marking crisp, barred blue wings visible, long tail fanned slightly, identical plumage pattern across the series",
+    "config": {
+      "subject.species_class": "bird",
+      "subject.behavior": "in-flight",
+      "optics.lens": "500mm-long",
+      "optics.light": "backlit-rim",
+      "optics.habitat": "branch-perch"
+    },
+    "seed": 5302
+  },
+  "wildlife-blue-jay-pose-03-feeding": {
+    "engine": "wildlife-photo",
+    "description": "Blue Jay pose 3 of 4: same adult blue jay leaning down to feed on a berry.",
+    "subject": "same adult blue jay pose-series bird leaning forward on the same mossy oak branch to pick a small berry with its beak, crest partly raised, black necklace marking crisp, barred blue wings folded, tail counterbalancing upward, one foot gripping bark, identical plumage pattern across the series",
+    "config": {
+      "subject.species_class": "bird",
+      "subject.behavior": "feeding",
+      "optics.lens": "500mm-long",
+      "optics.light": "dappled-forest",
+      "optics.habitat": "branch-perch"
+    },
+    "seed": 5303
+  },
+  "wildlife-blue-jay-pose-04-preening": {
+    "engine": "wildlife-photo",
+    "description": "Blue Jay pose 4 of 4: same adult blue jay preening wing feathers.",
+    "subject": "same adult blue jay pose-series bird in a clear preening pose on the same mossy oak branch, head turned backward and partly tucked into its lifted blue wing, beak visibly gripping one wing feather, wing lifted away from body, crest lowered slightly, black necklace marking crisp, barred blue wing detail visible, one foot tucked close to body, not an upright alert pose, identical plumage pattern across the series",
+    "config": {
+      "subject.species_class": "bird",
+      "subject.behavior": "grooming",
+      "optics.lens": "500mm-long",
+      "optics.light": "dappled-forest",
+      "optics.habitat": "branch-perch"
+    },
+    "seed": 5314
+  },
+
+  "wildlife-red-finch-pose-01-alert-perch": {
+    "engine": "wildlife-photo",
+    "description": "Red Finch pose 1 of 4: same male House Finch, alert perch with red head and breast.",
+    "subject": "same male House Finch red finch pose-series bird, alert side-profile perch on a thin garden twig, raspberry-red forehead throat and upper breast, brown-streaked wings folded, conical seed beak closed, tail angled slightly downward, one eye sharply visible, clean natural background corners with no signature no watermark no letters, identical plumage pattern across the series",
+    "config": {
+      "subject.species_class": "bird",
+      "subject.behavior": "alert-watching",
+      "optics.lens": "500mm-long",
+      "optics.light": "golden-hour-low",
+      "optics.habitat": "garden-domestic"
+    },
+    "seed": 5411
+  },
+  "wildlife-red-finch-pose-02-landing": {
+    "engine": "wildlife-photo",
+    "description": "Red Finch pose 2 of 4: same male House Finch landing with wings open.",
+    "subject": "same male House Finch red finch pose-series bird landing on the same thin garden twig, wings spread in a braking pose, feet extended toward the twig, raspberry-red forehead throat and upper breast, brown-streaked wing feathers visible, conical seed beak closed, identical plumage pattern across the series",
+    "config": {
+      "subject.species_class": "bird",
+      "subject.behavior": "in-flight",
+      "optics.lens": "500mm-long",
+      "optics.light": "backlit-rim",
+      "optics.habitat": "garden-domestic"
+    },
+    "seed": 5402
+  },
+  "wildlife-red-finch-pose-03-feeding": {
+    "engine": "wildlife-photo",
+    "description": "Red Finch pose 3 of 4: same male House Finch feeding on seeds.",
+    "subject": "same male House Finch red finch pose-series bird leaning down on the same thin garden twig to pick one visible seed with its conical beak, raspberry-red forehead throat and upper breast, brown-streaked wings folded, tail lifted slightly for balance, identical plumage pattern across the series",
+    "config": {
+      "subject.species_class": "bird",
+      "subject.behavior": "feeding",
+      "optics.lens": "500mm-long",
+      "optics.light": "golden-hour-low",
+      "optics.habitat": "garden-domestic"
+    },
+    "seed": 5403
+  },
+  "wildlife-red-finch-pose-04-preening": {
+    "engine": "wildlife-photo",
+    "description": "Red Finch pose 4 of 4: same male House Finch preening shoulder feathers.",
+    "subject": "same male House Finch red finch pose-series bird in a clear preening pose on the same thin garden twig, head turned backward and partly tucked into its shoulder, beak visibly combing brown-streaked shoulder feathers, one wing lifted slightly away from the body, raspberry-red forehead throat and upper breast, one foot tucked close to body, beak closed against feathers not singing, identical plumage pattern across the series",
+    "config": {
+      "subject.species_class": "bird",
+      "subject.behavior": "grooming",
+      "optics.lens": "500mm-long",
+      "optics.light": "golden-hour-low",
+      "optics.habitat": "garden-domestic"
+    },
+    "seed": 5414
+  },
+
   "impressionist-starry-cypresses": {
     "engine": "impressionist",
     "description": "Van Gogh Saint-Rémy: cypress flames against a swirling starry sky over a wheatfield.",
@@ -987,5 +1095,25 @@
       "composition.border": "none"
     },
     "seed": 41
+  },
+  "tshirt-royal-bengal-tiger-madhubani": {
+    "engine": "minimalist-tshirt",
+    "description": "Royal Bengal tiger corrected for the Indian animal Madhubani T-shirt set: full-body side profile, matte folk palette, no mascot-logo head drift.",
+    "subject": "single centered Royal Bengal tiger in complete full-body side profile for a premium Madhubani T-shirt print, walking calmly left to right, clear tiger silhouette with strong shoulders, long tail, four proportional legs, almond eye, whisker dots, bold black double-contour keylines, matte flat saturated folk fills, striped body panels filled with leaf-vein and fish-scale Madhubani infill, tiny peepal leaf and lotus ornaments used sparingly, large clean negative space, no text, no scenery, isolated print artwork, screen-print friendly, modern Indian streetwear",
+    "config": {
+      "subject.motif": "madhubani-folk-icon",
+      "style.tradition": "madhubani-contemporary",
+      "style.detail": "maximal-but-printable",
+      "style.symmetry": "handmade-balanced",
+      "style.accents": "micro-folk-dots",
+      "production.output": "print-art",
+      "production.ink": "vibrant-folk",
+      "production.shirt_color": "cream-or-black",
+      "composition.placement": "center-chest",
+      "composition.layout": "single-mark",
+      "composition.background": "no-background",
+      "composition.border": "none"
+    },
+    "seed": 8101
   }
 }
