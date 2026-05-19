@@ -1602,7 +1602,18 @@ button:focus-visible {
   letter-spacing: 0.5px;
   text-transform: none;
   white-space: pre;   /* preserve leading spaces for "  ↳" nesting */
+  display: block;
 }
+.action-label { line-height: 1.2; }
+.action-hint {
+  font: 10px/1.3 var(--font-ui);
+  color: var(--muted);
+  opacity: 0.65;
+  margin-top: 3px;
+  letter-spacing: 0.3px;
+  white-space: normal;
+}
+.action.active .action-hint { color: var(--green-dim); opacity: 0.9; }
 .action:hover { background: var(--surface); color: var(--ink-bright); border-color: var(--line); transform: none; }
 .action.active {
   background: var(--surface);
@@ -2575,14 +2586,14 @@ const groups = [
     ["gallery", "All renders + ratings"],
   ]],
   ["CREATE", [
-    ["create",                   "▸ Create (any style — recommended)"],
-    ["thumbnail",                "▸ Thumbnail (preset + headline overlay)"],
-    ["engine",                   "▸ Other engine (advanced)"],
-    ["coloring-page",            "  · Children's coloring book (legacy direct page)"],
-    ["mandala-art-page",         "  · Mandala art (legacy direct page)"],
-    ["indian-folk-page",         "  · Indian folk art (legacy direct page)"],
-    ["stylized-cinematic-page",  "  · Stylized cinematic (legacy direct page)"],
-    ["tshirt-page",              "  · Minimalist T-shirt design (legacy direct page)"],
+    ["create",                   "▸ Create (any style — recommended)", "start here — pick a Style, get the right engine"],
+    ["thumbnail",                "▸ Thumbnail (preset + headline overlay)", "branded thumbnail + headline composited via PIL"],
+    ["engine",                   "▸ Other engine (advanced)", "raw engine + recipe picker — bypasses the Style helper"],
+    ["coloring-page",            "  · Children's coloring book", "B&W ink line art, 8.5×11 coloring page"],
+    ["mandala-art-page",         "  · Mandala art", "radial mandala raster, sacred geometry"],
+    ["indian-folk-page",         "  · Indian folk art", "Madhubani / Tanjore / Pahari / Ravi-Varma panels"],
+    ["stylized-cinematic-page",  "  · Stylized cinematic", "Tartakovsky / Mignola / Ghibli illustration"],
+    ["tshirt-page",              "  · Minimalist T-shirt design", "simplified marks for apparel screen-print (not dense panels)"],
   ]],
   ["EDIT", [
     ["edit",                     "Edit / restyle an existing image"],
@@ -3491,11 +3502,21 @@ function renderActions() {
     root.appendChild(h);
     const list = document.createElement("div");
     list.className = "action-list";
-    for (const [id, label] of rows) {
+    for (const row of rows) {
+      const [id, label, hint] = row;
       const btn = document.createElement("button");
       btn.type = "button";
       btn.className = "action" + (id === state.action ? " active" : "");
-      btn.textContent = label;
+      const top = document.createElement("div");
+      top.className = "action-label";
+      top.textContent = label;
+      btn.appendChild(top);
+      if (hint) {
+        const sub = document.createElement("div");
+        sub.className = "action-hint";
+        sub.textContent = hint;
+        btn.appendChild(sub);
+      }
       btn.onclick = () => { state.action = id; renderActions(); renderForm(); };
       list.appendChild(btn);
     }
