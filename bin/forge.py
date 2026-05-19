@@ -257,7 +257,7 @@ def _resolve_quantize(override: int | None = None) -> int | None:
     """Return the int to pass to mflux --quantize, or None to skip the flag (= fp16)."""
     if override is not None:
         return None if override == 0 else int(override)
-    raw = os.environ.get("FORGE_FLUX_QUANTIZE", "8").strip().lower()
+    raw = os.environ.get("FORGE_FLUX_QUANTIZE", "4").strip().lower()
     if raw in {"", "0", "none", "fp16", "off"}:
         return None
     try:
@@ -268,7 +268,7 @@ def _resolve_quantize(override: int | None = None) -> int | None:
         pass
     return 8  # safe fallback when the env var is malformed
 
-MLX_CACHE_LIMIT_GB = int(os.environ.get("FORGE_MLX_CACHE_LIMIT_GB", "32"))
+MLX_CACHE_LIMIT_GB = int(os.environ.get("FORGE_MLX_CACHE_LIMIT_GB", "96"))
 
 def _mflux_runtime_args(quantize: int | None = None) -> list[str]:
     """Return the mflux runtime flags shared across every mflux invocation."""
