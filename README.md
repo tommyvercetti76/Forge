@@ -7,7 +7,7 @@
 *Image · Text · Audio · No cloud required for core local paths*
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![Tests](https://img.shields.io/badge/tests-128_passing-brightgreen.svg)](#development-and-verification)
+[![Tests](https://github.com/tommyvercetti76/Forge/actions/workflows/tests.yml/badge.svg)](https://github.com/tommyvercetti76/Forge/actions/workflows/tests.yml)
 [![Python](https://img.shields.io/badge/python-3.11+-blue.svg)](#install)
 [![Platform](https://img.shields.io/badge/platform-Apple_Silicon-lightgrey.svg)](#install)
 [![Models](https://img.shields.io/badge/models-FLUX_•_Z--Image_•_mflux-orange.svg)](NOTICE)
@@ -21,11 +21,31 @@
 
 ---
 
-Forge turns prompts, books, scripts, images, and videos into production assets entirely on an
-M-series Mac — eight specialist FLUX engines, procedural line art, multilingual voiceover,
-audiobooks, and upload-ready video bundles. Built for a real production desk: brand presets,
-series locks, a trust layer for unattended runs, and audit handoffs for the parts that still need
-to become perfect.
+<div align="center">
+  <img src="docs/gallery/peacock_v3.png" alt="Madhubani folk-art peacock rendered by Forge" width="520">
+  <br><sub><i>Madhubani folk-art peacock — Forge minimalist-tshirt engine on FLUX.1-dev</i></sub>
+</div>
+
+<div align="center">
+  <img src="docs/gallery/tiger_v3.png" width="120" alt="Tiger">
+  <img src="docs/gallery/elephant_v3.png" width="120" alt="Elephant">
+  <img src="docs/gallery/blackbuck_v3.png" width="120" alt="Blackbuck">
+  <img src="docs/gallery/rhino_v3.png" width="120" alt="One-horned rhinoceros">
+  <img src="docs/gallery/cobra_v3.png" width="120" alt="King cobra">
+  <img src="docs/gallery/snow_leopard_v3.png" width="120" alt="Snow leopard">
+  <br><sub><i>Six of 41 species in the Madhubani catalog. Every render is paired with attribution manifests honoring the Mithila tradition of Bihar, India.</i></sub>
+</div>
+
+---
+
+**Forge is an eval-driven local ML workstation for image generation, with domain schemas, automated
+QC, model/runtime ops, cultural attribution, and a closed-loop Art Reasoning Engine.**
+
+The flagship is a Madhubani folk-art catalog of 41 Indian-wildlife species across 21 national parks,
+rendered entirely on Apple Silicon through FLUX / mflux. Every render is gated by a 9-check QC
+rubric before promotion. The project also includes a Translation Studio, eight specialist render
+engines, audiobook + video pipelines, and a product-mockup compositor — see
+[Other capabilities](#other-capabilities) below.
 
 ---
 
@@ -44,8 +64,10 @@ Rows 2-3 from [QUALITY_FINDINGS](docs/QUALITY_FINDINGS_2026-05-20.md) and
 [FORGE_QUALITY_SPEED_AUDIT](docs/FORGE_QUALITY_SPEED_AUDIT_2026-05-19.md). The parallel-pose
 figure is the runtime ceiling when memory fits two Metal slots.
 
-<sub>Reproduce with `forge bench` (multi-seed harness planned; the existing `forge bench` runs
-runtime smoke checks).</sub>
+<sub>Row 1 is **historical measured evidence** from the P1 multi-seed batch landing (commit
+[b618f2c](https://github.com/tommyvercetti76/Forge/commit/b618f2c)). A reproducible
+`forge bench --multi-seed` harness is on the roadmap — the existing `forge bench` runs
+runtime smoke checks only.</sub>
 
 ---
 
@@ -86,7 +108,10 @@ runtime smoke checks).</sub>
 
 ---
 
-## What Forge Can Do Today
+## Other capabilities
+
+The Madhubani engine is the flagship, but Forge ships a wider production toolkit. These all run
+locally on Apple Silicon and share the same trust-layer / artifact-receipt conventions.
 
 | Area | Primary entrypoints | Output |
 | --- | --- | --- |
@@ -738,6 +763,6 @@ go wrong, how to verify it, and where future agents should continue. Update
 Built on [`mflux`](https://github.com/filipstrand/mflux), [FLUX](https://blackforestlabs.ai/) (BFL non-commercial), and [Z-Image-Turbo](https://huggingface.co/).
 Cultural attribution: see [docs/CULTURAL_HERITAGE_ATTRIBUTION.md](docs/CULTURAL_HERITAGE_ATTRIBUTION.md).
 
-[**Install**](#install) · [**Contribute**](CONTRIBUTING.md) · [**Security**](SECURITY.md) · [**License (MIT)**](LICENSE) · [**Third-party notices**](NOTICE)
+[**Install**](#install) · [**Roadmap**](docs/ROADMAP.md) · [**Contribute**](CONTRIBUTING.md) · [**Security**](SECURITY.md) · [**License (MIT)**](LICENSE) · [**Third-party notices**](NOTICE)
 
 </div>

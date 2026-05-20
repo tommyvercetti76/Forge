@@ -13,7 +13,7 @@
 Forge has serious engineering underneath. The metrics we've already measured:
 
 - **P1 multi-seed batch:** 106.7s → 41.9s for 4 seeds at cool/schnell. Verified -60.8% wall-clock on M5 Max.
-- **119 passing tests** across 14 test files; engine_qc trust layer with blockers/publishable semantics.
+- **128 passing tests** (1 skipped optional dep) across 15 test files; engine_qc trust layer with blockers/publishable semantics.
 - **8 specialist FLUX engines** plus a procedural mandala/folk-art lane.
 - **41-species Madhubani catalog** across 21 national parks, with 12 body types and per-body-type pose semantics.
 - **50-reference Mithila corpus** from Wikimedia Commons with full attribution.
