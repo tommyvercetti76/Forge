@@ -380,3 +380,50 @@ the new F1 in the commit message — even when the number drops. The
 F1 0.89 collapse documented above is what happens when an F1 number
 gets framed as a headline before the underlying corpus is big enough
 to sustain it. We won't make that same claim again without N ≥ 50.
+
+---
+
+## v2 of the CLIP+sklearn probe (2026-05-20 PM — partial recovery)
+
+After the F1 0.00 finding, the next iteration tried the cheapest
+change before committing to per-zone probes or a LoRA-tuned encoder:
+**class-balanced LR + hyperparameter sweep on the same N=16 strong
+labels.** Result: `madhubani_likeness_v2.npz` ships at
+
+| Config | Precision | Recall | F1 | Accuracy |
+| :--- | -: | -: | -: | -: |
+| **L2, class_weight=balanced, C=1.0** | **0.571** | **0.667** | **0.615** | **0.688** |
+| L2, class_weight=balanced, C=0.1 | 0.500 | 0.500 | 0.500 | 0.625 |
+| L1, class_weight=balanced, C=10.0 | 0.400 | 0.333 | 0.364 | 0.562 |
+| L1, class_weight=balanced, C ≤ 1.0 | 0.000 | 0.000 | 0.000 | 0.625 |
+| (v1) L2, class_weight=None, C=1.0 | 0.000 | 0.000 | 0.000 | 0.625 |
+
+Single change vs v1 — `class_weight='balanced'` — lifts LOOCV F1
+from **0.000 to 0.615** on the same data. The probe was collapsing
+to majority-class prediction; inverse-frequency loss weighting
+restored real decision boundaries.
+
+11/16 correct. Every disagreement clusters within ±0.06 of the
+threshold (P 0.448 - 0.558) — a *calibrated* probe, not a confident
+one. The 5 wrong calls are all close-to-threshold:
+elephant_v2 / peacock_v2 (FN), elephant_v3 / macaque_v2 /
+peacock_v3 (FP).
+
+**What v2 doesn't do:** break the composite ceiling on rhino. CLIP P
+spans 0.553-0.556 across 4 rhino variants in the latest run (vs v1's
+0.478-0.552). Dynamic range tightened, not widened. Composite
+ceiling: `0.6 × 1.0 + 0.4 × 0.56 ≈ 0.824` — basically where v1 landed.
+
+**Honest interpretation:** within-species CLIP variance is too small
+for *any* linear probe on raw CLIP features to drive composite past
+0.85 on a well-rendered Madhubani render. The probe is doing its job
+(F1 0.62 distinguishing pass from fail across species), but the
+composite scoring function is bottlenecked by `rubric=1.0`
+saturating its 0.6 weight. The path forward: (a) per-zone CLIP
+probes (head/body/tail) with their own dynamic ranges, (b) re-extract
+features through the LoRA-tuned encoder, or (c) a different
+composite formula that isn't saturated.
+
+**Production probe** is now v2; `bin/best_of_n.py` auto-detects
+`madhubani_likeness_v2.npz` and falls back to v1 if absent. v1 stays
+on disk for the historical record.

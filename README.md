@@ -13,9 +13,9 @@
 [![Models](https://img.shields.io/badge/models-FLUX_•_Z--Image_•_mflux-orange.svg)](NOTICE)
 [![Code of Conduct](https://img.shields.io/badge/code_of_conduct-respectful-blueviolet.svg)](CODE_OF_CONDUCT.md)
 
-**`-60.8%`** wall-clock vs. naïve mflux loop &nbsp;·&nbsp; **`128`** passing tests &nbsp;·&nbsp; **`41`**-species curated Madhubani catalog &nbsp;·&nbsp; **`N=16`** maintainer-labeled gold corpus
+**`-60.8%`** wall-clock vs. naïve mflux loop &nbsp;·&nbsp; **`128`** passing tests &nbsp;·&nbsp; **`41`**-species curated Madhubani catalog &nbsp;·&nbsp; **`N=16`** maintainer-labeled gold corpus &nbsp;·&nbsp; **`F1 0.62`** CLIP-probe v2 LOOCV (was 0.00 on v1)
 
-<sub>Earlier "F1 0.89 learned QC" claim was a small-sample artifact on N=9; on the expanded N=16 set the heuristic rubric measures F1 0.53 and the CLIP probe collapses to F1 0.00 (LOOCV). Honest write-up: [QC_AGREEMENT_STUDY § Expanded-N correction](docs/QC_AGREEMENT_STUDY.md#expanded-n-correction-2026-05-20-pm).</sub>
+<sub>v1 of the CLIP+sklearn probe collapsed to F1 0.00 on N=16 LOOCV (small-sample artifact, predicted majority class). v2 — class-balanced LR on the same CLIP features — lifts LOOCV F1 to 0.615 by fixing the imbalance, but composite ceiling on rhino stays ~0.82 because CLIP's dynamic range on Madhubani-vs-not is narrow at this N. Full honest accounting: [QC_AGREEMENT_STUDY § Expanded-N correction](docs/QC_AGREEMENT_STUDY.md#expanded-n-correction-2026-05-20-pm).</sub>
 
 [**Install**](#install) &nbsp;·&nbsp; [**Try the gallery**](#specialist-engines) &nbsp;·&nbsp; [**Architecture**](docs/ARCHITECTURE.md) &nbsp;·&nbsp; [**Hard problems**](#hard-problems-forge-solves)
 

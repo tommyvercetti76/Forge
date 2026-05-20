@@ -60,7 +60,12 @@ from madhubani_qc import score_madhubani_png  # noqa: E402
 
 ANIMALS_PATH = ROOT / "brand/madhubani/animals.json"
 PALETTE_PATH = ROOT / "brand/madhubani/palette.json"
-LIKENESS_WEIGHTS_PATH = ROOT / "brand/madhubani/madhubani_likeness_v1.npz"
+# Prefer v2 (class-balanced, F1 0.615 LOOCV on N=16) over v1 (raw CLIP, F1 0.000
+# LOOCV) when both are present. v1 was kept on disk for the historical record
+# documented in docs/QC_AGREEMENT_STUDY.md § Expanded-N correction.
+_LIKENESS_WEIGHTS_V2 = ROOT / "brand/madhubani/madhubani_likeness_v2.npz"
+_LIKENESS_WEIGHTS_V1 = ROOT / "brand/madhubani/madhubani_likeness_v1.npz"
+LIKENESS_WEIGHTS_PATH = _LIKENESS_WEIGHTS_V2 if _LIKENESS_WEIGHTS_V2.exists() else _LIKENESS_WEIGHTS_V1
 
 DEFAULT_RUBRIC_WEIGHT = 0.6
 DEFAULT_CLIP_WEIGHT = 0.4
