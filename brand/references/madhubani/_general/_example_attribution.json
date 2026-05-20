@@ -1,0 +1,11 @@
+{
+  "_comment": "SAMPLE attribution file showing the schema. Real entries should be named '<image>.attribution.json' as a sibling to the image. This file is illustrative only — the corpus audit treats files starting with '_' as non-data.",
+  "source_url": "https://commons.wikimedia.org/wiki/File:Sita_Devi_Madhubani_painting_-_Tiger_motif.jpg",
+  "artist": "Sita Devi",
+  "year": "circa 1972",
+  "license": "public-domain",
+  "permitted_uses": ["LoRA training", "Kontext seed", "private reference"],
+  "added_by": "Rohan",
+  "added_at": "2026-05-20",
+  "notes": "Example attribution. Replace fields with the real source when adding a real image. 'license' should be one of: public-domain, CC-BY-SA-3.0, CC-BY-4.0, CC0, fair-use-research, permitted-by-museum, owned-by-user. Avoid 'unknown' or 'all-rights-reserved' without a written permission record."
+}
