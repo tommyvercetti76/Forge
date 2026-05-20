@@ -2,9 +2,10 @@
   "$schema": "./_schema/poses.schema.json",
   "name": "madhubani-animal-tee-poses",
   "description": "The four canonical poses used across every animal in the Madhubani tee catalog. Each animal × pose pair produces one design. The set of four for any one animal is the standard 'mini-collection' unit.",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "established": "2026-05-18",
-  "rationale": "These four poses generalize across mammals, birds, reptiles, and primates. Each species can be rendered in all four states. 'Walking' is deliberately NOT a pose because v2 testing showed walking quadrupeds in side profile drop the far legs more often than they keep them.",
+  "v2_changes_2026_05_20": "Expanded body_type_overrides to cover all 12 body types in animals.json (was: 4). Strengthened bird overrides (peacock previously rendered standing instead of perched; the new wording uses 'roosting on a low branch' and explicitly says 'NOT standing on ground'). Added overrides for crocodilian, small-mammal, stocky-omnivore, arboreal-primate, armored-quadruped, and tightened the existing bird block. The 4 slot names (standing-alert/seated-rest/signature-action/frontal-portrait) are CATALOG POSITIONS, not literal pose descriptions — the body-type override is the source of truth for what the rendered pose actually IS for that species.",
+  "rationale": "Four catalog slots × per-body-type semantics. Slot names are catalog positions (every animal renders 1-4); the body_type_overrides map defines what each slot MEANS for each body type. A 'seated-rest' bird is PERCHED on a branch (not seated on its haunches); a 'seated-rest' serpent is COILED with hood lowered; a 'seated-rest' cetacean is SUSPENDED motionless; a 'seated-rest' mammal is actually seated. The build_subject_string function in bin/forge_madhubani.py consults body_type_overrides FIRST; the per-slot subject_template is the fallback only when no body-type override applies. 'Walking' is deliberately NOT a slot because v2 testing showed walking quadrupeds in side profile drop the far legs more often than they keep them.",
 
   "poses": [
     {
@@ -86,16 +87,46 @@
       "frontal-portrait": "HEAD-ON FRONTAL VIEW of the hood spread wide, both eyes visible, spectacle pattern centered on the hood, mouth closed dignified"
     },
     "bird": {
-      "standing-alert": "STANDING ALERT in side profile on a perch or ground line, both legs visible, head looking forward",
-      "seated-rest": "PERCHED with feet folded under the body, head turned slightly, tail held at rest",
-      "signature-action": "in characteristic display action (fanned tail / spread wings / etc. per species), all features visible",
-      "frontal-portrait": "HEAD-AND-CHEST FRONTAL VIEW facing the viewer directly, head centered, both eyes visible, crest visible if applicable, both wings folded against body visible at sides"
+      "standing-alert": "STANDING ALERT in side profile on a perch or ground line, both legs visible and planted, head looking forward, tail held downward in resting position (NOT fanned, NOT in flight, NOT mid-display) — this is the STANDING hero pose, the bird is upright and watchful",
+      "seated-rest": "PERCHED LOW AND RESTING on a horizontal branch — body sinks low on the branch with feet GRIPPING from beneath, legs nearly hidden under the body, head turned slightly to one side, tail trailing softly behind, wings folded close against the body — explicitly NOT standing tall, NOT on the ground, the bird is RESTING on a tree branch with its body lowered to the branch line",
+      "signature-action": "in the species' characteristic SHOWY action — fanned-tail courtship display for peacock, spread-wing in-flight glide for crane/stork/skimmer, calling with throat-pouch extended for hornbill, etc. (per species' signature_action field) — the wow-shot of the bird in motion or display",
+      "frontal-portrait": "HEAD-AND-CHEST FRONTAL VIEW facing the viewer directly, head centered with crest visible above, both eyes visible flanking the bill, bill centered pointing forward, both wings folded against body visible at sides as flat folk panels with feather patterns — fully frontal symmetric"
     },
     "primate": {
-      "standing-alert": "STANDING ALERT in side profile, both legs and arms visible and proportional",
-      "seated-rest": "SEATED CALMLY in side profile, hands folded or resting, tail curved at rest",
-      "signature-action": "in characteristic action (leaping / climbing / etc.), all four limbs visible",
-      "frontal-portrait": "HEAD-AND-SHOULDERS FRONTAL VIEW facing the viewer directly, both eyes visible, characteristic mane/face features symmetric"
+      "standing-alert": "STANDING ALERT in side profile, both legs planted and arms hanging or resting near the body, all four limbs visible and proportional, head looking forward with dignified gravity",
+      "seated-rest": "SEATED CALMLY in side profile on a ground or low perch, hands folded in lap or resting on knees, tail curved at rest around the body, head still alert (resting, not sleeping)",
+      "signature-action": "in characteristic action (leaping between branches for macaque / langur, climbing for hoolock-gibbon, etc.), all four limbs visible and proportional, dynamic but anatomically clear",
+      "frontal-portrait": "HEAD-AND-SHOULDERS FRONTAL VIEW facing the viewer directly, both eyes visible (almond eyes NOT round cartoon eyes), characteristic mane/face features symmetric, hands visible at chest if applicable"
+    },
+    "arboreal-primate": {
+      "standing-alert": "HANGING BY BOTH LONG ARMS from a horizontal branch in side profile, body extended downward, legs tucked or hanging straight, head turned to look forward — the gibbon-typical suspended pose",
+      "seated-rest": "SEATED ON A BRANCH with one or both arms holding adjacent branches, body upright, head turned slightly, tail (where present) curled — resting between brachiation swings",
+      "signature-action": "MID-SWING between branches with one long arm extended forward to grip the next branch and the other trailing back, body horizontal mid-air, legs tucked under the body — explosive brachiation motion",
+      "frontal-portrait": "HEAD-AND-SHOULDERS FRONTAL VIEW with long arms framing the chest, both eyes visible (gibbon almond-eye with white brow-band), face symmetric, dignified expression"
+    },
+    "crocodilian": {
+      "standing-alert": "BASKING ALERT on a mud bank in side profile with body fully extended, all four short legs planted, head raised slightly, tail extended straight back, scales rendered as flat folk panels along back — the watchful resting predator",
+      "seated-rest": "FLOATING HALF-SUBMERGED in still water in side profile, only the eyes and snout above the waterline (rendered as flat folk dots and lines for the water), the bulk of the body suggested as a long horizontal shape beneath — calm and motionless",
+      "signature-action": "JAWS OPEN in defensive display, body planted on bank with tail curled to one side for balance, all teeth visible as folk-style triangular shapes, eyes alert — the warning pose",
+      "frontal-portrait": "HEAD-ON FRONTAL VIEW of the broad snout pointed at the viewer, both eyes visible on top of the head, jaws closed in dignified composure, scales radiating symmetrically along the snout — a fierce but stilled icon"
+    },
+    "small-mammal": {
+      "standing-alert": "STANDING ALERT in side profile on all four legs (or upright on hind legs for mongoose/squirrel/red-panda), small body compact, head looking forward, tail held in characteristic position (bushy for fox/squirrel, ringed for red-panda)",
+      "seated-rest": "CURLED INTO A RESTING BALL with tail wrapped around the body (squirrel / red-panda / fox), or LOW ON HAUNCHES at ease, head still alert but body relaxed — small-mammal contemplation",
+      "signature-action": "in characteristic action — squirrel mid-leap between branches, fox pouncing forward on prey, mongoose rearing back from snake-confrontation, red-panda balancing on branch with tail extended — species-specific signature motion",
+      "frontal-portrait": "HEAD-AND-SHOULDERS FRONTAL VIEW facing the viewer directly, both eyes visible (small almond eyes), ears prominent (large for fox, rounded for red-panda), characteristic ruff/markings symmetric"
+    },
+    "stocky-omnivore": {
+      "standing-alert": "STANDING ALERT in side profile on all four planted legs, broad shoulders and hips proportional, head lowered slightly with snout forward (boar) or raised (bear), short tail visible — the powerful low-slung silhouette",
+      "seated-rest": "SEATED on haunches with forelegs upright (sloth-bear) or LYING DOWN with body curled (wild-boar at rest), head still alert — the muscular animal at ease",
+      "signature-action": "in characteristic action — sloth-bear STANDING ON HIND LEGS reaching upward into a tree for honey (the iconic gesture), wild-boar CHARGING with head lowered and tusks forward, pygmy-hog LEAPING through tall grass — species' signature wow-shot",
+      "frontal-portrait": "HEAD-AND-SHOULDERS FRONTAL VIEW facing the viewer directly, broad face centered, both small eyes visible flanking the snout, large ears or chest blaze prominent (sloth-bear's V-shaped chest blaze especially), short snout extended forward"
+    },
+    "armored-quadruped": {
+      "standing-alert": "STANDING ALERT in side profile on all four planted legs, body horizontal with armored scales/plates running along the back rendered as flat folk panels, head extended forward, long tail trailing behind — pangolin or aardvark in alert posture",
+      "seated-rest": "CURLED INTO A SCALED BALL (pangolin defensive coil) with the head and underbelly tucked inside, scales overlapping in a spiral folk pattern across the visible outer surface, or in lower-profile resting curl — defensive at rest",
+      "signature-action": "WALKING with armor plates rippling along the back in motion, one front and one back leg extended forward, head down at ground sniffing for ants, long tail trailing — characteristic forage walk",
+      "frontal-portrait": "HEAD-ON FRONTAL VIEW with the long pointed snout extended toward the viewer, scales radiating outward from the head along the back, small eyes flanking the snout, ears slightly back — fierce but stilled icon"
     }
   },
 
