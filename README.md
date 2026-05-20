@@ -1,84 +1,90 @@
+<div align="center">
+
 # Forge
 
-Local-first generative-AI workstation for Apple Silicon. Image · Text · Audio. No cloud APIs.
+**Local-first generative-AI workstation for Apple Silicon**
 
-| 60% faster than naïve mflux loop | 119 passing tests | 41-species curated catalog |
-| --- | --- | --- |
-| -60.8% wall-clock, 4-seed render | 14 test files, all green | Madhubani folk art across 21 Indian parks |
+*Image · Text · Audio · No cloud APIs*
 
-[Install](#install) · [Try the Madhubani gallery](#specialist-engines) · [Read the architecture](docs/ARCHITECTURE.md)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![Tests](https://img.shields.io/badge/tests-128_passing-brightgreen.svg)](#development-and-verification)
+[![Python](https://img.shields.io/badge/python-3.11+-blue.svg)](#install)
+[![Platform](https://img.shields.io/badge/platform-Apple_Silicon-lightgrey.svg)](#install)
+[![Models](https://img.shields.io/badge/models-FLUX_•_Z--Image_•_mflux-orange.svg)](NOTICE)
+[![Code of Conduct](https://img.shields.io/badge/code_of_conduct-respectful-blueviolet.svg)](CODE_OF_CONDUCT.md)
 
-Forge turns prompts, books, scripts, images, and videos into production assets entirely on an M-series
-Mac — eight specialist FLUX engines, procedural line art, multilingual voiceover, audiobooks, and
-upload-ready video bundles. It is built for a real production desk: brand presets, series locks, a
-trust layer for unattended runs, and audit handoffs for the parts that still need to become perfect.
+**`-60.8%`** wall-clock vs. naïve mflux loop &nbsp;·&nbsp; **`128`** passing tests &nbsp;·&nbsp; **`41`**-species curated Madhubani catalog
 
-## Benchmarks (measured on M5 Max)
+[**Install**](#install) &nbsp;·&nbsp; [**Try the gallery**](#specialist-engines) &nbsp;·&nbsp; [**Architecture**](docs/ARCHITECTURE.md) &nbsp;·&nbsp; [**Hard problems**](#hard-problems-forge-solves)
+
+</div>
+
+---
+
+Forge turns prompts, books, scripts, images, and videos into production assets entirely on an
+M-series Mac — eight specialist FLUX engines, procedural line art, multilingual voiceover,
+audiobooks, and upload-ready video bundles. Built for a real production desk: brand presets,
+series locks, a trust layer for unattended runs, and audit handoffs for the parts that still need
+to become perfect.
+
+---
+
+## Benchmarks
+
+> Measured on **M5 Max**, 64GB unified memory.
 
 | Workload | Naïve | Forge | Speedup |
-| --- | ---: | ---: | ---: |
-| 4-seed FLUX.1-schnell render, 640², `cool` profile | 106.7s | 41.9s | -60.8% |
-| Same pattern on `quality`/dev (P1 multi-seed) | — | — | ~-15 to -20% |
-| 4-pose Madhubani set, `--jobs 2` parallel poses | 4 waves | 2 waves | up to -50% (ideal, memory-permitting) |
+| :--- | ---: | ---: | ---: |
+| 4-seed FLUX.1-schnell, 640², `cool` profile | 106.7s | 41.9s | **−60.8%** |
+| Same pattern on `quality`/dev (P1 multi-seed) | — | — | **~−15 to −20%** |
+| 4-pose Madhubani set, `--jobs 2` parallel poses | 4 waves | 2 waves | **up to −50%** |
 
-The first row is the verified P1 multi-seed batch result; FLUX cold-load is paid once per batch
-instead of N times. Rows two and three are from
-[docs/QUALITY_FINDINGS_2026-05-20.md](docs/QUALITY_FINDINGS_2026-05-20.md) and
-[docs/FORGE_QUALITY_SPEED_AUDIT_2026-05-19.md](docs/FORGE_QUALITY_SPEED_AUDIT_2026-05-19.md). The
-Madhubani parallel-pose figure is the runtime ceiling when memory fits two Metal slots — actual
-machines may queue.
+Row 1 is the verified P1 multi-seed batch — FLUX cold-load paid once per batch instead of N times.
+Rows 2-3 from [QUALITY_FINDINGS](docs/QUALITY_FINDINGS_2026-05-20.md) and
+[FORGE_QUALITY_SPEED_AUDIT](docs/FORGE_QUALITY_SPEED_AUDIT_2026-05-19.md). The parallel-pose
+figure is the runtime ceiling when memory fits two Metal slots.
 
-Reproduce with `forge bench` (planned — `forge bench` exists for runtime smoke checks; a dedicated
-multi-seed benchmark harness is not yet shipped).
+<sub>Reproduce with `forge bench` (multi-seed harness planned; the existing `forge bench` runs
+runtime smoke checks).</sub>
+
+---
 
 ## Hard problems Forge solves
 
-1. **Photorealism lock on Madhubani folk art** — FLUX.2 defaulted to photorealistic tigers and
-   peacocks even with "Madhubani" in the prompt. Fix: flat-silhouette tuning plus 18 hard negatives
-   in the engine scaffold. See [docs/MADHUBANI_ART_IDENTITY.md](docs/MADHUBANI_ART_IDENTITY.md).
-2. **Body-type pose semantics** — "seated peacock" is nonsense; birds don't sit. Fix: per-body-type
-   pose overrides in `poses.json` v2, so each catalog species inherits only the poses its body plan
-   supports. See [docs/MADHUBANI_ART_IDENTITY.md](docs/MADHUBANI_ART_IDENTITY.md).
-3. **Trust layer for unattended runs** — naïve QC returns one boolean and you cannot tell why a run
-   failed. Fix: 8-check rubric plus `blockers.json` sidecars plus `publishable: true/false`
-   semantics, with `--allow-qc-warnings` as the only override. See
-   [bin/madhubani_qc.py](bin/madhubani_qc.py) and [bin/engine_qc.py](bin/engine_qc.py).
-4. **Multi-seed wall-clock** — looping `mflux` once per seed pays the Python startup and model load
-   N times. Fix: a single `mflux-generate --seed S1 S2 S3 S4` invocation collapses the cold-load
-   tax. Measured -60.8% on cool/schnell. See
-   [docs/QUALITY_FINDINGS_2026-05-20.md](docs/QUALITY_FINDINGS_2026-05-20.md).
-5. **Cultural-heritage attribution** — generative tools risk extractive use of folk traditions when
-   they consume references without credit. Fix: 50 open-licensed Wikimedia Commons references with
-   full `attribution.json` receipts per asset, plus a dedicated heritage doc. See
-   [docs/CULTURAL_HERITAGE_ATTRIBUTION.md](docs/CULTURAL_HERITAGE_ATTRIBUTION.md) and
-   [brand/references/README.md](brand/references/README.md).
-6. **Closed-loop verification** — prompt iteration eventually hits a context ceiling and you cannot
-   tell whether the next change is helping. Fix: an Art Reasoning Engine that auto-checks renders
-   against rubric items. Pattern-density check shipped as Phase B.1; decoration-zone, anatomy-count,
-   multi-seed best-of-N, and retry-with-boost are planned. See
-   [docs/ART_REASONING_ENGINE.md](docs/ART_REASONING_ENGINE.md).
+| # | Problem | Solution | Read more |
+| :-: | :--- | :--- | :--- |
+| 1 | **Photorealism lock on Madhubani folk art** — FLUX.2 rendered photorealistic tigers and peacocks even with "Madhubani" in the prompt. | Flat-silhouette tuning + 18 hard negatives in the engine scaffold. | [MADHUBANI_ART_IDENTITY](docs/MADHUBANI_ART_IDENTITY.md) |
+| 2 | **Body-type pose semantics** — "seated peacock" is nonsense; birds don't sit. | Per-body-type pose overrides in `poses.json` v2 — each species inherits only the poses its body plan supports. | [MADHUBANI_ART_IDENTITY](docs/MADHUBANI_ART_IDENTITY.md) |
+| 3 | **Trust layer for unattended runs** — naïve QC returns one boolean; you can't tell why a run failed. | 9-check rubric + `blockers.json` sidecars + `publishable: true/false`, with `--allow-qc-warnings` as the only override. | [madhubani_qc.py](bin/madhubani_qc.py) · [engine_qc.py](bin/engine_qc.py) |
+| 4 | **Multi-seed wall-clock** — looping `mflux` once per seed pays the Python startup and model load N times. | One `mflux-generate --seed S1 S2 S3 S4` invocation collapses the cold-load tax. **−60.8%** measured on cool/schnell. | [QUALITY_FINDINGS](docs/QUALITY_FINDINGS_2026-05-20.md) |
+| 5 | **Cultural-heritage attribution** — generative tools risk extractive use of folk traditions. | 50 open-licensed Wikimedia references with `attribution.json` receipts per asset + a dedicated heritage doc. | [CULTURAL_HERITAGE](docs/CULTURAL_HERITAGE_ATTRIBUTION.md) · [references/](brand/references/README.md) |
+| 6 | **Closed-loop verification** — prompt iteration hits a context ceiling and you can't tell whether the next change is helping. | Art Reasoning Engine that auto-checks renders against rubric items. **Shipped:** pattern-density (B.1), decoration-zone-presence (B.2). **Planned:** anatomy-count, multi-seed best-of-N, retry-with-boost. | [ART_REASONING_ENGINE](docs/ART_REASONING_ENGINE.md) |
 
-## Reality Check
+---
 
-This section is intentionally blunt. Trust this over older notes.
+<details>
+<summary><b>Reality check</b> — what Forge is and is not (click to expand)</summary>
 
-- Forge is local-first, not local-only. Most image, LLM, translation, and English
-  TTS workflows can run locally after setup. High-quality Hindi and Marathi TTS
-  can use Sarvam Bulbul through `SARVAM_TTS_KEY`.
-- Forge targets macOS on Apple Silicon. The performance profile assumes an M-series
-  machine with enough unified memory for FLUX workloads.
-- FLUX rendering depends on `mflux` and cached model weights. `forge doctor --deep`
-  is the first thing to run when renders behave strangely.
-- `forge audiobook` and `bin/audiobook.py` are not the same product surface.
-  `forge audiobook` is the general CLI wrapper. `bin/audiobook.py` is the deeper
-  multilingual ASMR/book-video pipeline.
-- Near-perfect 10-page book localization in Hindi, English, and Marathi is a
-  defined target, not fully guaranteed by the current implementation. The audit,
-  gaps, target pipeline, and definition of done live in
+<br>
+
+- **Local-first, not local-only.** Most image, LLM, translation, and English TTS workflows run
+  locally after setup. High-quality Hindi and Marathi TTS can optionally use Sarvam Bulbul through
+  `SARVAM_TTS_KEY`.
+- **Apple Silicon only.** Performance profile assumes an M-series machine with enough unified
+  memory for FLUX workloads.
+- **FLUX rendering depends on `mflux` and cached model weights.** `forge doctor --deep` is the
+  first thing to run when renders behave strangely.
+- **Two audiobook surfaces.** `forge audiobook` is the general CLI wrapper.
+  `bin/audiobook.py` is the deeper multilingual ASMR/book-video pipeline.
+- **10-page book localization (Hindi/English/Marathi) is a target, not a guarantee.** Audit, gaps,
+  target pipeline, and definition of done live in
   [docs/BOOK_LOCALIZATION_AUDIT_HANDOFF.md](docs/BOOK_LOCALIZATION_AUDIT_HANDOFF.md).
-- `bin/audiobook.py --batch-pages 10 --spoken-words 150` speaks the first 150
-  words of each 10-page batch by default. That is excerpt mode, not full-page
-  translation coverage.
+- **`bin/audiobook.py --batch-pages 10 --spoken-words 150`** speaks the first 150 words of each
+  10-page batch by default. That is excerpt mode, not full-page translation coverage.
+
+</details>
+
+---
 
 ## What Forge Can Do Today
 
@@ -166,6 +172,8 @@ Forge/
 |-- tests/                            # runtime regression tests
 `-- archive/                          # older scripts kept for reference
 ```
+
+---
 
 ## Install
 
@@ -509,6 +517,8 @@ Folder watcher:
 bash ~/Desktop/Forge/bin/watch-folder.sh ~/Videos/videos-in ~/Videos/videos-out
 ```
 
+---
+
 ## Resource Profiles
 
 Profiles are the shared speed/quality vocabulary across CLI and web UI.
@@ -617,6 +627,8 @@ forge models clean --dry-run
 | `FORGE_ALLOW_TEMP_ARTIFACT_FALLBACK` | Explicit emergency opt-in to redirect unwritable artifact receipts to temp; default is fail loudly |
 | `FORGE_CAPTION_LANGS` | Default caption languages for `process-video` |
 
+---
+
 ## Documentation Map
 
 Start here:
@@ -694,6 +706,8 @@ Then verify that the web form sends only options the backend actually consumes.
 The current audit lens for this kind of mismatch is captured in the handoff docs
 and should be updated whenever the UI changes.
 
+---
+
 ## Known Sharp Edges
 
 - Full book localization needs forced alignment, glossary enforcement,
@@ -714,3 +728,16 @@ and should be updated whenever the UI changes.
 A feature is not done until the repo says what exists, what it outputs, what can
 go wrong, how to verify it, and where future agents should continue. Update
 [docs/INDEX.md](docs/INDEX.md) whenever you add a durable doc.
+
+---
+
+<div align="center">
+
+**Forge** is a personal portfolio project by [Rohan Ramekar](https://github.com/tommyvercetti76).
+
+Built on [`mflux`](https://github.com/filipstrand/mflux), [FLUX](https://blackforestlabs.ai/) (BFL non-commercial), and [Z-Image-Turbo](https://huggingface.co/).
+Cultural attribution: see [docs/CULTURAL_HERITAGE_ATTRIBUTION.md](docs/CULTURAL_HERITAGE_ATTRIBUTION.md).
+
+[**Install**](#install) · [**Contribute**](CONTRIBUTING.md) · [**Security**](SECURITY.md) · [**License (MIT)**](LICENSE) · [**Third-party notices**](NOTICE)
+
+</div>
