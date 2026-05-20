@@ -3687,6 +3687,24 @@ class MinimalistTShirtEngine(Engine):
         "natural lion tan body", "natural peacock blue body",
         "natural parrot green body", "natural species fur tones",
         "wildlife-photograph color palette", "naturalistic species rendering",
+        # L1 — anti-photorealism / anti-3D negatives (2026-05-20, post FLUX.2
+        # migration). FLUX.2 honors body_fill_color (good) but still renders
+        # high-pull species (tiger, elephant) with 3D shading + fur texture +
+        # photographic muscle. The Madhubani convention is FLAT 2D folk
+        # silhouette with decoration as flat color zones INSIDE — never a
+        # photorealistic animal wrapped in patterns. These negatives push
+        # the model into the flat-folk-icon register that the pass_examples
+        # (blackbuck_v3, peacock_v3, elephant_v2) actually live in.
+        "photorealistic rendering", "photorealistic animal", "3D rendered animal",
+        "3D shading", "dimensional shading", "rendered fur texture",
+        "individual hair detail", "anatomically modeled body", "muscle definition",
+        "soft shading on body", "gradient on body", "lighting on body",
+        "specular highlights on fur", "subsurface scattering on skin",
+        "photographic detail in eye", "photorealistic eye reflection",
+        "wildlife photograph composition", "Nat Geo wildlife photo style",
+        "stuffed-animal plush look", "CGI animal model", "Pixar-style animal",
+        "Disney-style realistic animal", "realistic animal portrait painting",
+        "oil painting realism on animal", "watercolor-realism on animal body",
     )
     default_lora_stack: ClassVar[tuple[tuple[str, float], ...]] = ()
 
@@ -3836,14 +3854,25 @@ class MinimalistTShirtEngine(Engine):
         #   - cobra still had a small painter mark in the corner despite
         #     signature negatives being in a 60-item negatives list
         anatomy_first = (
-            "ANATOMY FIRST: render a clean, anatomically correct animal "
-            "silhouette FIRST; decoration goes ON TOP. Decoration must "
-            "NEVER replace, consume, or obscure the underlying anatomy. "
-            "For quadrupeds in side profile, ALL FOUR LEGS must be clearly "
-            "visible — overlapping legs show as two distinct outlines, "
-            "never a single merged shape, never one leg hidden behind a "
-            "blanket. Tail, ears, and any signature anatomical features "
-            "(horns, trunk, hood, crest, mane) are present and "
+            "ANATOMY FIRST — FLAT 2D SILHOUETTE: render a clean, "
+            "HAND-DRAWN folk-art silhouette FIRST — a single FLAT-COLOR "
+            "shape with confident double-contour outlines, NEVER a "
+            "photorealistic 3D-rendered animal, NEVER a sculpted body, "
+            "NEVER fur texture, NEVER dimensional shading. The body is a "
+            "FLAT FOLK ICON painted in 2D, like the Mithila wall-paintings "
+            "of Sita Devi, Ganga Devi, and Baua Devi — not a National "
+            "Geographic photograph wrapped in patterns. "
+            "DECORATION goes INSIDE the flat silhouette as FLAT color "
+            "zones — geometric folk panels, lotus medallions, vermillion "
+            "dot-bands, leaf-vein linework — each rendered as solid flat "
+            "color shapes that sit inside the body silhouette like ink on "
+            "paper. Decoration NEVER becomes 3D shading; decoration "
+            "NEVER replaces, consumes, or obscures the underlying "
+            "anatomy. For quadrupeds in side profile, ALL FOUR LEGS must "
+            "be clearly visible — overlapping legs show as two distinct "
+            "outlines, never a single merged shape, never one leg hidden "
+            "behind a blanket. Tail, ears, and any signature anatomical "
+            "features (horns, trunk, hood, crest, mane) are present and "
             "proportional BEFORE any ornament is applied."
         )
         no_signature = (

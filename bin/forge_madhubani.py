@@ -296,8 +296,13 @@ def build_subject_string(animal: dict, pose: dict, register: str) -> str:
     anatomy_guard = (animal.get("anatomy_must_include") or "").strip()
     anatomy_guard_clause = f"SPECIES ANATOMY: {anatomy_guard}" if anatomy_guard else ""
 
+    # N1-rev2 (2026-05-20) — species_render_name lets us anchor the species
+    # in a folk-art register where FLUX.2 keeps pulling toward photorealism.
+    # When set, it replaces display_name in the rendered subject ONLY.
+    # display_name stays canonical everywhere else (manifests, QC, files).
+    species_in_subject = animal.get("species_render_name") or animal["display_name"]
     parts = [
-        f"single centered {animal['display_name']} {_pose_action_clause(pose_slug, animal)}",
+        f"single centered {species_in_subject} {_pose_action_clause(pose_slug, animal)}",
         f"premium Madhubani Mithila folk-art icon{register_clause}",
         anatomy_guard_clause,
         _body_anatomy_clause(body_type, animal),

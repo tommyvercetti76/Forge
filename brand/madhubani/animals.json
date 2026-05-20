@@ -108,6 +108,8 @@
     {
       "slug": "tiger",
       "display_name": "Royal Bengal Tiger",
+      "species_render_name": "Madhubani folk-art tiger icon",
+      "species_render_name_reason": "N1-rev2 (2026-05-20, post FLUX.2 migration + L1+L2): FLUX.2 honors body_fill_color but still pulls the tiger toward photorealism (3D face, fur, dimensional muscle) when the subject says 'Royal Bengal Tiger'. Earlier N1 attempt used 'folk-art striped large cat' which dropped the species identity entirely and made it cartoonish. This phrasing keeps 'tiger' (preserves anatomy + stripes) but anchors it as a 'Madhubani folk-art icon' (anchors style). Combined with L1+L2's flat-silhouette directives, this might break the photoreal lock without losing tiger character. display_name stays canonical for manifests/QC/files; only the rendered subject is neutralized.",
       "binomial": "Panthera tigris tigris",
       "series": "indian",
       "park": "jim-corbett",
