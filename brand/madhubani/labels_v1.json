@@ -1,0 +1,132 @@
+{
+  "schema": "forge.madhubani_labels.v1",
+  "version": "1.0.0",
+  "established": "2026-05-20",
+  "labeler": "Rohan Ramekar (single labeler \u2014 inter-annotator agreement not yet measured)",
+  "n_pass": 6,
+  "n_fail": 10,
+  "n_total": 16,
+  "description": "User-curated strong labels for the Madhubani folk-art QC agreement study. Each entry records the file's MD5 for content-based identity (paths may move; MD5 stays stable). Use this manifest as the authoritative label source \u2014 the directory-walking convention in bin/qc_agreement_study.py is a convenience that derives the same labels from disk.",
+  "rationale_summary": {
+    "tigers": "All tigers (v1/v2/v3) labeled FAIL \u2014 \"mid in Madhubani art (Tiger in Cinematic mode looks great)\"",
+    "snow_leopards": "All snow leopards (v1/v2/v3) labeled FAIL \u2014 \"all snow leopards mid in Madhubani art\"",
+    "peacock": "v1 PASS (\"plumage ideal\" \u2014 Kachni-school monochromatic register), v2 PASS (\"colors ideal \u2014 gold standard\"), v3 FAIL (\"picks worse from both\")",
+    "elephant": "v1 PASS, v2 PASS (\"gold standard\"), v3 FAIL (\"v1 and v2 better\")",
+    "rhino": "v3 PASS (\"good that we picked\"); v1/v2 not addressed",
+    "cobra/macaque/blackbuck": "Single labeled instance per species, kept from original curation"
+  },
+  "entries": [
+    {
+      "filename": "blackbuck_v3.png",
+      "label": "pass",
+      "md5": "a8a480286122cbbd3a4618670c7543a6",
+      "path": "generated/madhubani_animals/_learning/pass_examples/blackbuck_v3.png",
+      "rationale": "v3 blackbuck \u2014 original user-curated pass example (folk decoration intact)"
+    },
+    {
+      "filename": "elephant_v1_better.png",
+      "label": "pass",
+      "md5": "d52c22936a361a5da0c1a237390a12f8",
+      "path": "generated/madhubani_animals/_learning/pass_examples/elephant_v1_better.png",
+      "rationale": "v1 elephant \u2014 \"better in v1 and v2\" per user verdict"
+    },
+    {
+      "filename": "elephant_v2.png",
+      "label": "pass",
+      "md5": "bee6135e2a4e8fe2dad3616635618f2b",
+      "path": "generated/madhubani_animals/_learning/pass_examples/elephant_v2.png",
+      "rationale": "v2 elephant \u2014 \"gold standard\" per user verdict"
+    },
+    {
+      "filename": "peacock_v1_plumage_ideal.png",
+      "label": "pass",
+      "md5": "0ab173bb7da07f7928dc44177924e026",
+      "path": "generated/madhubani_animals/_learning/pass_examples/peacock_v1_plumage_ideal.png",
+      "rationale": "v1 peacock \u2014 \"v1 plumage is ideal\" per user verdict (Kachni-school monochromatic register)"
+    },
+    {
+      "filename": "peacock_v2_colors_ideal.png",
+      "label": "pass",
+      "md5": "98c22e83d6c5b0841baed6311d78d31a",
+      "path": "generated/madhubani_animals/_learning/pass_examples/peacock_v2_colors_ideal.png",
+      "rationale": "v2 peacock \u2014 \"v2 colors are ideal\" per user verdict"
+    },
+    {
+      "filename": "rhino_v3.png",
+      "label": "pass",
+      "md5": "1e170bb04c3ebe4149ef67eb89f5da94",
+      "path": "generated/madhubani_animals/_learning/pass_examples/rhino_v3.png",
+      "rationale": "v3 rhino \u2014 \"good that we picked\" per user verdict"
+    },
+    {
+      "filename": "cobra_v2_signature.png",
+      "label": "fail",
+      "md5": "eac3162a450e016ccb999c473db38a4b",
+      "path": "generated/madhubani_animals/_learning/fail_examples/cobra_v2_signature.png",
+      "rationale": "v2 cobra signature pose \u2014 original user fail example (two-tongues hallucination)"
+    },
+    {
+      "filename": "elephant_v3_worse_than_v1_v2.png",
+      "label": "fail",
+      "md5": "6c3bd4d58d87a3cbe5f144f7e00589b0",
+      "path": "generated/madhubani_animals/_learning/fail_examples/elephant_v3_worse_than_v1_v2.png",
+      "rationale": "v3 elephant \u2014 \"v1 and v2 better\" implies v3 worse per user verdict"
+    },
+    {
+      "filename": "macaque_v2_cartoon_eyes.png",
+      "label": "fail",
+      "md5": "f041fd6692ebd8ec4895d24bd5a72c5c",
+      "path": "generated/madhubani_animals/_learning/fail_examples/macaque_v2_cartoon_eyes.png",
+      "rationale": "v2 macaque \u2014 original user fail example (cartoon round eyes, not folk almond)"
+    },
+    {
+      "filename": "peacock_v3_picks_worse.png",
+      "label": "fail",
+      "md5": "25eb935ecf8e2d3b72ed992400faa4b0",
+      "path": "generated/madhubani_animals/_learning/fail_examples/peacock_v3_picks_worse.png",
+      "rationale": "v3 peacock \u2014 \"picks worse from both\" per user verdict"
+    },
+    {
+      "filename": "snow_leopard_v1_madhubani_mid.png",
+      "label": "fail",
+      "md5": "c59758cc65f326972ce612195649ab36",
+      "path": "generated/madhubani_animals/_learning/fail_examples/snow_leopard_v1_madhubani_mid.png",
+      "rationale": "v1 snow leopard \u2014 \"all snow leopards mid in Madhubani art\" per user verdict"
+    },
+    {
+      "filename": "snow_leopard_v2_blob.png",
+      "label": "fail",
+      "md5": "4b6fed316280116c081d8173e9bf23c9",
+      "path": "generated/madhubani_animals/_learning/fail_examples/snow_leopard_v2_blob.png",
+      "rationale": "v2 snow leopard \u2014 original user fail example (blob silhouette no anatomy)"
+    },
+    {
+      "filename": "snow_leopard_v3_madhubani_mid.png",
+      "label": "fail",
+      "md5": "8f582e359881192cf85d6bda363729ac",
+      "path": "generated/madhubani_animals/_learning/fail_examples/snow_leopard_v3_madhubani_mid.png",
+      "rationale": "v3 snow leopard \u2014 \"all snow leopards mid in Madhubani art\" per user verdict"
+    },
+    {
+      "filename": "tiger_v1_mascot.png",
+      "label": "fail",
+      "md5": "07c8d100dd0a0c50846412a79e99494d",
+      "path": "generated/madhubani_animals/_learning/fail_examples/tiger_v1_mascot.png",
+      "rationale": "v1 tiger \u2014 original user fail example (mascot cartoon, no folk decoration)"
+    },
+    {
+      "filename": "tiger_v2_madhubani_mid.png",
+      "label": "fail",
+      "md5": "8ed12d6a29196e5a5ea563caa34a27b8",
+      "path": "generated/madhubani_animals/_learning/fail_examples/tiger_v2_madhubani_mid.png",
+      "rationale": "v2 tiger \u2014 \"all tigers mid in Madhubani (tiger in Cinematic mode looks great)\" per user verdict"
+    },
+    {
+      "filename": "tiger_v3_madhubani_mid.png",
+      "label": "fail",
+      "md5": "047dd4a02cc36045e7338b4fdb890f8a",
+      "path": "generated/madhubani_animals/_learning/fail_examples/tiger_v3_madhubani_mid.png",
+      "rationale": "v3 tiger \u2014 \"all tigers mid in Madhubani (tiger in Cinematic mode looks great)\" per user verdict"
+    }
+  ]
+}

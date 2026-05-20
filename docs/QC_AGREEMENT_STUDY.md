@@ -2,7 +2,10 @@
 
 > First measurement: 2026-05-20
 > Methodology: [`bin/qc_agreement_study.py`](../bin/qc_agreement_study.py) (reproducible)
-> Corpus: 9 strong-label + 16 weak-label Madhubani renders held in tree
+> Corpus: **16 strong-label** + 16 weak-label Madhubani renders held in tree
+> Labels of record: [`brand/madhubani/labels_v1.json`](../brand/madhubani/labels_v1.json)
+>
+> **The earlier "F1 0.89" headline collapsed when the labeled set grew from 9 → 16.** Full honest accounting in the [Expanded-N correction](#expanded-n-correction-2026-05-20-pm) section near the bottom.
 
 ## Motivation
 
@@ -276,3 +279,104 @@ The script reads from `_learning/pass_examples/`,
 `_legacy/indian_animals_v1/`. To grow the labeled set, drop more PNGs
 into `_learning/{pass,fail}_examples/` with filenames containing the
 animal slug.
+
+---
+
+## Expanded-N correction (2026-05-20 PM)
+
+The maintainer walked the corpus and provided real per-image verdicts.
+Several flips:
+
+- **All tigers (v1/v2/v3) → FAIL** — *"all tigers mid in Madhubani art (tiger in Cinematic mode looks great)."*
+- **All snow leopards (v1/v2/v3) → FAIL** — *"all snow leopards mid in Madhubani art."*
+- **Peacock v1 → PASS** — *"plumage is ideal"* (Kachni-school monochromatic register).
+- **Peacock v2 → PASS** — *"colors are ideal — gold standard."*
+- **Peacock v3 → FAIL** — *"picks worse from both."* (Flipped from the original gold-set.)
+- **Elephant v1 → PASS** — *"better in v1 and v2."*
+- **Elephant v3 → FAIL** (implied by *"v1 and v2 better"*).
+- **Elephant v2 → PASS confirmed** ("gold standard").
+- **Rhino v3 → PASS confirmed** ("good that we picked").
+
+Strong-label set grew from **N = 9 → 16** (6 pass + 10 fail). Both
+metrics dropped:
+
+| Model | Result on N=9 | Result on N=16 | Δ |
+| :--- | :-: | :-: | -: |
+| **Heuristic rubric (`auto_qc_pass`)** | F1 **0.667** | F1 **0.533** | −0.134 |
+| **CLIP+sklearn probe (LOOCV)** | F1 **0.889** | F1 **0.000** | **−0.889** |
+
+### Heuristic rubric — 7 wrong calls on N=16
+
+5 false positives + 2 false negatives. Specific images:
+
+| Image | Verdict | Rubric said | Root cause |
+| :--- | :--- | :--- | :--- |
+| `tiger_v2_madhubani_mid.png` | FAIL | PASS 7/7 | No "Madhubani vs cinematic" register check — folk-color stripes alone pass every active check |
+| `tiger_v3_madhubani_mid.png` | FAIL | PASS 7/7 | Same |
+| `elephant_v3_worse_than_v1_v2.png` | FAIL | PASS 7/7 | "Worse" is about lineage/proportion — rubric has no proportion check |
+| `macaque_v2_cartoon_eyes.png` | FAIL | PASS 7/7 | `eye_character` measures luminance contrast, not eye shape (cartoon round vs folk almond) |
+| `snow_leopard_v2_blob.png` | FAIL | PASS 7/7 | `anatomy` would have caught the blob silhouette but is disabled-by-default |
+| `peacock_v1_plumage_ideal.png` | PASS | FAIL 5/7 | `color_floor` rejects monochromatic — but that *is* Kachni school |
+| `peacock_v2_colors_ideal.png` | PASS | FAIL 6/7 | `subject_centered` fails because the long tail throws the bbox off-center |
+
+### CLIP+sklearn probe — total collapse
+
+On LOOCV over the N=16 strong-label set, the probe predicts FAIL for
+**every single image** (P ~0.34-0.46 across the board). F1 = 0.000.
+
+The three reasons:
+
+1. **The old probe was trained on era-bucket weak labels** (v3 = pass,
+   v1 = fail). The maintainer's verdicts flipped many of those — v3
+   tiger / elephant / peacock / snow leopard are now FAIL; v1 peacock
+   / elephant are now PASS. The probe's training distribution is no
+   longer aligned with the test distribution.
+2. **N = 16 is far below the rule-of-thumb for a 512-dim CLIP
+   embedding.** Standard heuristic is ≥10× features in training data
+   — that's ~5,000 labeled images. We have 16.
+3. **Class imbalance** (62.5% fail) + L2-regularized LR with N=15 train
+   samples per fold ⇒ the optimizer's safest move is to predict the
+   majority class.
+
+The earlier F1 0.89 number on the original N=9 was a small-sample
+artifact. It does not survive contact with a 16-image labeled set
+that captures the maintainer's actual register-vs-decoration taste.
+
+### What this means
+
+The rubric measures the **shell of Madhubani** (palette, framing,
+decoration presence) but cannot see the **soul** (Madhubani-vs-
+cinematic register, monochromatic Kachni-school style, lineage
+proportion). The CLIP probe inherited a noisy training signal and
+cannot generalize at this N. Closing the gap requires either:
+
+- **A genuinely larger labeled set** (target N ≥ 50). Slow but the
+  honest path. The labels manifest at
+  [`brand/madhubani/labels_v1.json`](../brand/madhubani/labels_v1.json)
+  is the file that should grow.
+- **A Madhubani-tuned embedding** (re-train the LoRA fully, then
+  re-extract CLIP features through the LoRA-tuned encoder before
+  fitting the linear probe). The current pilot LoRA was a 50-step
+  smoke test; the overnight 15-epoch recipe at
+  [`docs/LORA_TRAINING_RECIPE.md`](LORA_TRAINING_RECIPE.md) is the
+  next investment.
+- **Per-zone CLIP probes** (head/body/tail) instead of one global
+  probe — more parameters to learn from the same N.
+
+### Labels of record
+
+[`brand/madhubani/labels_v1.json`](../brand/madhubani/labels_v1.json)
+is the authoritative label source going forward. Per-image entries
+include the MD5 (content-stable identity), the verdict, and the
+maintainer's rationale. The directory-walking convention in
+`bin/qc_agreement_study.py` continues to work because the manifest
+and the on-disk arrangement agree by construction.
+
+### Honesty pledge
+
+Future commits that change any of the 10 checks **must** re-run
+`bin/qc_agreement_study.py` against the N=16+ labeled set and report
+the new F1 in the commit message — even when the number drops. The
+F1 0.89 collapse documented above is what happens when an F1 number
+gets framed as a headline before the underlying corpus is big enough
+to sustain it. We won't make that same claim again without N ≥ 50.
