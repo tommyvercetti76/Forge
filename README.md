@@ -70,6 +70,16 @@ QC and manifest. See [docs/MINIMAL_ANIMAL_LINES.md](docs/MINIMAL_ANIMAL_LINES.md
 
 Resolution priority chain: `--ultra-res` > `--hi-res` > explicit `--width`/`--height` > engine native canvas > 1280×720 fallback. The upscale path (next section) is the safest route to print-grade resolution on M5 Max.
 
+Every `forge engine render` checks for a `<png>.qc.json` sidecar after each
+render. Failed checks become a `<png>.blockers.json` sibling and the manifest
+records `publishable: false` for that variant. The default is strict; pass
+`--allow-qc-warnings` to keep the blockers list visible while forcing
+`publishable: true` (use only after human review). Today only Madhubani
+writes rich QC sidecars (4/7 rubric checks gated); other engines emit no
+blockers until per-engine auto-QC lands. The Madhubani driver applies the
+same gate at promotion time (`promote_pose` still honors `--force`). The
+shared primitive lives in [bin/engine_qc.py](bin/engine_qc.py).
+
 ## Repository Map
 
 ```text
@@ -88,6 +98,7 @@ Forge/
 |   |-- forge_runtime.py              # cache, jobs, locks, LLM/TTS helpers
 |   |-- style_engines.py              # specialist FLUX engines
 |   |-- _engine_base.py               # engine contracts
+|   |-- engine_qc.py                  # shared blockers/publishable trust layer
 |   |-- mandala_engine.py             # procedural mandala/line-art renderer
 |   |-- minimal_animal_engine.py      # beta <=8-line animal mark renderer
 |   |-- audiobook.py                  # multilingual book/video pipeline
@@ -413,7 +424,7 @@ Profiles are the shared speed/quality vocabulary across CLI and web UI.
 | Profile | FLUX model | Steps | Guidance | Cooldown | Intended use |
 | --- | --- | ---: | ---: | ---: | --- |
 | `cool` | `schnell` | 4 | 0.0 | 20s | Preview/scouting pass, fastest and lowest heat |
-| `balanced` | `dev` | 18 | preset/default | 5s | Default production iteration |
+| `balanced` | `dev` | 18 | preset/default | 0s | Default production iteration |
 | `max` | `dev` | 25 | preset/default | 0s | Better final detail when time allows |
 | `quality` | `dev` | 36 | preset/default | 0s | Production-grade q8 path for line art/iconic work |
 
@@ -438,6 +449,15 @@ python bin/forge_madhubani.py render tiger --all-poses --jobs 2
 On a four-pose set, two jobs can cut ideal wall clock roughly in half when two
 Metal slots fit in memory. The runtime still serializes or caps work if the
 machine cannot safely hold it.
+
+Multi-seed engine renders collapse into a single mflux invocation. When
+`forge engine render <engine> --seeds N` is used, Forge passes all seeds to
+one `mflux-generate --seed S1 S2 ...` call instead of spawning N
+subprocesses. Measured −60.8% wall-clock on a 4-seed cool/schnell run
+(106.7 s → 41.9 s) because the FLUX cold-load is paid once per batch. The
+saving is largest on `cool`/`schnell` scouting and smaller (~15–20%) on
+`quality`/`max` where inference dominates. See
+[docs/QUALITY_FINDINGS_2026-05-20.md](docs/QUALITY_FINDINGS_2026-05-20.md).
 
 Common pattern:
 
@@ -493,7 +513,7 @@ forge models clean --dry-run
 | `FORGE_SARVAM_SPEAKER` | Default Sarvam speaker |
 | `FORGE_SARVAM_SPEAKER_MR` | Marathi-specific Sarvam speaker override |
 | `FORGE_SARVAM_MODEL` | Sarvam model, default `bulbul:v3` |
-| `FORGE_FLUX_QUANTIZE` | mflux weight quantization, default `8`; use `0` for fp16 |
+| `FORGE_FLUX_QUANTIZE` | mflux weight quantization, default `4`; use `8` for higher-fidelity finals, `0` for fp16 |
 | `FORGE_METAL_SLOTS` | Requested concurrent heavy Metal workers; default `1`, capped by memory |
 | `FORGE_FLUX_PARALLEL_JOBS` | Alias for `FORGE_METAL_SLOTS` focused on FLUX render batches |
 | `FORGE_METAL_MAX_SLOTS` | Hard cap for `metal-heavy` slots after env request |
@@ -523,7 +543,8 @@ Critical handoffs and audits:
 
 | Document | Use it when |
 | --- | --- |
-| [docs/FORGE_QUALITY_SPEED_AUDIT_2026-05-19.md](docs/FORGE_QUALITY_SPEED_AUDIT_2026-05-19.md) | You are checking the latest quality/speed audit and target math |
+| [docs/FORGE_QUALITY_SPEED_AUDIT_2026-05-19.md](docs/FORGE_QUALITY_SPEED_AUDIT_2026-05-19.md) | You are checking the prior quality/speed audit and target math |
+| [docs/QUALITY_FINDINGS_2026-05-20.md](docs/QUALITY_FINDINGS_2026-05-20.md) | You are deciding the next quality/perf lever — measured P1/Q1 results, levers A–F, per-species iconography draft |
 | [docs/BOOK_LOCALIZATION_AUDIT_HANDOFF.md](docs/BOOK_LOCALIZATION_AUDIT_HANDOFF.md) | You are building near-perfect Hindi/English/Marathi book subtitles and audio |
 | [docs/PRESET_PRECISION_IMPROVEMENT_HANDOFF.md](docs/PRESET_PRECISION_IMPROVEMENT_HANDOFF.md) | You are improving preset precision by 40% or more |
 | [docs/PRESET_PROMPT_TEMPLATE.md](docs/PRESET_PROMPT_TEMPLATE.md) | You are authoring semantic preset tokens and dependency vectors |

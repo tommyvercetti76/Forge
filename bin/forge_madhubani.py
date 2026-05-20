@@ -47,6 +47,7 @@ from pathlib import Path
 from typing import Any
 
 from madhubani_qc import score_madhubani_png
+import engine_qc
 
 # --- Paths ---------------------------------------------------------------
 
@@ -121,6 +122,11 @@ def _write_auto_qc(png_path: Path, animal: dict, pose_slug: str) -> dict[str, An
     _atomic_write_json(qc_path, qc)
     status = "PASS" if qc["auto_qc_pass"] else "REVIEW"
     print(f"   QC {status}: {qc['pass_count']}/{qc['auto_check_count']} auto checks → {_display(qc_path)}")
+    # Q1 trust layer — write blockers.json sibling iff any check failed.
+    # Stale blockers files are removed by engine_qc when the new QC passes.
+    blockers_path, blockers = engine_qc.write_blockers_json(png_path, qc)
+    if blockers and blockers_path:
+        print(f"   BLOCKED: {engine_qc.summarize(blockers)} → {_display(blockers_path)}")
     return qc
 
 
@@ -463,6 +469,15 @@ def render_set(animal_slug: str, register: str, only_pose: str | None = None,
         qc = result.get("qc")
         if rc != 0:
             failures += 1
+        pose_blockers = engine_qc.derive_blockers(qc) if qc else []
+        # publishable here is the strict reading; --force / promote --force can
+        # still override at promotion time. Dry-run never claims publishability.
+        publishable = (
+            not dry_run
+            and rc == 0
+            and bool(qc and qc.get("auto_qc_pass"))
+            and not pose_blockers
+        )
         pose_records.append({
             "pose": plan.pose["slug"],
             "ordinal": plan.pose["ordinal"],
@@ -476,11 +491,15 @@ def render_set(animal_slug: str, register: str, only_pose: str | None = None,
             "auto_qc_score": qc.get("score") if qc else None,
             "auto_qc_pass": qc.get("auto_qc_pass") if qc else None,
             "auto_qc_pass_count": qc.get("pass_count") if qc else None,
+            "publishable": publishable,
+            "blockers": [b["check"] for b in pose_blockers],
             "subject_string": plan.subject_string,
             "config_string": plan.config_string,
         })
     qc_scores = [float(p["auto_qc_score"]) for p in pose_records if p["auto_qc_score"] is not None]
     qc_pass_count = sum(1 for p in pose_records if p["auto_qc_pass"] is True)
+    publishable_count = sum(1 for p in pose_records if p.get("publishable") is True)
+    blocked_count = sum(1 for p in pose_records if p.get("blockers"))
     finished = datetime.now(timezone.utc)
     manifest_dir = ATTEMPTS_DIR / animal_slug / version
     manifest = {
@@ -501,7 +520,10 @@ def render_set(animal_slug: str, register: str, only_pose: str | None = None,
         "failure_count": failures,
         "auto_qc_pass_count": qc_pass_count,
         "auto_qc_mean_score": round(sum(qc_scores) / len(qc_scores), 2) if qc_scores else None,
+        "publishable_count": publishable_count,
+        "blocked_count": blocked_count,
         "auto_qc_contract": "4/7 rubric checks machine-scored; promotion blocks failed auto-QC unless --force",
+        "publishability_contract": "publishable iff returncode==0 AND auto_qc_pass AND blockers==[]; promote --force overrides at promotion time only",
         "status": "DRY_RUN" if dry_run else ("PASS" if failures == 0 else "PARTIAL_FAIL"),
         "poses": pose_records,
         "next_actions": [

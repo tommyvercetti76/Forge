@@ -21,6 +21,7 @@ import shutil
 import signal
 import subprocess
 import sys
+import tempfile
 import textwrap
 import time
 import urllib.request
@@ -155,9 +156,9 @@ MFLUX_HEARTBEAT_SEC = float(os.environ.get("FORGE_MFLUX_HEARTBEAT_SEC", "30"))
 
 # M5 Max optimization — mflux supports on-the-fly model quantization via --quantize {3,4,5,6,8}.
 # fp16 (the implicit default if we never pass --quantize) is the slow path: it uses ~24 GB and is
-# ~25-50 % slower than int8 / int4 with near-zero quality loss for FLUX-dev. We default to int8
-# (FORGE_FLUX_QUANTIZE=8) — indistinguishable from fp16, ~25 % faster, ~12 GB. Set 4 for fast
-# iteration (~50 % faster, mild faces softening), 0 / "none" to force fp16.
+# ~25-50 % slower than int8 / int4 with near-zero quality loss for FLUX-dev. Forge defaults to q4
+# (FORGE_FLUX_QUANTIZE=4) for throughput-first iteration; use q8 for higher-fidelity finals.
+# 0 / "none" forces fp16.
 def _realesrgan_ready() -> tuple[bool, str]:
     """Return (ready, note) for the bundled RealESRGAN binary + at least one model."""
     if not REALESRGAN_BIN.exists():
@@ -290,7 +291,9 @@ FLUX_COOLDOWN_SEC = float(os.environ.get("FORGE_FLUX_COOLDOWN_SEC", "0"))
 # Profile presets — match `forge bench` so they're a real shared vocabulary.
 PROFILES = {
     "cool":     {"flux_model": "schnell", "flux_steps": 4,  "flux_guidance": 0.0, "cooldown": 20.0},
-    "balanced": {"flux_model": "dev",     "flux_steps": 18, "flux_guidance": None, "cooldown": 5.0},
+    # Keep balanced thermally reasonable via step count/quantization, but avoid
+    # forced idle gaps so sustained throughput stays high in batch workloads.
+    "balanced": {"flux_model": "dev",     "flux_steps": 18, "flux_guidance": None, "cooldown": 0.0},
     "max":      {"flux_model": "dev",     "flux_steps": 25, "flux_guidance": None, "cooldown": 0.0},
     # Production-grade: keep q8 by default. On Apple Silicon this preserves
     # visual quality while avoiding the memory pressure that makes parallel
@@ -1354,6 +1357,161 @@ def flux_generate(
     if cooldown > 0:
         print(dim(f"  · cooldown {cooldown:.0f}s (FORGE_FLUX_COOLDOWN_SEC or profile)"))
         time.sleep(cooldown)
+
+
+def flux_generate_batch(
+    preset: dict,
+    concept: str,
+    out_paths: list[Path],
+    *,
+    seeds: list[int],
+    steps: int | None = None,
+    series: dict | None = None,
+    draft: bool = False,
+    profile: str | None = None,
+    lora_paths: list[str] | None = None,
+    lora_scales: list[float] | None = None,
+    width: int | None = None,
+    height: int | None = None,
+    guidance_override: float | None = None,
+    quantize: int | None = None,
+) -> None:
+    # mflux's native --seed S1 S2 … pays the FLUX cold-load once per batch
+    # instead of once per subprocess. Measured 5.6× speedup on cool/schnell
+    # scouting (107s → 19s for 4 seeds); ~15–20% on quality flows where
+    # inference dominates. Single-seed callers stay on flux_generate.
+    if len(seeds) != len(out_paths):
+        sys.exit(red(f"flux_generate_batch: seeds ({len(seeds)}) must match out_paths ({len(out_paths)})"))
+    if not seeds:
+        return
+    if len(seeds) == 1:
+        flux_generate(
+            preset, concept, out_paths[0],
+            seed=seeds[0], steps=steps, series=series,
+            draft=draft, profile=profile,
+            lora_paths=lora_paths, lora_scales=lora_scales,
+            width=width, height=height,
+            guidance_override=guidance_override, quantize=quantize,
+        )
+        return
+    if len(set(seeds)) != len(seeds):
+        sys.exit(red(f"flux_generate_batch: duplicate seeds not allowed in one batch ({seeds})"))
+
+    model, step_count, guidance = _resolve_flux_runtime(
+        preset, draft=draft, profile=profile, steps_override=steps,
+    )
+    if guidance_override is not None:
+        guidance = float(guidance_override)
+    if step_count < 1:
+        sys.exit(red("--steps must be >= 1"))
+
+    ready, reason = _flux_model_ready(model)
+    if not ready:
+        repo = _FLUX_REPO_MAP.get(model, model)
+        sys.exit(
+            red(f"FLUX preflight failed: {reason}") + "\n"
+            + dim(f"  this run wants FLUX.1-{model}, but it's not fully cached.\n\n")
+            + "  Options:\n"
+            + f"  1. Complete the download (resumable):\n"
+            + f"       hf download {repo}\n"
+            + "  2. Switch the preset to a model you HAVE — edit brand/presets/"
+              f"{preset['id']}.json,\n     change flux.model to 'schnell' (or 'dev', whichever is cached).\n"
+            + "  3. Inspect what's cached:\n"
+            + "       forge models scan --full\n"
+        )
+
+    full_prompt = build_flux_prompt(preset, concept, series=series)
+
+    if lora_paths is not None:
+        eff_loras, eff_scales = list(lora_paths), list(lora_scales or [])
+    elif series and series.get("lora_paths"):
+        eff_loras = list(series.get("lora_paths") or [])
+        eff_scales = list(series.get("lora_scales") or [])
+    else:
+        eff_loras = list(preset.get("lora_paths") or [])
+        eff_scales = list(preset.get("lora_scales") or [])
+    resolved_loras: list[str] = []
+    for p in eff_loras:
+        candidate = Path(p).expanduser()
+        if not candidate.is_absolute() and not candidate.exists():
+            in_brand = LORAS_DIR / p
+            if in_brand.exists():
+                candidate = in_brand
+        if not candidate.exists():
+            sys.exit(red(f"LoRA file not found: {p}") + dim(f"\n  looked in CWD and {LORAS_DIR}"))
+        resolved_loras.append(str(candidate.resolve()))
+    eff_loras = resolved_loras
+    if eff_loras and len(eff_scales) != len(eff_loras):
+        eff_scales = [0.8] * len(eff_loras)
+
+    preset_native = preset.get("native_canvas") or {}
+    eff_w = int(width) if width else int(preset_native.get("width", THUMB_W))
+    eff_h = int(height) if height else int(preset_native.get("height", THUMB_H))
+    if quantize is None and profile and "quantize" in PROFILES.get(profile, {}):
+        quantize = PROFILES[profile]["quantize"]
+
+    out_paths[0].parent.mkdir(parents=True, exist_ok=True)
+    staging_dir = Path(tempfile.mkdtemp(prefix=".forge-batch-", dir=str(out_paths[0].parent)))
+
+    cmd = [
+        "mflux-generate",
+        *_mflux_runtime_args(quantize),
+        "--model", model, "--prompt", full_prompt,
+        "--width", str(eff_w), "--height", str(eff_h),
+        "--steps", str(step_count), "--guidance", str(guidance),
+        "--seed", *[str(s) for s in seeds],
+        "--output", str(staging_dir / "img.png"),
+    ]
+    if eff_loras:
+        cmd.extend(["--lora-paths", *eff_loras])
+        cmd.extend(["--lora-scales", *[str(s) for s in eff_scales]])
+
+    mode_tag = profile.upper() if profile else ("DRAFT" if draft else "FINAL")
+    q_resolved = _resolve_quantize(quantize)
+    q_tag = f" q{q_resolved}" if q_resolved else " fp16"
+    lora_tag = f" loras={len(eff_loras)}" if eff_loras else ""
+    seeds_tag = ",".join(str(s) for s in seeds)
+    print(dim(f"  $ mflux-generate [{mode_tag}]{q_tag} model={model} steps={step_count} guidance={guidance} seeds=[{seeds_tag}] batch{lora_tag}"))
+
+    try:
+        try:
+            require_metal_acceleration(label=f"mflux batch {model}/{step_count}×{len(seeds)}")
+        except RuntimeError as e:
+            sys.exit(red(str(e)))
+        with ResourceLock("metal-heavy") as lock:
+            if lock.wait_seconds > 0.1:
+                print(dim(f"  · waited {lock.wait_seconds:.1f}s for Metal lock"))
+            _preflight_memory(label=f"mflux batch {model}/{step_count}×{len(seeds)}")
+            run_subprocess(
+                cmd, check=True, timeout=MFLUX_TIMEOUT_SEC,
+                heartbeat_label=f"mflux batch {model}/{step_count}×{len(seeds)}",
+                heartbeat_seconds=MFLUX_HEARTBEAT_SEC,
+            )
+    except Exception:
+        shutil.rmtree(staging_dir, ignore_errors=True)
+        raise
+
+    # mflux writes <basename_stem>_seed_<seed_value>.<ext> (e.g. img_seed_1.png).
+    # Remap each to the caller's requested out_path, validating along the way.
+    for seed, out_path in zip(seeds, out_paths):
+        mflux_path = staging_dir / f"img_seed_{seed}.png"
+        if not mflux_path.exists():
+            shutil.rmtree(staging_dir, ignore_errors=True)
+            sys.exit(red(f"mflux batch output missing for seed {seed}: {mflux_path.name}"))
+        try:
+            validate_png(mflux_path, width=eff_w, height=eff_h, min_bytes=4096)
+        except ValueError as e:
+            shutil.rmtree(staging_dir, ignore_errors=True)
+            sys.exit(red(f"mflux batch output validation failed for seed {seed}: {e}"))
+        out_path.parent.mkdir(parents=True, exist_ok=True)
+        os.replace(mflux_path, out_path)
+    shutil.rmtree(staging_dir, ignore_errors=True)
+
+    cooldown = _cooldown_seconds(profile, draft)
+    if cooldown > 0:
+        print(dim(f"  · cooldown {cooldown:.0f}s (FORGE_FLUX_COOLDOWN_SEC or profile)"))
+        time.sleep(cooldown)
+
 
 # ─────────────── voice ───────────────
 
@@ -3177,6 +3335,31 @@ def cmd_engine_render(args) -> int:
     variants: list[dict[str, Any]] = []
     base_seed = directive.seed
     from _engine_base import Directive  # type: ignore
+
+    # Pre-batch the txt2img base renders into a single mflux invocation when
+    # we have multiple seeds. mflux loads the model once and inferences N
+    # times; verified ~5.6× faster on cool/schnell, ~15-20% on quality. The
+    # img2img / Kontext path stays per-seed (different conditioning per call).
+    batch_pre_rendered: set[int] = set()
+    if not src_image_path and seeds_n > 1:
+        batch_seeds = [base_seed + i for i in range(seeds_n)]
+        batch_targets = []
+        for i, this_seed in enumerate(batch_seeds):
+            png_path_i = gallery_dir / f"seed{i+1:02d}.png"
+            base_target_i = png_path_i if not refine else png_path_i.with_name(png_path_i.stem + "-base.png")
+            batch_targets.append(base_target_i)
+        print(cyan(f"  ▶ batch render: {seeds_n} seeds [{', '.join(str(s) for s in batch_seeds)}] in 1 mflux call"))
+        flux_generate_batch(
+            synth, "", batch_targets,
+            seeds=batch_seeds,
+            steps=steps_override,
+            series=None, draft=args.draft, profile=args.profile,
+            width=eff_w, height=eff_h,
+            guidance_override=guidance_override,
+            quantize=getattr(args, "quantize", None),
+        )
+        batch_pre_rendered = set(batch_seeds)
+
     for i in range(seeds_n):
         this_seed = base_seed + i
         if seeds_n > 1:
@@ -3196,7 +3379,10 @@ def cmd_engine_render(args) -> int:
         base_target = png_path
         if refine and not src_image_path:
             base_target = png_path.with_name(png_path.stem + "-base.png")
-        print(cyan(f"  ▶ seed {i+1}/{seeds_n} (seed={this_seed}) → {png_path.name}"))
+        if this_seed in batch_pre_rendered:
+            print(cyan(f"  ▶ seed {i+1}/{seeds_n} (seed={this_seed}) → {png_path.name}  (from batch)"))
+        else:
+            print(cyan(f"  ▶ seed {i+1}/{seeds_n} (seed={this_seed}) → {png_path.name}"))
 
         if src_image_path:
             # img2img path — engine directive restyles the user's photo.
@@ -3218,6 +3404,11 @@ def cmd_engine_render(args) -> int:
                 strength=from_image_strength, seed=this_seed,
                 steps=steps_count, guidance=guidance_val,
             )
+        elif this_seed in batch_pre_rendered:
+            # Already rendered above in the multi-seed batch call. The file is
+            # at base_target with full PNG validation already performed inside
+            # flux_generate_batch. Skip the redundant cold-load.
+            pass
         else:
             # txt2img path — engine directive generates a fresh image.
             flux_generate(
@@ -3299,13 +3490,47 @@ def cmd_engine_render(args) -> int:
             )
         except Exception as e:
             print(dim(f"  · gallery capture skipped: {e}"))
-        variants.append({"seed": this_seed, "png_name": png_path.name, "png_path": str(png_path)})
+
+        # Q1 trust layer — if the engine wrote a *.qc.json next to the PNG,
+        # convert failed checks into a blockers.json sibling and tag the
+        # variant `publishable`. Engines without auto-QC (today: everything
+        # except Madhubani) get publishable=true and no blockers file, which
+        # is correct given that we have no machine evidence of failure.
+        import engine_qc  # type: ignore
+        qc_sidecar = engine_qc.read_qc_sidecar(png_path)
+        allow_warnings = bool(getattr(args, "allow_qc_warnings", False))
+        blockers_path, blockers = engine_qc.write_blockers_json(png_path, qc_sidecar)
+        publishable = engine_qc.is_publishable(blockers, allow_warnings=allow_warnings)
+        if blockers:
+            tag = gold("warning (override)") if allow_warnings else red("BLOCKED")
+            print(f"    {tag}: {engine_qc.summarize(blockers)}")
+            if blockers_path:
+                print(dim(f"      blockers → {blockers_path.name}"))
+
+        variants.append({
+            "seed": this_seed,
+            "png_name": png_path.name,
+            "png_path": str(png_path),
+            "publishable": publishable,
+            "blockers": [b["check"] for b in blockers],
+            "qc_pass": qc_sidecar.get("auto_qc_pass") if qc_sidecar else None,
+        })
         print(green(f"    ✓ {png_path}"))
 
     # Contact sheet for multi-seed runs
     if seeds_n > 1 and gallery_dir is not None:
         sheet = _write_contact_sheet(gallery_dir, engine=engine_name, subject=subject, variants=variants)
         print(green(f"\n✓ gallery: {gallery_dir}") + dim(f" — {sheet.name} (open to pick)"))
+
+    # Publishability summary across the run
+    publishable_count = sum(1 for v in variants if v.get("publishable"))
+    blocked_count = len(variants) - publishable_count
+    if blocked_count:
+        msg = f"  {publishable_count}/{len(variants)} publishable, {blocked_count} blocked by auto-QC"
+        if getattr(args, "allow_qc_warnings", False):
+            print(gold(msg) + dim(" (--allow-qc-warnings forced publishable=true; review blockers.json)"))
+        else:
+            print(red(msg) + dim(" — review *.blockers.json next to each PNG"))
     return 0
 
 
@@ -5401,9 +5626,11 @@ def main() -> int:
     eng_render.add_argument("--steps", type=int, default=None,
                             help="override FLUX inference steps; useful for faster engine batches. Overrides the profile step count.")
     eng_render.add_argument("--quantize", type=int, choices=[0, 3, 4, 5, 6, 8], default=None, dest="quantize",
-                            help="mflux quantization (3/4/5/6/8 bits). 8=indistinguishable from fp16 +25%% speed (default), 4=~50%% faster with mild quality drop, 0=force fp16. Env: FORGE_FLUX_QUANTIZE.")
+                            help="mflux quantization (3/4/5/6/8 bits). 4=~50%% faster with mild quality drop (default), 8=near-fp16 fidelity with ~25%% speed gain, 0=force fp16. Env: FORGE_FLUX_QUANTIZE.")
     eng_render.add_argument("--upscale", type=str, default=None, dest="upscale",
                             help="post-render upscale via RealESRGAN-ncnn-vulkan (safe high-res — renders FLUX at base size, then upscales). Values: 2x / 3x / 4x / 6x / 8x / 12x / 16x. Adds ~6 s per 4× pass. Replaces --hi-res / --ultra-res when memory matters.")
+    eng_render.add_argument("--allow-qc-warnings", action="store_true", dest="allow_qc_warnings",
+                            help="treat failed auto-QC checks as warnings instead of blockers. Per-render blockers.json is still written; publishable=true is forced. Use only after human review.")
     eng_render.set_defaults(func=cmd_engine_render)
 
     p_th = sub.add_parser("thumbnail", help="render one thumbnail")
