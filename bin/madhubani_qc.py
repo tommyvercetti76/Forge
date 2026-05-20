@@ -17,7 +17,7 @@ import numpy as np
 from PIL import Image
 
 
-AUTO_CHECK_COUNT = 9
+AUTO_CHECK_COUNT = 10
 
 # Phase-B (2026-05-20, B.1) — pattern_density target bands per decoration_density.
 # Measured: fraction of subject-mask pixels NOT close to the body_fill_color
@@ -106,7 +106,17 @@ LEG_PILLAR_SKIP_BODY_TYPES = frozenset({"serpent", "cetacean"})
 #   baseline peacock) dip below it. The Δ-E LAB heuristic does not
 #   separate "real decoration" from "bright cartoon color." Demoting to
 #   informational until B.3+ replaces it with a learned discriminator.
-DISABLED_BY_DEFAULT_CHECKS: frozenset[str] = frozenset({"anatomy", "pattern_density"})
+DISABLED_BY_DEFAULT_CHECKS: frozenset[str] = frozenset({
+    "anatomy",
+    "pattern_density",
+    # Phase B.3 (2026-05-20) — anatomy_feature_count ships as informational.
+    # Same conservative posture as `anatomy`: measure it on the labeled set
+    # first, then promote to active only if the QC agreement study shows
+    # positive discrimination. v1 covers three high-impact features only
+    # (tongue, horns_on_nose, tail_eye_spots) so most species score 0/0
+    # known features and would never trip auto_qc_pass anyway.
+    "anatomy_feature_count",
+})
 
 
 def _hex_to_rgb(value: str) -> tuple[int, int, int]:
@@ -562,6 +572,321 @@ def _score_decoration_zone_presence(
     }
 
 
+# ──────────────────────────────────────────────────────────────────────
+# Phase B.3 (2026-05-20) — anatomy_feature_count heuristics.
+#
+# The user-flagged failures from the tiger-anatomy-regression session
+# were specifically: "cobra has two tongues" and "rhino with two horns
+# (that's the African one)" and "peacock plumage too sparse." Phase A
+# encoded the rules into `anatomical_count_constraints` on each species;
+# Phase B.3 (this code) is the verifier.
+#
+# v1 covers three high-impact features only:
+#   * tongue   — count red elongated CCs in the face zone; expect 0 or 1
+#   * horns_on_nose — count protrusions above bbox top; expect 1 (rhino)
+#   * tail_eye_spots — count distinct decoration islands in the tail zone;
+#                      expect 8–12 for peacock
+#
+# Other constraint keys (legs_visible, eyes_visible, ears, etc.) are
+# either already covered by `_score_anatomy` (legs) or skipped as too
+# heuristic-fragile for v1. Species whose constraint set contains zero
+# v1-supported keys pass informationally.
+
+_REGION_BBOX_FRACTIONS: dict[str, tuple[float, float, float, float]] = {
+    # (y_top_frac, y_bot_frac, x_left_frac, x_right_frac) within bbox
+    "face":    (0.00, 0.35, 0.55, 1.00),
+    "mouth":   (0.18, 0.40, 0.60, 1.00),
+    "tail":    (0.20, 0.85, 0.00, 0.35),
+    "abovebbox": (0.00, 0.10, 0.45, 1.00),  # near-top, face-side
+}
+
+
+def _parse_count_constraint(text: str) -> dict[str, Any]:
+    """Extract a numeric expectation from a free-text constraint string.
+
+    Returns {min, max, expects_zero, raw} — `min`/`max` are the inclusive
+    bounds; `expects_zero` is True when the constraint reads "closed",
+    "not visible", "no tongue", etc.
+
+    Examples:
+      "4 (all four legs ...)"                     -> {min: 4, max: 4}
+      "8 to 12 distinct ocellus motifs"           -> {min: 8, max: 12}
+      "closed (no tongue visible)"                -> {expects_zero: True}
+      "either NOT visible OR exactly ONE forked"  -> {min: 0, max: 1}
+    """
+    import re
+    lower = text.lower()
+    result: dict[str, Any] = {"raw": text}
+    if any(w in lower for w in ["closed", "not visible", "no tongue", "no fangs", "not be"]):
+        result["expects_zero"] = True
+    # "8 to 12" / "8-12"
+    rng = re.search(r"(\d+)\s*(?:to|-|–)\s*(\d+)", text)
+    if rng:
+        result["min"] = int(rng.group(1))
+        result["max"] = int(rng.group(2))
+        return result
+    # "exactly ONE" / "exactly TWO" / "ONLY ONE"
+    if "exactly one" in lower or "only one" in lower or "exactly 1" in lower:
+        result["min"] = 1
+        result["max"] = 1
+        if result.get("expects_zero"):
+            # "either NOT visible OR exactly ONE" -> 0..1
+            result["min"] = 0
+            result.pop("expects_zero", None)
+        return result
+    # Leading bare number "4 (..." or "2 small ..."
+    m = re.match(r"^\s*(\d+)\b", text)
+    if m:
+        n = int(m.group(1))
+        result["min"] = n
+        result["max"] = n
+    return result
+
+
+def _connected_components(mask: np.ndarray, min_size: int = 8) -> list[tuple[int, int, int, int, int]]:
+    """4-connected CC labeling via flood fill. Returns a list of
+    (size, y_min, x_min, y_max, x_max) for each component >= min_size.
+    Numpy-only, no scipy dep."""
+    visited = np.zeros_like(mask, dtype=bool)
+    out: list[tuple[int, int, int, int, int]] = []
+    height, width = mask.shape
+    ys_all, xs_all = np.where(mask & ~visited)
+    for sy, sx in zip(ys_all, xs_all):
+        if visited[sy, sx]:
+            continue
+        # Iterative flood fill with an explicit stack.
+        stack = [(sy, sx)]
+        ymin = ymax = sy
+        xmin = xmax = sx
+        size = 0
+        while stack:
+            y, x = stack.pop()
+            if y < 0 or y >= height or x < 0 or x >= width:
+                continue
+            if visited[y, x] or not mask[y, x]:
+                continue
+            visited[y, x] = True
+            size += 1
+            if y < ymin: ymin = y
+            if y > ymax: ymax = y
+            if x < xmin: xmin = x
+            if x > xmax: xmax = x
+            stack.append((y + 1, x))
+            stack.append((y - 1, x))
+            stack.append((y, x + 1))
+            stack.append((y, x - 1))
+        if size >= min_size:
+            out.append((size, ymin, xmin, ymax, xmax))
+    return out
+
+
+def _region_slice(bbox: tuple[int, int, int, int], frac: tuple[float, float, float, float]) -> tuple[int, int, int, int]:
+    x0, y0, x1, y1 = bbox
+    yt, yb, xl, xr = frac
+    bh = max(1, y1 - y0 + 1)
+    bw = max(1, x1 - x0 + 1)
+    return (y0 + int(yt * bh), y0 + int(yb * bh), x0 + int(xl * bw), x0 + int(xr * bw))
+
+
+def _score_tongue(rgb: np.ndarray, lab: np.ndarray, subject_mask: np.ndarray,
+                  bbox: tuple[int, int, int, int]) -> int:
+    """Count red elongated CCs in the mouth/face region. The vermillion
+    folk-palette color (#c8261f) is the Madhubani tongue color in
+    practice; we look for connected red regions in the face area."""
+    ry0, ry1, rx0, rx1 = _region_slice(bbox, _REGION_BBOX_FRACTIONS["mouth"])
+    if ry1 <= ry0 or rx1 <= rx0:
+        return 0
+    vermillion = _hex_to_rgb("#c8261f")
+    distance = _delta_e(lab[ry0:ry1, rx0:rx1], vermillion)
+    region_mask = subject_mask[ry0:ry1, rx0:rx1]
+    red_mask = region_mask & (distance < 18)
+    if not red_mask.any():
+        return 0
+    ccs = _connected_components(red_mask, min_size=24)
+    # Filter to ELONGATED components (aspect ratio > 1.4 in either dimension)
+    # — a tongue is a long thin shape, a face medallion is roughly circular.
+    elongated = 0
+    for size, ymin, xmin, ymax, xmax in ccs:
+        h = ymax - ymin + 1
+        w = xmax - xmin + 1
+        aspect = max(h, w) / max(1, min(h, w))
+        if aspect >= 1.4:
+            elongated += 1
+    return elongated
+
+
+def _score_horns_on_nose(subject_mask: np.ndarray, bbox: tuple[int, int, int, int]) -> int:
+    """Count distinct upward protrusions of the subject mask in the
+    face-side region above the bbox-top. Implementation: slice the top
+    strip of the bbox, find runs of contiguous columns where the subject
+    extends to the topmost ~5% of the bbox — each run is one horn."""
+    x0, y0, x1, y1 = bbox
+    bw = max(1, x1 - x0 + 1)
+    bh = max(1, y1 - y0 + 1)
+    # Top 8% of bbox, face-side half (x 50%-100%).
+    horn_band_top = y0
+    horn_band_bottom = y0 + max(1, int(0.08 * bh))
+    horn_x_start = x0 + bw // 2
+    horn_x_end = x1 + 1
+    strip = subject_mask[horn_band_top:horn_band_bottom, horn_x_start:horn_x_end]
+    if strip.size == 0:
+        return 0
+    # Column-presence: 1 if any subject pixel in that column within the strip.
+    col_presence = strip.any(axis=0).astype(np.uint8)
+    # A "horn" is a contiguous run of present columns ≥ 4 px wide separated
+    # by ≥ 6 px gaps. Trail-of-ones counting:
+    horns = 0
+    in_run = False
+    run_w = 0
+    gap_w = 0
+    for v in col_presence:
+        if v:
+            if not in_run and gap_w >= 6:
+                in_run = True
+                run_w = 0
+            elif not in_run:
+                in_run = True
+                run_w = 0
+            run_w += 1
+            gap_w = 0
+        else:
+            if in_run:
+                if run_w >= 4:
+                    horns += 1
+                in_run = False
+                run_w = 0
+            gap_w += 1
+    if in_run and run_w >= 4:
+        horns += 1
+    return horns
+
+
+def _score_tail_eye_spots(rgb: np.ndarray, lab: np.ndarray, subject_mask: np.ndarray,
+                          bbox: tuple[int, int, int, int],
+                          expected_body_fill: str | None) -> int:
+    """Count distinct decoration islands in the tail region. For peacock,
+    each ocellus is a small circular blob of non-body-fill color. We
+    count connected components within the tail slice that have
+    near-circular shape (aspect 0.5..2.0) and size in [60, 1200] px."""
+    if not expected_body_fill:
+        return 0
+    ry0, ry1, rx0, rx1 = _region_slice(bbox, _REGION_BBOX_FRACTIONS["tail"])
+    if ry1 <= ry0 or rx1 <= rx0:
+        return 0
+    body_rgb = _hex_to_rgb(expected_body_fill)
+    region_lab = lab[ry0:ry1, rx0:rx1]
+    region_mask = subject_mask[ry0:ry1, rx0:rx1]
+    body_distance = _delta_e(region_lab, body_rgb)
+    decorated = region_mask & (body_distance > 18)
+    if not decorated.any():
+        return 0
+    ccs = _connected_components(decorated, min_size=60)
+    ocelli = 0
+    for size, ymin, xmin, ymax, xmax in ccs:
+        if size > 1200:
+            continue  # too big — that's the body, not an ocellus
+        h = ymax - ymin + 1
+        w = xmax - xmin + 1
+        aspect = max(h, w) / max(1, min(h, w))
+        if aspect <= 2.0:  # roughly round-ish
+            ocelli += 1
+    return ocelli
+
+
+def _score_anatomy_feature_count(
+    rgb: np.ndarray,
+    lab: np.ndarray,
+    subject_mask: np.ndarray,
+    bbox: tuple[int, int, int, int],
+    expected_body_fill: str | None,
+    constraints: dict[str, Any] | None,
+) -> dict[str, Any]:
+    """Phase B.3 v1 — count cobra tongues, rhino horns, peacock ocelli."""
+    if not constraints:
+        return {
+            "pass": True,
+            "reason": "no anatomical_count_constraints declared on animal",
+            "informational_only": True,
+        }
+    if subject_mask is None or not subject_mask.any():
+        return {
+            "pass": False,
+            "reason": "no subject mask detected",
+            "features": [],
+        }
+
+    SUPPORTED = {"tongue", "horns_on_nose", "tail_eye_spots"}
+    features: list[dict[str, Any]] = []
+    pass_count = 0
+    fail_count = 0
+    skipped_count = 0
+
+    for key, raw in constraints.items():
+        if key not in SUPPORTED:
+            features.append({"feature": key, "skipped": True, "reason": "not in v1 supported set"})
+            skipped_count += 1
+            continue
+        parsed = _parse_count_constraint(str(raw))
+        if key == "tongue":
+            measured = _score_tongue(rgb, lab, subject_mask, bbox)
+        elif key == "horns_on_nose":
+            measured = _score_horns_on_nose(subject_mask, bbox)
+        elif key == "tail_eye_spots":
+            measured = _score_tail_eye_spots(rgb, lab, subject_mask, bbox, expected_body_fill)
+        else:
+            measured = -1
+
+        # Determine pass:
+        ok = True
+        reason: str
+        if parsed.get("expects_zero") and measured > 0:
+            ok = False
+            reason = f"expected closed/none, found {measured}"
+        elif "min" in parsed and "max" in parsed:
+            if not (parsed["min"] <= measured <= parsed["max"]):
+                ok = False
+                reason = f"measured {measured} outside expected [{parsed['min']},{parsed['max']}]"
+            else:
+                reason = f"measured {measured} in expected [{parsed['min']},{parsed['max']}]"
+        else:
+            # Could not parse the constraint numerically.
+            features.append({
+                "feature": key,
+                "measured": measured,
+                "skipped": True,
+                "reason": "could not parse numeric expectation from constraint text",
+            })
+            skipped_count += 1
+            continue
+
+        if ok:
+            pass_count += 1
+        else:
+            fail_count += 1
+        features.append({
+            "feature": key,
+            "measured": measured,
+            "parsed": parsed,
+            "pass": ok,
+            "reason": reason,
+        })
+
+    scored = pass_count + fail_count
+    overall_pass = scored == 0 or fail_count == 0
+    return {
+        "pass": overall_pass,
+        "features_scored": scored,
+        "features_passed": pass_count,
+        "features_failed": fail_count,
+        "features_skipped": skipped_count,
+        "features": features,
+        "reason": (
+            "no v1-supported features declared on this species" if scored == 0
+            else f"{pass_count}/{scored} v1-supported features in range"
+        ),
+    }
+
+
 def score_madhubani_png(
     png_path: Path,
     *,
@@ -570,6 +895,7 @@ def score_madhubani_png(
     body_type: str | None = None,
     decoration_density: str | None = None,
     required_decoration_zones: list[str] | None = None,
+    anatomical_count_constraints: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     palette = _load_palette(palette_path)
     rules = palette.get("rules", {})
@@ -665,6 +991,10 @@ def score_madhubani_png(
         lab, subject_mask, (x0, y0, x1, y1), expected_body_fill,
         required_decoration_zones,
     )
+    anatomy_feature_count_check = _score_anatomy_feature_count(
+        rgb, lab, subject_mask, (x0, y0, x1, y1), expected_body_fill,
+        anatomical_count_constraints,
+    )
 
     checks = {
         "color_floor": {
@@ -700,6 +1030,7 @@ def score_madhubani_png(
         "eye_character": eye_character_check,
         "pattern_density": pattern_density_check,
         "decoration_zone_presence": zone_presence_check,
+        "anatomy_feature_count": anatomy_feature_count_check,
     }
     # Active checks are everything except those marked disabled_by_default —
     # disabled checks still run and report (informational), but they do not

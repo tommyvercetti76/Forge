@@ -21,7 +21,9 @@ sys.path.insert(0, str(ROOT / "bin"))
 from madhubani_qc import (
     AUTO_CHECK_COUNT,
     _extract_zone_label,
+    _parse_count_constraint,
     _score_anatomy,
+    _score_anatomy_feature_count,
     _score_decoration_zone_presence,
     _score_eye_character,
     _score_text_leak,
@@ -232,14 +234,97 @@ class DecorationZonePresenceTests(unittest.TestCase):
         self.assertTrue(result.get("informational_only"))
 
 
+class ParseCountConstraintTests(unittest.TestCase):
+    def test_bare_number(self) -> None:
+        result = _parse_count_constraint("4 (all four legs as distinct outlines)")
+        self.assertEqual(result["min"], 4)
+        self.assertEqual(result["max"], 4)
+
+    def test_range_with_to(self) -> None:
+        result = _parse_count_constraint("8 to 12 distinct ocellus motifs")
+        self.assertEqual(result["min"], 8)
+        self.assertEqual(result["max"], 12)
+
+    def test_range_with_dash(self) -> None:
+        result = _parse_count_constraint("3 to 5 fan feathers")
+        self.assertEqual(result["min"], 3)
+        self.assertEqual(result["max"], 5)
+
+    def test_closed_mouth_expects_zero(self) -> None:
+        result = _parse_count_constraint(
+            "closed (no tongue visible; no fangs unless signature-action pose)"
+        )
+        self.assertTrue(result.get("expects_zero"))
+
+    def test_either_not_or_one(self) -> None:
+        # The cobra constraint — the user's #1 callout.
+        result = _parse_count_constraint(
+            "either NOT visible (mouth closed, default) OR exactly ONE forked tongue"
+        )
+        # Should land as a 0..1 range, not as expects_zero (because ONE is allowed).
+        self.assertEqual(result.get("min"), 0)
+        self.assertEqual(result.get("max"), 1)
+
+
+class AnatomyFeatureCountTests(unittest.TestCase):
+    def _setup(self):
+        # Walnut-brown body silhouette, plenty big to slice into regions.
+        height = width = 256
+        rgb = np.full((height, width, 3), [245, 239, 227], dtype=np.uint8)
+        rgb[40:220, 50:200] = [90, 58, 31]
+        subject_mask = np.zeros((height, width), dtype=bool)
+        subject_mask[40:220, 50:200] = True
+        bbox = (50, 40, 199, 219)
+        from madhubani_qc import _srgb_to_lab
+        return rgb, _srgb_to_lab(rgb), subject_mask, bbox
+
+    def test_passes_informationally_when_no_constraints(self) -> None:
+        rgb, lab, mask, bbox = self._setup()
+        result = _score_anatomy_feature_count(rgb, lab, mask, bbox, "#5a3a1f", None)
+        self.assertTrue(result["pass"])
+        self.assertTrue(result.get("informational_only"))
+
+    def test_skips_unsupported_features_gracefully(self) -> None:
+        rgb, lab, mask, bbox = self._setup()
+        constraints = {
+            "legs_visible": "4 (all four legs)",
+            "ears": "2 small triangular",
+        }
+        result = _score_anatomy_feature_count(rgb, lab, mask, bbox, "#5a3a1f", constraints)
+        # v1 doesn't support legs_visible or ears — both skipped.
+        self.assertTrue(result["pass"])  # nothing scored, nothing failed
+        self.assertEqual(result["features_skipped"], 2)
+        self.assertEqual(result["features_scored"], 0)
+
+    def test_cobra_two_tongues_fails(self) -> None:
+        # The user's #1 callout. Draw two red elongated shapes in the mouth zone.
+        rgb, lab, mask, bbox = self._setup()
+        # Mouth zone is roughly row 72-112, col 140-200 for this bbox.
+        # Two parallel thin red strips → two CCs, both elongated.
+        rgb[90:106, 150:158] = [200, 38, 31]  # tongue 1 (vermillion-ish, 16 high × 8 wide)
+        rgb[90:106, 170:178] = [200, 38, 31]  # tongue 2
+        from madhubani_qc import _srgb_to_lab
+        lab = _srgb_to_lab(rgb)
+        constraints = {
+            "tongue": "either NOT visible (mouth closed, default) OR exactly ONE forked tongue",
+        }
+        result = _score_anatomy_feature_count(rgb, lab, mask, bbox, "#5a3a1f", constraints)
+        self.assertFalse(result["pass"])
+        # The tongue feature should have measured 2.
+        tongue_feat = next(f for f in result["features"] if f.get("feature") == "tongue")
+        self.assertEqual(tongue_feat["measured"], 2)
+
+
 class AutoCheckCountTests(unittest.TestCase):
     def test_constant_matches_active_checks(self) -> None:
-        # Bumped 7 → 8 in Phase-B B.1 (2026-05-20) when pattern_density landed.
-        # Bumped 8 → 9 in Phase-B B.2 (2026-05-20) when decoration_zone_presence
-        # landed. Rubric: color_floor, corners_clean, subject_centered,
-        # body_fill, anatomy, text_leak, eye_character, pattern_density,
-        # decoration_zone_presence. Anatomy is informational.
-        self.assertEqual(AUTO_CHECK_COUNT, 9)
+        # 7 → 8 (B.1 pattern_density) → 9 (B.2 decoration_zone_presence) →
+        # 10 (B.3 anatomy_feature_count). The rubric now scores:
+        # color_floor, corners_clean, subject_centered, body_fill, anatomy
+        # (informational), text_leak, eye_character, pattern_density
+        # (informational after B.1 agreement study), decoration_zone_presence,
+        # anatomy_feature_count (informational at v1 launch — only 3 features
+        # supported, see B.3 launch commit).
+        self.assertEqual(AUTO_CHECK_COUNT, 10)
 
 
 if __name__ == "__main__":

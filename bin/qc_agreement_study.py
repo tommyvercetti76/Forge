@@ -141,6 +141,7 @@ def score_one(entry: dict[str, Any]) -> dict[str, Any] | None:
         body_type=animal.get("body_type"),
         decoration_density=animal.get("decoration_density"),
         required_decoration_zones=animal.get("required_decoration_zones"),
+        anatomical_count_constraints=animal.get("anatomical_count_constraints"),
     )
     return qc
 
