@@ -17,7 +17,21 @@ import numpy as np
 from PIL import Image
 
 
-AUTO_CHECK_COUNT = 7
+AUTO_CHECK_COUNT = 8
+
+# Phase-B (2026-05-20, B.1) — pattern_density target bands per decoration_density.
+# Measured: fraction of subject-mask pixels NOT close to the body_fill_color
+# (i.e. carrying decoration). A render that's "ornate" should have ~45-80% of
+# the subject silhouette decorated; "minimal" should have ≤20%. The check
+# fails if measured density is more than ONE BAND below target — e.g. peacock
+# declared "maximal" (target ≥0.65) rendered at 0.32 is two bands low → fail.
+PATTERN_DENSITY_BANDS: dict[str, tuple[float, float]] = {
+    # density_name: (min_acceptable, target_ideal)
+    "minimal":  (0.05, 0.15),
+    "balanced": (0.20, 0.40),
+    "ornate":   (0.40, 0.60),
+    "maximal":  (0.55, 0.75),
+}
 
 # Body-type → expected leg-pillar count under _score_anatomy. Body types
 # absent from the map skip the leg-count check entirely (pass by definition).
@@ -284,12 +298,90 @@ def _score_eye_character(rgb: np.ndarray, subject_mask: np.ndarray) -> dict[str,
     }
 
 
+def _score_pattern_density(
+    rgb: np.ndarray,
+    lab: np.ndarray,
+    subject_mask: np.ndarray,
+    expected_body_fill: str | None,
+    decoration_density: str | None,
+) -> dict[str, Any]:
+    """Phase-B B.1 (2026-05-20) — pattern_density verification.
+
+    Measures what fraction of the subject silhouette carries DECORATION
+    (i.e., is NOT close to the body_fill_color). High density = ornate
+    multi-color Madhubani. Low density = sparse / minimal / Kachni-school.
+
+    The animal's decoration_density field declares the target band (minimal
+    / balanced / ornate / maximal); this check fails when the measured
+    density is below the band's minimum threshold.
+
+    Returns:
+      {pass, measured_density, target_band, target_min, target_ideal, ...}
+    """
+    if subject_mask is None or not subject_mask.any():
+        return {
+            "pass": False,
+            "measured_density": 0.0,
+            "target_band": decoration_density,
+            "reason": "no subject mask detected",
+        }
+    if not expected_body_fill:
+        # No body_fill_color anchor → can't distinguish decoration from base.
+        # Report informationally but don't fail.
+        return {
+            "pass": True,
+            "measured_density": None,
+            "target_band": decoration_density,
+            "reason": "expected_body_fill not provided; density check skipped",
+            "informational_only": True,
+        }
+    body_rgb = _hex_to_rgb(expected_body_fill)
+    body_distance = _delta_e(lab, body_rgb)
+    # Subject pixels that are NOT close to the body fill color carry
+    # decoration. Threshold of 14 Δ-E is the same we use for subject_mask.
+    decorated_in_subject = subject_mask & (body_distance > 14)
+    denominator = max(1, int(subject_mask.sum()))
+    measured_density = float(decorated_in_subject.sum() / denominator)
+
+    if not decoration_density:
+        # Animal entry hasn't declared a target band — measure for reporting
+        # but don't hold the render to an arbitrary default.
+        return {
+            "pass": True,
+            "measured_density": round(measured_density, 4),
+            "target_band": None,
+            "decorated_pixel_count": int(decorated_in_subject.sum()),
+            "subject_pixel_count": int(subject_mask.sum()),
+            "reason": "decoration_density not declared; density check informational",
+            "informational_only": True,
+        }
+    band = decoration_density.lower()
+    if band not in PATTERN_DENSITY_BANDS:
+        band = "ornate"
+    target_min, target_ideal = PATTERN_DENSITY_BANDS[band]
+    return {
+        "pass": measured_density >= target_min,
+        "measured_density": round(measured_density, 4),
+        "target_band": band,
+        "target_min": target_min,
+        "target_ideal": target_ideal,
+        "decorated_pixel_count": int(decorated_in_subject.sum()),
+        "subject_pixel_count": int(subject_mask.sum()),
+        "reason": (
+            f"density {measured_density:.0%} below {band} band minimum {target_min:.0%}"
+            if measured_density < target_min
+            else f"density {measured_density:.0%} meets {band} band (target {target_ideal:.0%})"
+        ),
+    }
+
+
 def score_madhubani_png(
     png_path: Path,
     *,
     palette_path: Path,
     expected_body_fill: str | None = None,
     body_type: str | None = None,
+    decoration_density: str | None = None,
 ) -> dict[str, Any]:
     palette = _load_palette(palette_path)
     rules = palette.get("rules", {})
@@ -374,6 +466,9 @@ def score_madhubani_png(
     anatomy_check = _score_anatomy(subject_mask, body_type)
     text_leak_check = _score_text_leak(png_path)
     eye_character_check = _score_eye_character(rgb, subject_mask)
+    pattern_density_check = _score_pattern_density(
+        rgb, lab, subject_mask, expected_body_fill, decoration_density,
+    )
 
     checks = {
         "color_floor": {
@@ -407,6 +502,7 @@ def score_madhubani_png(
         "anatomy": anatomy_check,
         "text_leak": text_leak_check,
         "eye_character": eye_character_check,
+        "pattern_density": pattern_density_check,
     }
     # Active checks are everything except those marked disabled_by_default —
     # disabled checks still run and report (informational), but they do not

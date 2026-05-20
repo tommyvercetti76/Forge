@@ -133,8 +133,12 @@ class EyeCharacterCheckTests(unittest.TestCase):
 
 
 class AutoCheckCountTests(unittest.TestCase):
-    def test_constant_is_seven(self) -> None:
-        self.assertEqual(AUTO_CHECK_COUNT, 7)
+    def test_constant_matches_active_checks(self) -> None:
+        # Bumped 7 → 8 in Phase-B B.1 (2026-05-20) when pattern_density landed.
+        # The auto-check rubric now scores: color_floor, corners_clean,
+        # subject_centered, body_fill, anatomy, text_leak, eye_character,
+        # pattern_density. Anatomy is informational (disabled_by_default).
+        self.assertEqual(AUTO_CHECK_COUNT, 8)
 
 
 if __name__ == "__main__":
