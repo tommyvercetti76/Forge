@@ -25,13 +25,30 @@ Software:
 1. Clone the repo and `cd` into it.
 2. Create a Python 3.11+ virtual environment (`python3 -m venv .venv`,
    then `source .venv/bin/activate`).
-3. Install dependencies as declared in the project manifest.
+3. Install dependencies (and the dev extras used by the test suite):
+
+   ```
+   pip install -e '.[dev]'
+   ```
+
+   This resolves the lightweight runtime deps declared in
+   `pyproject.toml` (Pillow, numpy) plus the dev tools (pytest, ruff,
+   black). Heavy ML dependencies — `mflux`, `mlx`, optional
+   `pytesseract`, optional Whisper — are intentionally **not** in the
+   manifest because they pull large model weights; install them
+   separately per the ML setup notes below before running the engines
+   that need them. Forge's `bin/` scripts are run directly
+   (`python3 bin/forge.py <command>`); `pip install -e .` resolves
+   dependencies but does not install the CLI as a console script.
 4. Rehydrate the reference corpus locally:
    `python3 bin/rehydrate_references.py`. Binaries are intentionally
    gitignored; only the attribution manifests are committed.
 5. Install model weights from their original sources (Hugging Face). Forge
    does not redistribute weights. Review each model's license before use;
-   FLUX weights are non-commercial only (see `NOTICE`).
+   FLUX weights are non-commercial only (see `NOTICE`). The mflux runtime
+   and Apple MLX framework are also installed separately at this step,
+   per their upstream docs — they are heavy ML dependencies and are not
+   part of `pip install -e '.[dev]'`.
 
 ## Tests
 
@@ -41,9 +58,12 @@ Before opening a pull request, the test suite must pass:
 python3 -m unittest discover tests
 ```
 
-At the last verified run the suite reports 119+ passing tests. New code
+At the last verified run the suite reports 128 passing tests (1 skipped:
+an OCR check that needs an optional `pytesseract` install). New code
 should add tests in `tests/`, and unrelated test regressions should be
-fixed in the same PR that caused them.
+fixed in the same PR that caused them. CI runs the same command on
+macos-latest across Python 3.11 / 3.12 / 3.13 — see
+[`.github/workflows/tests.yml`](.github/workflows/tests.yml).
 
 ## Style and commits
 

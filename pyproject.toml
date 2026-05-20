@@ -1,0 +1,54 @@
+# NOTE: Forge runs as a collection of scripts under bin/, not an
+# importable package. `pip install -e .` resolves dependencies but
+# does not install the CLI as a console script — invoke scripts
+# directly: `python3 bin/forge.py <command>`. Packaging the CLI is
+# a future task.
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "forge"
+version = "0.1.0"
+description = "Local-first generative-AI workstation for Apple Silicon. Image · Text · Audio. No cloud required for core local paths."
+readme = "README.md"
+license = { text = "MIT" }
+authors = [{ name = "Rohan Ramekar" }]
+requires-python = ">=3.11"
+keywords = [
+    "apple-silicon",
+    "mflux",
+    "flux",
+    "generative-ai",
+    "local-first",
+    "mlx",
+    "madhubani",
+    "mithila",
+    "image-generation",
+    "translation",
+]
+classifiers = [
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: MacOS",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Multimedia :: Graphics",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+# Core runtime deps used unconditionally by bin/ scripts.
+# Heavy ML deps (mflux, mlx, pytesseract, whisper) are conditionally
+# imported and documented as separate runtime requirements in
+# CONTRIBUTING.md — they are NOT listed here to keep `pip install -e .`
+# fast and to avoid pulling model weights into CI.
+dependencies = [
+    "Pillow",
+    "numpy",
+]
+
+[project.optional-dependencies]
+dev = ["pytest", "ruff", "black"]
+
+[project.urls]
+Homepage = "https://github.com/tommyvercetti76/Forge"
+Issues = "https://github.com/tommyvercetti76/Forge/issues"
