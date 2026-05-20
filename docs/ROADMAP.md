@@ -61,10 +61,9 @@ Open an issue first for anything in "In progress" so we don't collide.
 
 ## In progress
 
-- **`pyproject.toml` + dependency manifest** — `CONTRIBUTING.md` currently references a manifest that does not exist. Closing this so `pip install -e '.[dev]'` works from a fresh clone. (OSS Readiness P0)
-- **GitHub Actions CI workflow** — `.github/workflows/tests.yml` to back the README test badge with a real green build. Linux-side unit tests; Metal/model checks stay local-only. (OSS Readiness P0)
-- **README alignment** — committing the untracked `tests/test_mockup_compositor.py` (or reverting the README claim) so the 128-test number matches the tracked suite. (OSS Readiness P0)
+- **LoRA pilot smoke run** — `mflux-train` against `z-image-turbo` with the 50-image Mithila corpus. Pipeline shipped: [`bin/forge_madhubani_lora.py`](../bin/forge_madhubani_lora.py) + [`LORA_TRAINING_RECIPE`](LORA_TRAINING_RECIPE.md). Smoke run completes in ~7 min at 512 px on M5 Max; checkpoint will land at `training/madhubani_lora/training/<ts>/checkpoints/lora_adapter.safetensors`. Full overnight recipe (~15 hrs) documented but not yet run.
 - **Phase B.3 — anatomy_feature_count heuristics** — queued next in the Art Reasoning Engine sequence; spec done, no code yet.
+- **HuggingFace publication of the LoRA checkpoint** — upload + model card with cultural attribution + before/after F1 measurement vs baseline auto-QC. Pending the full overnight training run.
 
 ---
 

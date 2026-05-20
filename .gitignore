@@ -61,6 +61,18 @@ outputs/
 generated/
 forge-out/
 
+# LoRA training data + run outputs. The config (train.json) and the
+# DATASET.md provenance summary are committed via explicit `git add`.
+# Image symlinks, captions, checkpoints, logs, and progress samples
+# are not — they regenerate from bin/forge_madhubani_lora.py and the
+# rehydrated reference corpus.
+training/madhubani_lora/images/
+training/madhubani_lora/training/
+training/logs/
+# mflux-train resolves `checkpoint.output_path` relative to CWD with a
+# timestamp suffix, so runs launched from the repo root land here too.
+training_*/
+
 # Gallery DB, lock files, and other per-machine runtime state.
 .forge-state/
 *.mp4
