@@ -419,6 +419,12 @@ def execute_render(
     (empirically validated 2026-05-20 against FLUX.1-dev — see PROFILES["madhubani"]
     docstring in forge.py). The dispatcher in forge.py:mflux_cli_for() picks
     the mflux-generate-flux2 binary based on the profile's flux_model.
+
+    Lane-1 (2026-05-20): when the animal has a `style_reference_path` set in
+    animals.json, pass it through as `--style-reference` to forge engine
+    render. This makes FLUX.2 condition on the existing corpus (legacy v3
+    renders or pass_examples) — visual style transfer that locks the
+    Madhubani folk-icon register much harder than prompt-only iteration can.
     """
     cmd = [
         sys.executable, str(FORGE_BIN),
@@ -430,6 +436,20 @@ def execute_render(
         "--steps", str(steps),
         "--out", str(plan.out_path),
     ]
+    # Pass the style reference through if the animal has one declared. The
+    # reference path in animals.json is relative to repo root; resolve it
+    # absolute for the child process.
+    ref_rel = plan.animal.get("style_reference_path")
+    ref_strength = plan.animal.get("style_reference_strength")
+    if ref_rel:
+        ref_abs = ROOT / ref_rel
+        if ref_abs.exists():
+            cmd.extend(["--style-reference", str(ref_abs)])
+            if ref_strength is not None:
+                cmd.extend(["--style-reference-strength", str(ref_strength)])
+            print(f"   style-ref: {ref_rel} (strength={ref_strength})")
+        else:
+            print(f"   ! style_reference_path declared but file missing: {ref_rel}; skipping")
     print(f"\n── [{plan.pose['ordinal']}/4] {plan.animal_slug} — {plan.pose['slug']}  (seed={plan.seed}, register={plan.register}, steps={steps})")
     if dry_run:
         print(f"   [dry-run] would run: {' '.join(cmd[:6])} ...")

@@ -1328,6 +1328,28 @@ def cmd_video(args) -> int:
     return 0
 
 
+def _style_reference_args(
+    style_reference_path: str | Path | None,
+    style_reference_strength: float = 0.6,
+) -> list[str]:
+    """Lane-1 (2026-05-20): if a style reference is provided, append the
+    mflux --image-path + --image-strength flags. Uniform across FLUX.1
+    (mflux-generate) and FLUX.2 (mflux-generate-flux2) — both CLIs accept
+    these flags. Returns [] when no reference is set.
+
+    The path is resolved to an absolute string. Missing files emit a
+    warning and skip silently (better than crashing the whole render set
+    when a reference is moved)."""
+    if not style_reference_path:
+        return []
+    ref = Path(style_reference_path).expanduser().resolve()
+    if not ref.exists():
+        print(dim(f"  · style-reference not found: {ref}; skipping image conditioning"))
+        return []
+    strength = max(0.0, min(1.0, float(style_reference_strength)))
+    return ["--image-path", str(ref), "--image-strength", str(strength)]
+
+
 def flux_generate(
     preset: dict,
     concept: str,
@@ -1344,6 +1366,8 @@ def flux_generate(
     height: int | None = None,
     guidance_override: float | None = None,
     quantize: int | None = None,
+    style_reference_path: str | Path | None = None,
+    style_reference_strength: float = 0.6,
 ) -> None:
     flux = preset["flux"]
     model, step_count, guidance = _resolve_flux_runtime(
@@ -1429,6 +1453,9 @@ def flux_generate(
         # mflux: --lora-paths and --lora-scales each take space-separated values
         cmd.extend(["--lora-paths", *eff_loras])
         cmd.extend(["--lora-scales", *[str(s) for s in eff_scales]])
+    # Lane-1 style reference (2026-05-20) — image conditioning when set
+    ref_args = _style_reference_args(style_reference_path, style_reference_strength)
+    cmd.extend(ref_args)
     mode_tag = profile.upper() if profile else ("DRAFT" if draft else "FINAL")
     series_tag = f" series={series['id']}" if series and series.get("id") else ""
     lora_tag = f" loras={len(eff_loras)}" if eff_loras else ""
@@ -1485,6 +1512,8 @@ def flux_generate_batch(
     height: int | None = None,
     guidance_override: float | None = None,
     quantize: int | None = None,
+    style_reference_path: str | Path | None = None,
+    style_reference_strength: float = 0.6,
 ) -> None:
     # mflux's native --seed S1 S2 … pays the FLUX cold-load once per batch
     # instead of once per subprocess. Measured 5.6× speedup on cool/schnell
@@ -1578,11 +1607,15 @@ def flux_generate_batch(
     if eff_loras:
         cmd.extend(["--lora-paths", *eff_loras])
         cmd.extend(["--lora-scales", *[str(s) for s in eff_scales]])
+    # Lane-1 style reference (2026-05-20) — image conditioning when set
+    ref_args = _style_reference_args(style_reference_path, style_reference_strength)
+    cmd.extend(ref_args)
 
     mode_tag = profile.upper() if profile else ("DRAFT" if draft else "FINAL")
     q_resolved = _resolve_quantize(quantize)
     q_tag = f" q{q_resolved}" if q_resolved else " fp16"
     lora_tag = f" loras={len(eff_loras)}" if eff_loras else ""
+    style_tag = f" style-ref" if ref_args else ""
     seeds_tag = ",".join(str(s) for s in seeds)
     print(dim(f"  $ {mflux_bin} [{mode_tag}]{q_tag} model={model} steps={step_count} guidance={guidance} seeds=[{seeds_tag}] batch{lora_tag}"))
 
@@ -3641,6 +3674,8 @@ def cmd_engine_render(args) -> int:
             width=eff_w, height=eff_h,
             guidance_override=guidance_override,
             quantize=getattr(args, "quantize", None),
+            style_reference_path=getattr(args, "style_reference", None),
+            style_reference_strength=getattr(args, "style_reference_strength", 0.6),
         )
         batch_pre_rendered = set(batch_seeds)
 
@@ -3702,6 +3737,8 @@ def cmd_engine_render(args) -> int:
                 series=None, draft=args.draft, profile=args.profile,
                 width=eff_w, height=eff_h, guidance_override=guidance_override,
                 quantize=getattr(args, "quantize", None),
+                style_reference_path=getattr(args, "style_reference", None),
+                style_reference_strength=getattr(args, "style_reference_strength", 0.6),
             )
 
         # Second pass — img2img refinement at low denoise (txt2img path only)
@@ -5972,6 +6009,10 @@ def main() -> int:
                             help="mflux quantization (3/4/5/6/8 bits). 4=~50%% faster with mild quality drop (default), 8=near-fp16 fidelity with ~25%% speed gain, 0=force fp16. Env: FORGE_FLUX_QUANTIZE.")
     eng_render.add_argument("--upscale", type=str, default=None, dest="upscale",
                             help="post-render upscale via RealESRGAN-ncnn-vulkan (safe high-res — renders FLUX at base size, then upscales). Values: 2x / 3x / 4x / 6x / 8x / 12x / 16x. Adds ~6 s per 4× pass. Replaces --hi-res / --ultra-res when memory matters.")
+    eng_render.add_argument("--style-reference", default=None, dest="style_reference",
+                            help="path to an existing image whose STYLE the new render should adopt (mflux --image-path). Distinct from --from-image (which replaces the subject entirely). Use --style-reference to lock the Madhubani folk-icon register against pass_examples / _legacy renders. Pairs with --style-reference-strength.")
+    eng_render.add_argument("--style-reference-strength", type=float, default=0.6, dest="style_reference_strength",
+                            help="how strongly --style-reference influences the render: 0.3 = strong (output close to reference), 0.6 = balanced default (style preserved, prompt drives pose), 0.9 = loose. Maps to mflux's --image-strength. Default 0.6.")
     eng_render.add_argument("--allow-qc-warnings", action="store_true", dest="allow_qc_warnings",
                             help="treat failed auto-QC checks as warnings instead of blockers. Per-render blockers.json is still written; publishable=true is forced. Use only after human review.")
     eng_render.set_defaults(func=cmd_engine_render)

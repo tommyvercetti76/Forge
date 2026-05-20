@@ -118,10 +118,12 @@
       "body_type": "lean-predator",
       "body_fill_color": "#5a3a1f",
       "body_fill_color_name": "walnut-brown",
-      "signature_features": "stripes translated into multi-color folk panels, long curved tail, almond eye, whisker dots",
+      "signature_features": "the body silhouette MUST carry 8-12 BOLD VERTICAL STRIPES — the iconic tiger stripe rhythm, preserved as flat folk-color bands running top-to-bottom across the back/flank/shoulder/haunch in indigo/leaf-green/vermillion/gold (NEVER black-on-orange photography, NEVER replaced by floral medallions). Without those distinct vertical stripe bands this is not a tiger. Plus: long curved tail with a continuation of the stripe-bands as tail rings, almond eye, whisker dots near the muzzle.",
       "signature_action": "crouched ready to leap, low body, intense gaze forward",
       "rest_pose_for_species": "seated upright, forelimbs straight, tail wrapped around feet",
-      "anatomy_must_include": "body filled with saturated walnut-brown NOT natural orange-and-black tiger photography; stripes translated INTO multi-color Madhubani folk panels (indigo, leaf-green, vermillion, gold) NOT realistic black stripes on orange fur; almond eye not round cartoon eye",
+      "anatomy_must_include": "body filled with saturated walnut-brown NOT natural orange-and-black tiger photography; THE STRIPE PATTERN MUST READ AS STRIPES — 8-12 distinct vertical bands of flat folk color (indigo, leaf-green, vermillion, gold) running across the back/flank/shoulder; NOT scattered floral medallions, NOT all-over patterning, NOT a generic lion silhouette; almond eye not round cartoon eye; long curved tail with banded folk pattern; the result must be unambiguously a TIGER (vertical stripe rhythm visible) and not a lion or generic large cat",
+      "style_reference_path": "generated/madhubani_animals/_legacy/indian_animals_v3/01_royal_bengal_tiger_madhubani_tshirt.png",
+      "style_reference_strength": 0.55,
       "iucn_status": "Endangered",
       "conservation_note": "National animal of India; ~3000 wild individuals remain. Jim Corbett National Park is India's oldest national park (1936) and the launchpad of Project Tiger.",
       "seed_block_start": 8300
@@ -140,8 +142,9 @@
       "signature_features": "curved trunk, large decorated ear, small tusk, almond eye",
       "signature_action": "trumpeting trunk raised high, mouth open in call",
       "rest_pose_for_species": "standing relaxed, trunk curled, weight on three legs with one lifted",
+      "style_reference_path": "generated/madhubani_animals/_learning/pass_examples/elephant_v2.png",
+      "style_reference_strength": 0.6,
       "iucn_status": "Endangered",
-      "conservation_note": "Cultural icon across South and Southeast Asia; threatened by habitat loss. Jim Corbett's foothills sustain the largest elephant population in northern India.",
       "seed_block_start": 8400
     },
     {
@@ -159,8 +162,9 @@
       "signature_action": "charging with focused power, head lowered horn forward",
       "rest_pose_for_species": "reclining camel-fashion, front legs folded beneath body",
       "anatomy_must_include": "EXACTLY ONE nose horn (Indian one-horned rhinoceros has a single horn, NEVER two); armored skin folds across shoulders and haunches; rectangular ears",
+      "style_reference_path": "generated/madhubani_animals/_learning/pass_examples/rhino_v3.png",
+      "style_reference_strength": 0.6,
       "iucn_status": "Vulnerable",
-      "conservation_note": "Recovering from near-extinction in early 20th century; protected in Kaziranga and Chitwan National Parks.",
       "seed_block_start": 8200
     },
     {
@@ -193,10 +197,10 @@
       "body_type": "lean-predator",
       "body_fill_color": "#5a3a1f",
       "body_fill_color_name": "walnut-brown",
-      "signature_features": "leaner more elongated body than upland Bengal tiger, longer legs adapted to wading, stripes translated into multi-color folk panels, long tail held low and curved, mangrove leaf accents in negative space",
+      "signature_features": "leaner more elongated body than upland Bengal tiger, longer legs adapted to wading, body silhouette MUST carry 8-12 BOLD VERTICAL STRIPES preserved as flat folk-color bands (indigo/leaf-green/vermillion/gold) — the tiger stripe rhythm stays visible (NEVER replaced by florals), long tail held low and curved with banded folk pattern, mangrove leaf accents in negative space",
       "signature_action": "stalking through mangrove shallows, body lowered, tail extended straight back, water dots scattering around the paws",
       "rest_pose_for_species": "perched on a folk-pattern mangrove root with forelimbs braced, tail draped, eyes alert toward the water",
-      "anatomy_must_include": "body filled with saturated walnut-brown NOT natural orange-and-black tiger photography; stripes translated INTO multi-color Madhubani folk panels (indigo, leaf-green, vermillion, gold) NOT realistic stripes on orange fur; leaner long-legged build distinct from upland Bengal tiger; almond eye not round cartoon eye",
+      "anatomy_must_include": "body filled with saturated walnut-brown NOT natural orange-and-black tiger photography; THE STRIPE PATTERN MUST READ AS STRIPES — 8-12 distinct vertical bands of flat folk color (indigo, leaf-green, vermillion, gold) across back/flank/shoulder; NOT scattered florals; leaner long-legged wading build distinct from upland Bengal tiger; almond eye not round cartoon eye; the result must be unambiguously a TIGER (vertical stripe rhythm visible)",
       "iucn_status": "Endangered",
       "conservation_note": "Only tiger population on Earth adapted to mangrove swamps and routinely entering saltwater; an apex predator of the Sundarbans delta shared between India and Bangladesh.",
       "seed_block_start": 9100
@@ -291,8 +295,9 @@
       "signature_features": "silver mane halo as folk sunburst, dark face, ALMOND eye NOT round cartoon eye, leaf-tuft tail",
       "signature_action": "leaping between branches, mane visible in motion",
       "rest_pose_for_species": "seated calmly, hands folded, tail curved",
+      "style_reference_path": "generated/madhubani_animals/_legacy/indian_animals_v3/08_lion_tailed_macaque_madhubani_tshirt.png",
+      "style_reference_strength": 0.6,
       "iucn_status": "Endangered",
-      "conservation_note": "Endemic to the Western Ghats; <4000 remaining. Periyar's evergreen forests are core habitat.",
       "seed_block_start": 8800
     },
     {
@@ -385,8 +390,9 @@
       "signature_features": "crested head, long elegant neck, tail with feather-eye motifs",
       "signature_action": "tail fanned in full radial display, head turned profile",
       "rest_pose_for_species": "perched with tail trailing, head alert",
+      "style_reference_path": "generated/madhubani_animals/_learning/pass_examples/peacock_v3.png",
+      "style_reference_strength": 0.6,
       "iucn_status": "Least Concern",
-      "conservation_note": "National bird of India; foundational subject in Madhubani folk tradition. Ranthambore's dry deciduous forests are quintessential peacock country.",
       "seed_block_start": 9800
     },
     {
@@ -498,8 +504,9 @@
       "signature_features": "rosettes as SPARSE folk medallions (max 4-5 zones, NOT all-over pattern), flowing long tail held low, rounded ears",
       "signature_action": "crouched on a Himalayan ledge, tail flicked",
       "rest_pose_for_species": "seated with tail wrapped around body for warmth",
+      "style_reference_path": "generated/madhubani_animals/_legacy/indian_animals_v3/07_snow_leopard_madhubani_tshirt.png",
+      "style_reference_strength": 0.6,
       "iucn_status": "Vulnerable",
-      "conservation_note": "Ghost of the Himalayas; subject of intensive camera-trap conservation. Hemis National Park in Ladakh has the highest known wild density on Earth.",
       "seed_block_start": 8700
     },
     {
@@ -820,8 +827,9 @@
       "signature_features": "hood with spectacle pattern, S-curve body, almond eyes, mouth CLOSED default",
       "signature_action": "rearing with hood fully spread, head high",
       "rest_pose_for_species": "coiled with hood lowered, head resting on coils",
+      "style_reference_path": "generated/madhubani_animals/_legacy/indian_animals_v3/06_king_cobra_madhubani_tshirt.png",
+      "style_reference_strength": 0.6,
       "iucn_status": "Vulnerable",
-      "conservation_note": "Sacred in many South Asian traditions; the naga of mythology. The Silent Valley population represents a deep-forest race within the species, often darker and more reclusive than dry-zone individuals.",
       "seed_block_start": 8500
     },
     {
@@ -877,8 +885,9 @@
       "signature_action": "leaping mid-stride with all four legs off the ground in the species' iconic 'pronk' bound, horns held high, head facing forward",
       "rest_pose_for_species": "kneeling on forelegs with hindquarters tucked under, horns held upright, eye looking forward in repose",
       "anatomy_must_include": "spiral corkscrew horns (NOT straight, NOT branching like deer antlers) rising up and outward in a graceful double-twist; sharp white-on-indigo two-tone pattern with the white cheek patch + chin + belly clearly delineated against the indigo upper body as solid flat folk shapes; almond eye not round cartoon eye; this is an antelope NOT a deer",
+      "style_reference_path": "generated/madhubani_animals/_learning/pass_examples/blackbuck_v3.png",
+      "style_reference_strength": 0.6,
       "iucn_status": "Least Concern",
-      "conservation_note": "Vehicle (vahana) of the goddess Saraswati in Hindu iconography. Velavadar Blackbuck National Park in Gujarat protects the largest known blackbuck population on the planet — a flat saline grassland sanctuary where the species' iconic pronking leap can be observed at scale.",
       "seed_block_start": 12300
     }
   ],
