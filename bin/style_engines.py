@@ -4035,26 +4035,35 @@ class MinimalistTShirtEngine(Engine):
 
         prompt = "\n\n".join(prompt_parts)
 
-        # ── Per-species iconography (Lever B, 2026-05-20) ──
-        # After master citations and before universal negatives, append the
-        # iconography phrase for the matched species. Recipes may opt out by
-        # setting ``species_iconography=False`` on the config (default-on).
-        species_iconography_enabled = bool(
-            getattr(config, "species_iconography", True)
-        )
-        if species_iconography_enabled:
-            hit = _match_species(clean_subject)
-            if hit is not None:
-                prompt = prompt + f"\n\n — species: {hit['phrase']}"
-                audit["species_iconography"] = {
-                    "species": hit["species"],
-                    "phrase": hit["phrase"],
-                    "matched_via": hit["matched_via"],
-                }
-            else:
-                audit["species_iconography"] = dict(_SPECIES_ICONOGRAPHY_MISS)
-        else:
-            audit["species_iconography"] = {"species": None, "disabled": True}
+        # ── Per-species iconography (Lever B, 2026-05-20) — DISABLED HERE ──
+        # The species_iconography.json table carries photorealistic species
+        # phrases ("amber-gold eyes with vertical slit pupils", "rust-orange
+        # body with broken stripes", etc.) tuned for the wildlife-photo /
+        # naturalistic engines. Applied to this engine those phrases actively
+        # FIGHT the Madhubani folk-art convention — Madhubani tigers carry a
+        # deep navy/indigo body with folk-pattern overlays (rust/cream
+        # geometric panels inside the silhouette), NOT natural species color.
+        # See pass_examples/elephant_v2.png et al. for the canonical look.
+        #
+        # The engine's existing master-citation block ("Sita Devi Mithila",
+        # "Ganga Devi line grammar", ...) plus animals.json's body_type rules
+        # already encode the folk register correctly. We deliberately do NOT
+        # consume species_iconography here. The audit field records the skip
+        # so reviewers can see this was intentional, not accidental.
+        #
+        # If we want per-species Madhubani-style iconography in the future
+        # (e.g. "tiger — navy body with rust folk panels as inner stripe
+        # pattern, almond eye, folk-stylized") it belongs in animals.json
+        # (already engine-aware) or a separate folk-iconography table — NOT
+        # in species_iconography.json which targets photorealistic engines.
+        audit["species_iconography"] = {
+            "species": None,
+            "applied": False,
+            "skipped_reason": (
+                "minimalist-tshirt engine uses Madhubani folk register; "
+                "photorealistic species phrases conflict with style anchors"
+            ),
+        }
 
         return Directive(
             engine=cls.name,

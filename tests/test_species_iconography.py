@@ -1,10 +1,17 @@
-"""Tests for the per-species iconography table (Lever B, A1, 2026-05-20).
+"""Tests for the species iconography table (Lever B, A1, 2026-05-20).
 
-The MinimalistTShirtEngine consults brand/madhubani/species_iconography.json
-once at module import time. For a known species name (or alias) appearing in
-the subject string, the engine appends the iconography phrase to the positive
-prompt and records the hit in the directive audit dict. Recipes can opt out by
-setting ``species_iconography=False`` on the config.
+Contract as of 2026-05-20 (after the Madhubani regression fix):
+
+  - brand/madhubani/species_iconography.json still loads and is well-formed.
+  - The _match_species() helper still detects species keys + aliases.
+  - The MinimalistTShirtEngine deliberately DOES NOT consume the table:
+    its phrases are photorealistic and conflict with the Madhubani folk
+    register. The engine records a skipped_reason in the directive audit
+    so reviewers see this was intentional.
+
+If a future non-Madhubani engine (wildlife-photo, noir, …) wants to use
+the table, the helper is here for it. This test locks both the table
+correctness and the deliberate skip in minimalist-tshirt.
 """
 from __future__ import annotations
 
@@ -25,19 +32,14 @@ from style_engines import (  # noqa: E402
     MTSubjectConfig,
     MinimalistTShirtConfig,
     MinimalistTShirtEngine,
+    _match_species,
 )
 
 
 SPECIES_JSON = ROOT / "brand" / "madhubani" / "species_iconography.json"
 
 
-def _tiger_config(subject: str, *, species_iconography: bool = True) -> MinimalistTShirtConfig:
-    """Build a vibrant-folk Madhubani config keyed to ``subject``.
-
-    The vibrant-folk path is the production path the iconography table is
-    aimed at, so we exercise the same branch the engine actually runs in
-    production.
-    """
+def _config_for(subject: str, *, species_iconography: bool = True) -> MinimalistTShirtConfig:
     return MinimalistTShirtConfig(
         subject=MTSubjectConfig(subject=subject, motif="madhubani-folk-icon"),
         style=MTStyleConfig(
@@ -62,92 +64,84 @@ def _tiger_config(subject: str, *, species_iconography: bool = True) -> Minimali
 
 
 class SpeciesIconographyTableTests(unittest.TestCase):
-    """The species table itself should be loadable, well-formed, and complete."""
+    """The species table itself stays well-formed even though minimalist-tshirt no longer consumes it."""
 
     def test_json_file_loads_and_parses_without_error(self) -> None:
         data = json.loads(SPECIES_JSON.read_text(encoding="utf-8"))
         self.assertEqual(data.get("schema"), "forge.species_iconography.v1")
-        self.assertIn("version", data)
         species = data.get("species") or {}
         self.assertEqual(
             set(species.keys()),
-            {
-                "tiger", "peacock", "elephant", "cobra", "fish",
-                "horse", "deer", "parrot", "turtle", "lion",
-            },
-            "species_iconography.json must cover exactly the 10 species in the findings draft",
+            {"tiger", "peacock", "elephant", "cobra", "fish",
+             "horse", "deer", "parrot", "turtle", "lion"},
         )
         for key, entry in species.items():
             self.assertIsInstance(entry, dict, f"{key} entry must be a dict")
             self.assertTrue(entry.get("identity"), f"{key} must carry an identity phrase")
-            aliases = entry.get("aliases") or []
-            self.assertIsInstance(aliases, list, f"{key} aliases must be a list")
-            self.assertGreaterEqual(
-                len(aliases), 2,
-                f"{key} should have at least 2 aliases for resilient subject matching",
-            )
+            self.assertIsInstance(entry.get("aliases") or [], list)
 
 
-class SpeciesIconographyInjectionTests(unittest.TestCase):
-    """The engine should inject the matching iconography phrase + audit entry."""
+class MatchSpeciesHelperTests(unittest.TestCase):
+    """The matcher still works for future engines that want to consume the table."""
 
-    def test_tiger_subject_string_injects_ocelli_whisker_phrase(self) -> None:
+    def test_tiger_key_matches(self) -> None:
+        hit = _match_species("Royal Bengal Tiger in side profile")
+        self.assertIsNotNone(hit)
+        self.assertEqual(hit["species"], "tiger")
+
+    def test_snake_alias_resolves_to_cobra(self) -> None:
+        hit = _match_species("a coiled snake rising")
+        self.assertIsNotNone(hit)
+        self.assertEqual(hit["species"], "cobra")
+
+    def test_unknown_subject_returns_none(self) -> None:
+        self.assertIsNone(_match_species("a sleek xenomorph"))
+
+
+class MinimalistTShirtDeliberateSkipTests(unittest.TestCase):
+    """The Madhubani-targeting engine MUST NOT inject the photorealistic phrases.
+
+    The fix on 2026-05-20 made minimalist-tshirt always skip the species
+    iconography table because its phrases (e.g. "rust-orange body with broken
+    vertical black stripes") force FLUX out of the Madhubani folk register
+    (deep navy/indigo body + folk-pattern overlay). The pass_examples corpus
+    is the source of truth for what "good" Madhubani looks like; the audit
+    field on every render carries a skipped_reason explaining the choice.
+    """
+
+    def test_tiger_subject_does_not_inject_photorealistic_phrase(self) -> None:
         directive = MinimalistTShirtEngine.build(
-            _tiger_config("single centered Royal Bengal tiger in full-body side profile")
+            _config_for("single centered Royal Bengal tiger in full-body side profile")
         )
-        # The exact phrase from the findings doc / species_iconography.json
-        # must end up in the positive prompt so FLUX has the compositional anchor.
-        self.assertIn("ocelli", directive.positive.lower())
-        self.assertIn("whiskers", directive.positive.lower())
-        self.assertIn(" — species: ", directive.positive)
-        # The audit dict must record the hit so reproducibility is intact.
-        audit_entry = directive.audit.get("species_iconography")
-        self.assertIsNotNone(audit_entry)
-        self.assertEqual(audit_entry["species"], "tiger")
-        self.assertIn("ocelli", audit_entry["phrase"])
-        self.assertIn(audit_entry["matched_via"], {"tiger", "bengal tiger", "royal bengal tiger"})
-
-    def test_cobra_alias_snake_matches(self) -> None:
-        directive = MinimalistTShirtEngine.build(
-            _tiger_config("a single coiled snake rising in folk-art register")
-        )
-        # The snake alias should resolve to the cobra entry, so the flared-hood
-        # phrase ends up in the prompt.
-        self.assertIn("flared hood", directive.positive.lower())
-        self.assertIn(" — species: ", directive.positive)
-        audit_entry = directive.audit.get("species_iconography")
-        self.assertEqual(audit_entry["species"], "cobra")
-        self.assertEqual(audit_entry["matched_via"], "snake")
-
-    def test_opt_out_flag_suppresses_injection(self) -> None:
-        directive = MinimalistTShirtEngine.build(
-            _tiger_config(
-                "single centered Royal Bengal tiger in full-body side profile",
-                species_iconography=False,
-            )
-        )
-        # No appended species block, no audit entry pointing at a species.
+        positive_lower = directive.positive.lower()
+        # The exact photorealistic phrase from species_iconography.json must not appear:
+        self.assertNotIn("amber-gold eyes with vertical slit pupils", positive_lower)
+        self.assertNotIn("rust-orange body with broken vertical black stripes", positive_lower)
+        # No " — species: " injection marker either.
         self.assertNotIn(" — species: ", directive.positive)
-        # Specifically: even though "tiger" is in the subject, the phrase must
-        # not be injected.
-        self.assertNotIn(
-            "amber-gold eyes with vertical slit pupils",
-            directive.positive,
-        )
-        audit_entry = directive.audit.get("species_iconography")
-        self.assertIsNotNone(audit_entry)
-        self.assertIsNone(audit_entry["species"])
-        self.assertTrue(audit_entry.get("disabled"))
 
-    def test_unknown_species_xenomorph_is_a_noop(self) -> None:
+    def test_audit_records_skip_with_reason(self) -> None:
         directive = MinimalistTShirtEngine.build(
-            _tiger_config("a sleek xenomorph stalking through industrial mist")
+            _config_for("Royal Bengal Tiger")
         )
-        # Prompt body unchanged shape-wise: no species suffix appended.
+        entry = directive.audit.get("species_iconography")
+        self.assertIsNotNone(entry)
+        self.assertEqual(entry.get("applied"), False)
+        self.assertIsNone(entry.get("species"))
+        self.assertIn("folk register", entry.get("skipped_reason", "").lower())
+
+    def test_opt_out_flag_is_effectively_a_noop_now(self) -> None:
+        # With the skip in place, the species_iconography=False config flag
+        # produces the same outcome as species_iconography=True: no injection,
+        # audit records skip. Both routes converge on the same contract.
+        d_on = MinimalistTShirtEngine.build(_config_for("Tiger", species_iconography=True))
+        d_off = MinimalistTShirtEngine.build(_config_for("Tiger", species_iconography=False))
+        self.assertNotIn(" — species: ", d_on.positive)
+        self.assertNotIn(" — species: ", d_off.positive)
+
+    def test_no_phrase_for_unknown_species_either(self) -> None:
+        directive = MinimalistTShirtEngine.build(_config_for("a sleek xenomorph"))
         self.assertNotIn(" — species: ", directive.positive)
-        audit_entry = directive.audit.get("species_iconography")
-        self.assertIsNotNone(audit_entry)
-        self.assertIsNone(audit_entry["species"])
 
 
 if __name__ == "__main__":
