@@ -192,6 +192,33 @@ forge engine render wildlife-photo --subject "blue jay perched on a branch"
 - These engines still depend on diffusion and may require seed iteration.
 - Procedural symmetry should use `forge mandala`, not `forge engine`.
 
+## Product Mockups
+
+**Commands**
+
+```sh
+forge mockup open-svg --out generated/mockup_templates/open-svg --limit 50
+forge mockup create --design art.transparent.png --manifest generated/mockup_templates/open-svg/templates.json --template-id mdi-tshirt-crew-outline --out mockup.svg
+forge mockup batch --design-dir generated/madhubani_animals/_legacy/indian_animals_v3 --pattern "01_royal_bengal_tiger_madhubani_tshirt.transparent.png" --manifest generated/mockup_templates/open-svg/templates.json --out generated/mockups/tiger_50_open_svg
+forge mockup download https://github.com/owner/repo/blob/main/mockups/front.png --out generated/mockup_templates/downloads
+```
+
+**Outputs**
+
+- SVG, JPG, or PNG product mockups.
+- Per-image JSON receipts.
+- Per-SVG attribution JSON receipts.
+- Batch manifest with every design/template pairing.
+
+**Mechanism**
+
+- Transparent print-art PNGs are trimmed and placed into template placement
+  boxes.
+- `open-svg` downloads curated open-license SVG product templates and writes
+  `CREDITS.md` plus per-template attribution JSON.
+- Downloaded image/SVG templates use explicit `--box x,y,width,height`
+  placement when they are not in a manifest.
+
 ## Thumbnail
 
 **Command**

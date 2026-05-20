@@ -77,6 +77,9 @@ flowchart LR
 | [../ALIGNMENT_PLAN.md](../ALIGNMENT_PLAN.md) | Gap assessment, definition of aligned, and execution plan. |
 | [../BACKLOG.md](../BACKLOG.md) | Feature backlog for pipelines, style engines, plumbing, and UI/system work. |
 | [MASTERY_PLAN.md](MASTERY_PLAN.md) | Mastery plan for pictures, thumbnails, audiobooks, coloring books, and mathematical mandalas. |
+| [ART_REASONING_ENGINE_PLAN.md](ART_REASONING_ENGINE_PLAN.md) | Research-backed plan for the isolated art reasoning lab, including V1/V2 ratings and first-slice build order. |
+| [ART_REASONING_ENGINE.md](ART_REASONING_ENGINE.md) | Architecture spec for schema-driven verification, retry loops, and feedback memory in the art reasoning engine. |
+| [OSS_READINESS_AGENT_HANDOFF.md](OSS_READINESS_AGENT_HANDOFF.md) | Agent-ready audit handoff for turning Forge into a credible public OSS portfolio project. |
 
 ## Documentation Maintenance
 

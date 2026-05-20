@@ -76,6 +76,27 @@ forge engine render minimalist-tshirt \
   --steps 14
 ```
 
+## Product Mockups
+
+`minimalist-tshirt` renders automatically produce `.transparent.png` siblings.
+Those files can now be placed onto downloaded open-license SVG product
+templates with credit receipts:
+
+```sh
+forge mockup open-svg --out generated/mockup_templates/open-svg --limit 50
+
+forge mockup batch \
+  --design-dir generated/madhubani_animals/_legacy/indian_animals_v3 \
+  --pattern "01_royal_bengal_tiger_madhubani_tshirt.transparent.png" \
+  --manifest generated/mockup_templates/open-svg/templates.json \
+  --out generated/mockups/tiger_50_open_svg
+```
+
+Use `forge mockup download <url> --out <dir>` for direct image files or GitHub
+blob URLs, then provide a placement with `--box x,y,width,height` when composing
+custom templates. The older `forge mockup init` command is only an offline
+procedural fallback.
+
 ## Engine Vocabulary
 
 ### Subject

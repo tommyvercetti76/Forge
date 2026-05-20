@@ -549,10 +549,12 @@ an explicit upscale follow-up until production upscale is wired into promote.
 
 **What's missing for shippable storefront assets:**
 
-- **Mockup compositor.** A 30-line PIL script that drops the transparent
-  PNG onto a cream-tee mockup template and a black-tee mockup template,
-  outputting `{slug}-{pose}-mockup-cream.jpg` and `{slug}-{pose}-mockup-
-  black.jpg`. Total of 480 mockups (240 × 2 colors). Runs in minutes.
+- **Mockup compositor.** Implemented as `forge mockup`. The production path is
+  `forge mockup open-svg`, which downloads open-license SVG product templates,
+  writes `CREDITS.md`, and emits per-template attribution JSON. `forge mockup
+  batch` then places transparent print PNGs across all SVG variants. Custom
+  downloaded image/SVG templates are supported with `forge mockup download`
+  plus manual placement boxes. `forge mockup init` is only an offline fallback.
 - **Export bundler.** Per-design folder containing `print-5120.png`,
   `transparent-print.png`, `mockup-cream.jpg`, `mockup-black.jpg`,
   `directive.json`, `listing.md`. Zip per series for handoff to fulfillment.
