@@ -231,6 +231,9 @@ def render_with_reasoning(
     seeds_per_attempt: int = 4,
     seed_offset: int = 0,
     accept_score: float = 0.85,
+    persist_to_ledger: bool = False,
+    pose_slug: str | None = None,
+    model: str | None = None,
 ) -> dict[str, Any]:
     """Render → score → boost → re-render closed loop.
 
@@ -282,7 +285,7 @@ def render_with_reasoning(
         if winner["composite"] >= accept_score and winner["auto_qc_pass"]:
             attempts.append(attempt_entry)
             final_winner = winner
-            return {
+            early_result = {
                 "schema": "forge.art_reasoning_engine.v1",
                 "accepted": True,
                 "winner": winner,
@@ -293,6 +296,19 @@ def render_with_reasoning(
                 "seeds_per_attempt": seeds_per_attempt,
                 "stopped_on_attempt": attempt_idx + 1,
             }
+            if persist_to_ledger and animal is not None:
+                try:
+                    from feedback_memory import RunsWriter
+                    RunsWriter.from_reasoning_result(
+                        early_result,
+                        animal_slug=str(animal.get("slug", "unknown")),
+                        pose_slug=pose_slug,
+                        model=model,
+                    )
+                    early_result["persisted_to_ledger"] = True
+                except Exception as exc:
+                    early_result["persist_error"] = str(exc)
+            return early_result
 
         # We need a fresh full QC dict to drive boost composition.
         # `winner` only carries the summary; re-score the winner path
@@ -334,7 +350,7 @@ def render_with_reasoning(
         else:
             final_winner = winner
 
-    return {
+    result = {
         "schema": "forge.art_reasoning_engine.v1",
         "accepted": False,
         "winner": final_winner,
@@ -345,6 +361,23 @@ def render_with_reasoning(
         "seeds_per_attempt": seeds_per_attempt,
         "stopped_on_attempt": len(attempts),
     }
+    if persist_to_ledger and animal is not None:
+        # Phase D.1 hook — the reasoning loop dumps its attempt ledger into
+        # brand/madhubani/learning/runs.jsonl so D.2's `forge madhubani learn`
+        # mining job can surface winning prompts later. Lazy import so the
+        # engine stays importable without the feedback_memory module on path.
+        try:
+            from feedback_memory import RunsWriter
+            RunsWriter.from_reasoning_result(
+                result,
+                animal_slug=str(animal.get("slug", "unknown")),
+                pose_slug=pose_slug,
+                model=model,
+            )
+            result["persisted_to_ledger"] = True
+        except Exception as exc:
+            result["persist_error"] = str(exc)
+    return result
 
 
 # ──────────────────────────────────────────────────────────────────────

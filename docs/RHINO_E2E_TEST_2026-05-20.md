@@ -1,8 +1,34 @@
 # Rhino end-to-end test of the Art Reasoning Engine
 
-> 2026-05-20. Walks the full closed-loop on a single species (rhino,
-> Indian one-horned rhinoceros) to demonstrate every shipped phase
-> firing on real renders held in tree.
+> 2026-05-20. Walks the **scoring half** of the closed-loop on a single
+> species (rhino, Indian one-horned rhinoceros) to demonstrate every
+> shipped scoring/ranking/diagnosis phase firing on real renders held
+> in tree.
+>
+> ## ⚠ Honesty note (added 2026-05-20 PM)
+>
+> This test does **NOT** invoke mflux to re-render with a boosted
+> prompt and observe the composite improve. It ranks 4 pre-existing
+> rhino renders + diagnoses the loser + emits the boost clause that
+> *would* be applied on a retry. The closed-loop is wired in code via
+> the injectable `render_fn` in `art_reasoning_engine.render_with_reasoning`
+> and proven on synthetic test fixtures, but the production path of
+> *render → score → boost → re-render → re-score* was not exercised
+> with mflux in this test. That demonstration is the
+> [forge_madhubani CLI integration](ROADMAP.md) follow-up — wiring
+> `flux_generate_batch` as the `render_fn` and running on a real
+> species at production resolutions. **What's tested vs what's not** is
+> spelled out in the matrix below.
+>
+> | Loop step | Demonstrated here? | How |
+> | :--- | :-: | :--- |
+> | Score | ✓ | Real `score_madhubani_png` on real PNGs |
+> | Composite rank | ✓ | Real `pick_best_of_n` with CLIP probabilities |
+> | Diagnose weakest | ✓ | Real `identify_weakest_check` |
+> | Compose boost | ✓ | Real boost clause emitted for both loser + winner refinement |
+> | **Re-render with mflux** | **✗** | Requires GPU + ~30-60 s per variant; not invoked in this test |
+> | **Re-score** | **✗** | No new render to score |
+> | **Persist to ledger** | (separate path) | D.1 `RunsWriter.from_reasoning_result` is unit-tested; production-call still pending CLI wire-up |
 
 ## What this test exercises
 
