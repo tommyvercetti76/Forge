@@ -1,14 +1,62 @@
 # Forge
 
-Local-first media factory for Apple Silicon.
+Local-first generative-AI workstation for Apple Silicon. Image · Text · Audio. No cloud APIs.
 
-Forge turns prompts, books, scripts, images, and videos into production assets:
-branded thumbnails, specialist FLUX images, procedural line art, voiceovers,
-episodes, audiobooks, subtitles, and upload-ready video bundles.
+| 60% faster than naïve mflux loop | 119 passing tests | 41-species curated catalog |
+| --- | --- | --- |
+| -60.8% wall-clock, 4-seed render | 14 test files, all green | Madhubani folk art across 21 Indian parks |
 
-Forge is built for a real production desk, not a demo folder. It has brand
-presets, series locks, local model cache rules, job state, web controls, CLI
-controls, and audit handoffs for the parts that still need to become perfect.
+[Install](#install) · [Try the Madhubani gallery](#specialist-engines) · [Read the architecture](docs/ARCHITECTURE.md)
+
+Forge turns prompts, books, scripts, images, and videos into production assets entirely on an M-series
+Mac — eight specialist FLUX engines, procedural line art, multilingual voiceover, audiobooks, and
+upload-ready video bundles. It is built for a real production desk: brand presets, series locks, a
+trust layer for unattended runs, and audit handoffs for the parts that still need to become perfect.
+
+## Benchmarks (measured on M5 Max)
+
+| Workload | Naïve | Forge | Speedup |
+| --- | ---: | ---: | ---: |
+| 4-seed FLUX.1-schnell render, 640², `cool` profile | 106.7s | 41.9s | -60.8% |
+| Same pattern on `quality`/dev (P1 multi-seed) | — | — | ~-15 to -20% |
+| 4-pose Madhubani set, `--jobs 2` parallel poses | 4 waves | 2 waves | up to -50% (ideal, memory-permitting) |
+
+The first row is the verified P1 multi-seed batch result; FLUX cold-load is paid once per batch
+instead of N times. Rows two and three are from
+[docs/QUALITY_FINDINGS_2026-05-20.md](docs/QUALITY_FINDINGS_2026-05-20.md) and
+[docs/FORGE_QUALITY_SPEED_AUDIT_2026-05-19.md](docs/FORGE_QUALITY_SPEED_AUDIT_2026-05-19.md). The
+Madhubani parallel-pose figure is the runtime ceiling when memory fits two Metal slots — actual
+machines may queue.
+
+Reproduce with `forge bench` (planned — `forge bench` exists for runtime smoke checks; a dedicated
+multi-seed benchmark harness is not yet shipped).
+
+## Hard problems Forge solves
+
+1. **Photorealism lock on Madhubani folk art** — FLUX.2 defaulted to photorealistic tigers and
+   peacocks even with "Madhubani" in the prompt. Fix: flat-silhouette tuning plus 18 hard negatives
+   in the engine scaffold. See [docs/MADHUBANI_ART_IDENTITY.md](docs/MADHUBANI_ART_IDENTITY.md).
+2. **Body-type pose semantics** — "seated peacock" is nonsense; birds don't sit. Fix: per-body-type
+   pose overrides in `poses.json` v2, so each catalog species inherits only the poses its body plan
+   supports. See [docs/MADHUBANI_ART_IDENTITY.md](docs/MADHUBANI_ART_IDENTITY.md).
+3. **Trust layer for unattended runs** — naïve QC returns one boolean and you cannot tell why a run
+   failed. Fix: 8-check rubric plus `blockers.json` sidecars plus `publishable: true/false`
+   semantics, with `--allow-qc-warnings` as the only override. See
+   [bin/madhubani_qc.py](bin/madhubani_qc.py) and [bin/engine_qc.py](bin/engine_qc.py).
+4. **Multi-seed wall-clock** — looping `mflux` once per seed pays the Python startup and model load
+   N times. Fix: a single `mflux-generate --seed S1 S2 S3 S4` invocation collapses the cold-load
+   tax. Measured -60.8% on cool/schnell. See
+   [docs/QUALITY_FINDINGS_2026-05-20.md](docs/QUALITY_FINDINGS_2026-05-20.md).
+5. **Cultural-heritage attribution** — generative tools risk extractive use of folk traditions when
+   they consume references without credit. Fix: 50 open-licensed Wikimedia Commons references with
+   full `attribution.json` receipts per asset, plus a dedicated heritage doc. See
+   [docs/CULTURAL_HERITAGE_ATTRIBUTION.md](docs/CULTURAL_HERITAGE_ATTRIBUTION.md) and
+   [brand/references/README.md](brand/references/README.md).
+6. **Closed-loop verification** — prompt iteration eventually hits a context ceiling and you cannot
+   tell whether the next change is helping. Fix: an Art Reasoning Engine that auto-checks renders
+   against rubric items. Pattern-density check shipped as Phase B.1; decoration-zone, anatomy-count,
+   multi-seed best-of-N, and retry-with-boost are planned. See
+   [docs/ART_REASONING_ENGINE.md](docs/ART_REASONING_ENGINE.md).
 
 ## Reality Check
 
@@ -39,6 +87,7 @@ This section is intentionally blunt. Trust this over older notes.
 | Web console | `forge web` | Browser wizard, run console, galleries, form-driven generation |
 | Brand thumbnails | `forge thumbnail`, `forge brief` | PNG thumbnails, background generations, title/metadata kits |
 | Specialist image engines | `forge engine ...` | FLUX renders plus directive JSON and gallery metadata |
+| Product mockups | `forge mockup ...` | Download/scaffold product templates and batch storefront mockups |
 | Image editing | `forge edit` | Edited variants from an existing image |
 | High-res via upscaler | `forge engine render ... --upscale {2x,3x,4x,6x,8x,12x,16x}` | RealESRGAN-ncnn-vulkan post-render upscale, safe on M5 Max |
 | Procedural art | `forge mandala`, `forge childrens-book`, `forge folk-art`, `forge minimal-animal` | SVG/PNG line art and QC JSON |
@@ -244,6 +293,49 @@ forge minimal-animal \
 
 Forge writes `.png`, `.svg`, `.qc.json`, and `.manifest.json`. The SVG stroke
 count is the source of truth; the PNG is only the preview.
+
+### Create Product Mockups
+
+Download 50 open-license SVG product templates with credit receipts:
+
+```sh
+forge mockup open-svg \
+  --out generated/mockup_templates/open-svg \
+  --limit 50
+```
+
+Create one SVG mockup from a transparent print-art PNG:
+
+```sh
+forge mockup create \
+  --design generated/madhubani_animals/_legacy/indian_animals_v3/01_royal_bengal_tiger_madhubani_tshirt.transparent.png \
+  --manifest generated/mockup_templates/open-svg/templates.json \
+  --template-id mdi-tshirt-crew-outline \
+  --out generated/mockups/tiger/tiger-crew-tee.svg
+```
+
+Fan one or more transparent designs across every downloaded SVG template:
+
+```sh
+forge mockup batch \
+  --design-dir generated/madhubani_animals/_legacy/indian_animals_v3 \
+  --pattern "01_royal_bengal_tiger_madhubani_tshirt.transparent.png" \
+  --manifest generated/mockup_templates/open-svg/templates.json \
+  --out generated/mockups/tiger_50_open_svg
+```
+
+Forge writes one `.svg` mockup and one `.svg.attribution.json` receipt per
+template. Direct image/SVG templates or GitHub blob URLs are still supported
+when you have your own licensed files:
+
+```sh
+forge mockup download \
+  https://github.com/owner/repo/blob/main/mockups/front.png \
+  --out generated/mockup_templates/downloads
+```
+
+`forge mockup init` remains available as an offline procedural fallback, but the
+sourceable path for production review is `forge mockup open-svg`.
 
 ### High Resolution — The Upscale Path
 
