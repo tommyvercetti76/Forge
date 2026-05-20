@@ -1,34 +1,20 @@
 # Rhino end-to-end test of the Art Reasoning Engine
 
-> 2026-05-20. Walks the **scoring half** of the closed-loop on a single
-> species (rhino, Indian one-horned rhinoceros) to demonstrate every
-> shipped scoring/ranking/diagnosis phase firing on real renders held
-> in tree.
+> 2026-05-20. Walks the **full closed-loop** on a single species (rhino,
+> Indian one-horned rhinoceros). Originally written when only the
+> scoring half had been demonstrated; updated 2026-05-20 PM with the
+> live mflux run that exercised render → score → rank → diagnose →
+> boost → persist end-to-end.
 >
-> ## ⚠ Honesty note (added 2026-05-20 PM)
->
-> This test does **NOT** invoke mflux to re-render with a boosted
-> prompt and observe the composite improve. It ranks 4 pre-existing
-> rhino renders + diagnoses the loser + emits the boost clause that
-> *would* be applied on a retry. The closed-loop is wired in code via
-> the injectable `render_fn` in `art_reasoning_engine.render_with_reasoning`
-> and proven on synthetic test fixtures, but the production path of
-> *render → score → boost → re-render → re-score* was not exercised
-> with mflux in this test. That demonstration is the
-> [forge_madhubani CLI integration](ROADMAP.md) follow-up — wiring
-> `flux_generate_batch` as the `render_fn` and running on a real
-> species at production resolutions. **What's tested vs what's not** is
-> spelled out in the matrix below.
->
-> | Loop step | Demonstrated here? | How |
+> | Loop step | Demonstrated? | How |
 > | :--- | :-: | :--- |
 > | Score | ✓ | Real `score_madhubani_png` on real PNGs |
 > | Composite rank | ✓ | Real `pick_best_of_n` with CLIP probabilities |
 > | Diagnose weakest | ✓ | Real `identify_weakest_check` |
-> | Compose boost | ✓ | Real boost clause emitted for both loser + winner refinement |
-> | **Re-render with mflux** | **✗** | Requires GPU + ~30-60 s per variant; not invoked in this test |
-> | **Re-score** | **✗** | No new render to score |
-> | **Persist to ledger** | (separate path) | D.1 `RunsWriter.from_reasoning_result` is unit-tested; production-call still pending CLI wire-up |
+> | Compose boost | ✓ | Real boost clause from `brand/madhubani/boost_prompts.json` |
+> | **Re-render with mflux** | ✓ | `forge_madhubani_reasoning.py` wraps `forge engine render --profile madhubani` and feeds the boosted prompt into a fresh `flux_generate_batch` call. 2 seeds × 25-step FLUX.2-klein-4b q4 = ~42 s per attempt. |
+> | **Re-score** | ✓ | New attempts get a fresh `pick_best_of_n` pass against the same 10-check rubric + CLIP probe |
+> | **Persist to ledger** | ✓ | D.1 `RunsWriter.from_reasoning_result` writes every attempt to `brand/madhubani/learning/runs.jsonl`; D.2 `forge madhubani learn` mines the digest |
 
 ## What this test exercises
 
@@ -216,3 +202,231 @@ python3 bin/art_reasoning_engine.py diagnose --animal rhino \
 ```
 
 Both commands work without `open_clip` installed; the composite gracefully degrades to rubric-only and the manifest records `clip_available: false`.
+
+---
+
+## Live closed-loop run — 2026-05-20 PM (mflux on M5 Max)
+
+Following the maintainer's "did we actually run it" question, the
+production-CLI wire-up at [`bin/forge_madhubani_reasoning.py`](../bin/forge_madhubani_reasoning.py)
+ran end-to-end on rhino. The receipts are below.
+
+### Run #1 — `--accept-score 0.80` (default)
+
+Command:
+
+```sh
+python3 bin/forge_madhubani_reasoning.py --slug rhino \
+  --max-attempts 2 --seeds-per-attempt 2 --accept-score 0.80
+```
+
+What ran:
+
+| Step | Detail |
+| :--- | :--- |
+| Subject string | 11168 chars (full per-species metadata: anatomy + zones + density + body fill + palette + boost-stack) |
+| Multi-seed batch | `mflux-generate-flux2 --model flux2-klein-4b --quantize 4 --steps 25 --seed 8200 8201` — two seeds in one batched mflux call |
+| Style reference | `pass_examples/rhino_v3.png` at strength 0.72 (Lane-1 wiring) |
+| Wall-clock | **42.3 s for 2 variants** (21.1 s/variant on M5 Max) |
+| Pick best | Real `pick_best_of_n` with CLIP probe |
+| Accept gate | composite ≥ 0.80 AND auto_qc_pass=True |
+
+Receipt:
+
+```
+Attempt 1:
+  winner path:        seed02.png
+  composite:          0.8199
+  rubric pass frac:   1.000
+  CLIP P:             0.5498
+  active checks:      7/7
+  auto_qc_pass:       True
+  failed checks:      ['anatomy', 'anatomy_feature_count']
+  weakest check:      (none — passed)
+  boost for next:     (none)
+
+ACCEPTED: True  on attempt 1
+```
+
+The two failed checks are `anatomy` and `anatomy_feature_count`, both
+disabled-by-default after the QC agreement study found them noisy on a
+small labeled set ([QC_AGREEMENT_STUDY](QC_AGREEMENT_STUDY.md)). The
+loop correctly treats them as informational and accepts on the first
+attempt's 7/7 active-check pass.
+
+The actual winning render (composite 0.8199, real mflux output, not a
+pre-existing legacy file). Copied into the in-tree gallery for
+reproducibility (the source under `generated/` is gitignored):
+
+<div align="center">
+  <img src="gallery/reasoning_loop/rhino_attempt1_composite_0.8199.png" alt="Live closed-loop rhino, attempt 1" width="420">
+  <br><sub><i>Live mflux output (FLUX.2-klein-4b q4 25 steps, seed 8201, 21.1 s) — rhino render with composite 0.8199, accepted on attempt 1.</i></sub>
+</div>
+
+Ledger row written to `brand/madhubani/learning/runs.jsonl`:
+
+```json
+{
+  "animal_slug": "rhino",
+  "pose_slug": "standing-alert",
+  "attempt": 1,
+  "seed": 2,
+  "composite": 0.8199,
+  "rubric_pass_fraction": 1.0,
+  "clip_likeness_probability": 0.5498,
+  "auto_qc_pass": true,
+  "active_check_count": 7,
+  "pass_count": 7,
+  "failed_checks": ["anatomy", "anatomy_feature_count"],
+  "weakest_dimension": null,
+  "boost_applied": null,
+  "accepted": true,
+  "render_path": "generated/madhubani_animals/reasoning_runs/rhino/20260520_161049/attempt_01/seed02.png",
+  "model": "madhubani",
+  "session_id": "e00070151e9f",
+  "ts": "2026-05-20T21:11:36Z",
+  "prompt_hash": "sha256:931709aa0e4ba860c800e573fd6ffb5ce20c8f141e2957c28b4d9a3331dc6e42",
+  "schema": "forge.run_attempt.v1"
+}
+```
+
+D.2 mining produced
+[`brand/madhubani/learning/species_winning_prompts.md`](../brand/madhubani/learning/species_winning_prompts.md)
+on the first-ever real ledger row:
+
+```
+Mined 1 rows (0 skipped) → 1 (species, pose) groups across 1 species
+```
+
+### Run #2 — forced retry path with `--accept-score 0.95`
+
+Because run #1 cleared the 0.80 gate on attempt 1, the retry-with-boost
+half of the loop never fired. Run #2 raises `--accept-score` to 0.95
+so attempt 1 must fail the gate and the boost composer fires.
+
+Command:
+
+```sh
+python3 bin/forge_madhubani_reasoning.py --slug rhino \
+  --max-attempts 2 --seeds-per-attempt 2 --accept-score 0.95
+```
+
+Receipt:
+
+```
+Attempt 1:
+  winner path:        seed02.png
+  composite:          0.8199
+  rubric pass frac:   1.000
+  CLIP P:             0.5498
+  active checks:      7/7
+  auto_qc_pass:       True
+  failed checks:      ['anatomy', 'anatomy_feature_count']
+  weakest check:      anatomy                         ← weakest-check picker
+                                                       falls back to
+                                                       informational since
+                                                       no active failures
+  boost for next:     FRAMING FIX: draw ALL anatomical limbs as DISTINCT outlines.
+                      For quadrupeds: 4 separate leg pillars ...
+
+Attempt 2 (prompt = base + boost appended):
+  winner path:        seed01.png
+  composite:          0.8206
+  rubric pass frac:   1.000
+  CLIP P:             0.5515
+  active checks:      7/7
+  auto_qc_pass:       True
+  failed checks:      ['anatomy', 'anatomy_feature_count']
+  weakest check:      anatomy
+  boost for next:     (same FRAMING FIX — would extend the boost stack)
+
+ACCEPTED: False  on attempt 2
+COMPOSITE DELTA attempt 1 → attempt 2: 0.8199 → 0.8206  (+0.0007)
+```
+
+Wall-clock per attempt: ~53-55 s (2 seeds, FLUX.2-klein-4b q4 25 steps).
+Two attempts total ~108 s + model load ≈ 2 min.
+
+Side-by-side:
+
+<div align="center">
+  <img src="gallery/reasoning_loop/rhino_attempt1_composite_0.8199.png" alt="Attempt 1 (composite 0.8199)" width="320">
+  <img src="gallery/reasoning_loop/rhino_attempt2_boosted_composite_0.8206.png" alt="Attempt 2 with boost (composite 0.8206)" width="320">
+  <br><sub><i>Attempt 1 (left, composite 0.8199, base prompt) vs Attempt 2 (right, composite 0.8206, base + FRAMING-FIX boost). Visually nearly indistinguishable; the boost composer fired correctly but the rhino was already at the corpus ceiling for this rubric + probe.</i></sub>
+</div>
+
+### Honest interpretation
+
+**What worked:**
+- ✓ The retry-with-boost path **fired correctly** when attempt 1 failed
+  the 0.95 gate. The weakest-check picker fell back from "no active
+  failures" to the highest-severity informational failure (anatomy)
+  and emitted the appropriate boost clause from
+  [`brand/madhubani/boost_prompts.json`](../brand/madhubani/boost_prompts.json).
+- ✓ Attempt 2's prompt was the base prompt **with the FRAMING-FIX
+  clause appended** — the prompt diff between attempts is real.
+- ✓ Every primitive of the loop ran on real compute. No stubs.
+
+**What didn't move:**
+- ✗ Composite barely budged: **+0.0007** from attempt 1 to attempt 2.
+  Both attempts cap at rubric=1.000 (every active check passes
+  on every variant); CLIP probability hovers at 0.5498 → 0.5515
+  (+0.0017). The rhino was already at the corpus ceiling.
+
+**Why the ceiling is at 0.82, not higher:**
+- The composite formula is `0.6 × rubric + 0.4 × CLIP`. With rubric
+  pegged at 1.0, the ceiling is `0.6 + 0.4 × CLIP`. To break 0.85
+  we'd need CLIP P ≥ 0.625; the current probe's effective range on
+  rhino is 0.5-0.6.
+- The CLIP probe was trained on 16 weakly-labeled era-bucket samples
+  (per [`madhubani_likeness_v1.report.json`](../brand/madhubani/madhubani_likeness_v1.report.json)).
+  Its decision threshold is near 0.5 and its dynamic range on a
+  well-rendered Madhubani rhino is narrow.
+- A LoRA-tuned CLIP encoder (re-extract features through the Madhubani
+  LoRA from [`LORA_TRAINING_RECIPE`](LORA_TRAINING_RECIPE.md)) is the
+  path to a probe with more dynamic range. Until then, the closed
+  loop's "improvement headroom" via prompt boosting is bounded.
+
+**What this measurement actually unlocks:**
+
+The Phase D ledger now has 3 real rows from these two runs. Future
+threshold tuning, boost-table edits, and probe-retraining can be
+A/B-tested by replaying against the labeled ledger — *did the rhino's
+composite move?* — without re-rendering. That's the feedback memory
+working as intended.
+
+To reproduce:
+
+```sh
+# Reproduce both runs:
+python3 bin/forge_madhubani_reasoning.py --slug rhino \
+  --max-attempts 2 --seeds-per-attempt 2 --accept-score 0.80   # run 1
+python3 bin/forge_madhubani_reasoning.py --slug rhino \
+  --max-attempts 2 --seeds-per-attempt 2 --accept-score 0.95   # run 2
+
+# Mine the ledger:
+python3 bin/feedback_memory.py learn
+
+# Open the digest:
+open brand/madhubani/learning/species_winning_prompts.md
+```
+
+### What this proves end-to-end
+
+Every primitive of the Art Reasoning Engine spec now has a real-mflux
+demonstration on the rhino species:
+
+- **B.1 + B.2 + B.3** rubric checks ran against a fresh mflux output
+  (not a pre-existing file) and reported 7/7 active passes.
+- **C.1** composite picker chose `seed02.png` over `seed01.png` from
+  the same batch using real CLIP probabilities.
+- **C.2** weakest-check identifier saw all active checks pass and
+  correctly emitted no boost (the early-accept path).
+- **D.1** ledger row written with session_id, prompt_hash, timestamp,
+  and full scoring detail.
+- **D.2** mining produced the markdown digest from the live ledger.
+
+The earlier honesty note ("we only ran the scoring half") is **no
+longer accurate** — the rest of the loop is now demonstrated with real
+compute. What remains pending: a run where the boost composer fires
+and changes the prompt between attempts; that's the run #2 above.
