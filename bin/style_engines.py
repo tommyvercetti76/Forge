@@ -3750,7 +3750,15 @@ class MinimalistTShirtEngine(Engine):
         # navy-bodied folk icons. The truncation also hid the bug because no
         # error was raised. Engines with shorter free-text subjects (e.g.
         # noir-cinema at 400, others at 220) keep their tighter caps.
-        clean_subject = normalize_subject(sub.subject, max_chars=2000)
+        # Phase-A (2026-05-20) — bump from 2000 to 5000. The Madhubani driver
+        # now produces subjects ~4100 chars long (BODY FILL OVERRIDE + 7-zone
+        # decoration spec + ground mark + ornaments + register +
+        # MANDATORY DECORATION ZONES + ANATOMICAL COUNTS + DECORATION DENSITY).
+        # The previous 2000 cap silently truncated the new Phase-A clauses
+        # which carry the load-bearing rules ("the rendered output MUST show
+        # forehead tikka + neck collar + anklets + ... + tongue=1 forked-tip,
+        # not 2 separate tongues"). Going to 5000 gives headroom.
+        clean_subject = normalize_subject(sub.subject, max_chars=5000)
 
         if cmp.placement == "left-pocket" and cmp.layout in {"stacked-symbols", "repeat-mini-pattern"}:
             # This is allowed, but the prompt needs extra reduction pressure.

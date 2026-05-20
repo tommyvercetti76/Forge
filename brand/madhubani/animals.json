@@ -122,8 +122,24 @@
       "signature_action": "crouched ready to leap, low body, intense gaze forward",
       "rest_pose_for_species": "seated upright, forelimbs straight, tail wrapped around feet",
       "anatomy_must_include": "body filled with saturated walnut-brown NOT natural orange-and-black tiger photography; THE STRIPE PATTERN MUST READ AS STRIPES — 8-12 distinct vertical bands of flat folk color (indigo, leaf-green, vermillion, gold) running across the back/flank/shoulder; NOT scattered floral medallions, NOT all-over patterning, NOT a generic lion silhouette; almond eye not round cartoon eye; long curved tail with banded folk pattern; the result must be unambiguously a TIGER (vertical stripe rhythm visible) and not a lion or generic large cat",
-      "style_reference_path": "generated/madhubani_animals/_legacy/indian_animals_v3/01_royal_bengal_tiger_madhubani_tshirt.png",
-      "style_reference_strength": 0.55,
+      "_style_reference_disabled_reason": "Phase-A 2026-05-20: the v3 tiger ref is sparse (orange + black stripes only; no interior Madhubani decoration). At strength 0.55-0.67 it OVERRODE the prompt's MANDATORY DECORATION ZONES, producing tigers with zero interior art. Prompt-only render is dramatically richer. Disabled until a denser tiger reference is curated or the variant tier ships a Bharni-dense LoRA.",
+      "_style_reference_path_disabled": "generated/madhubani_animals/_legacy/indian_animals_v3/01_royal_bengal_tiger_madhubani_tshirt.png",
+      "required_decoration_zones": [
+        "FOREHEAD: small circular tikka medallion in vermillion + saffron between the eyes",
+        "NECK: multi-color folk collar band (3-5 colors: indigo/saffron/vermillion/leaf-green)",
+        "BODY INTERIOR (most important): inside each of the 8-12 vertical stripe bands, paint flat folk-color panels with lotus medallions, leaf-vein details, and dot patterns — the stripe bands ARE the canvas for decoration, not empty black bars",
+        "SHOULDER + HIP: large ornamental rosette panels (vermillion floral with saffron center)",
+        "FOUR LEG ANKLETS: vermillion + leaf-green folk bands at each of the four leg joints",
+        "TAIL: continuation of stripe bands as folk-color rings (NOT plain black bars)"
+      ],
+      "anatomical_count_constraints": {
+        "legs_visible": "4 (all four legs as distinct outlines)",
+        "eyes_visible": "1 in side profile (almond eye, single eye visible)",
+        "ears": "2 small triangular",
+        "tail": "1 long curved",
+        "mouth": "closed (no tongue visible; no fangs unless signature-action pose)"
+      },
+      "decoration_density": "ornate",
       "iucn_status": "Endangered",
       "conservation_note": "National animal of India; ~3000 wild individuals remain. Jim Corbett National Park is India's oldest national park (1936) and the launchpad of Project Tiger.",
       "seed_block_start": 8300
@@ -143,7 +159,25 @@
       "signature_action": "trumpeting trunk raised high, mouth open in call",
       "rest_pose_for_species": "standing relaxed, trunk curled, weight on three legs with one lifted",
       "style_reference_path": "generated/madhubani_animals/_learning/pass_examples/elephant_v2.png",
-      "style_reference_strength": 0.6,
+      "style_reference_strength": 0.72,
+      "required_decoration_zones": [
+        "FOREHEAD: tikka medallion + decorated headband",
+        "EAR: large folk-pattern panel filling the visible ear (vine motifs, dot bands, vermillion accents)",
+        "NECK: multi-color folk collar",
+        "BODY: ornate decorated saddle blanket covering the back with lotus medallion at center, leaf-vein border, vermillion + saffron palette",
+        "FOUR LEG ANKLETS: vermillion + saffron + cream folk bands at each ankle",
+        "TUSKS: visible small tusks (proportional, not exaggerated)",
+        "TAIL: short with tufted tip"
+      ],
+      "anatomical_count_constraints": {
+        "legs_visible": "4 (all four legs as distinct outlines)",
+        "eyes_visible": "1 in side profile",
+        "ears": "1 large visible (side profile shows near ear)",
+        "tusks": "2 small visible (don't omit; don't exaggerate)",
+        "trunk": "1 curved",
+        "tail": "1 short tufted"
+      },
+      "decoration_density": "ornate",
       "iucn_status": "Endangered",
       "seed_block_start": 8400
     },
@@ -163,7 +197,23 @@
       "rest_pose_for_species": "reclining camel-fashion, front legs folded beneath body",
       "anatomy_must_include": "EXACTLY ONE nose horn (Indian one-horned rhinoceros has a single horn, NEVER two); armored skin folds across shoulders and haunches; rectangular ears",
       "style_reference_path": "generated/madhubani_animals/_learning/pass_examples/rhino_v3.png",
-      "style_reference_strength": 0.6,
+      "style_reference_strength": 0.72,
+      "required_decoration_zones": [
+        "FOREHEAD: tikka medallion",
+        "NECK: folk collar band",
+        "ARMOR PLATES (most important): the rhino's armor folds rendered as ornate folk panels — shoulder plate with sun-medallion, flank plate with vine motif, haunch plate with rosette pattern",
+        "FOUR ANKLETS: vermillion + saffron bands",
+        "NOSE-HORN: single horn proportional (NOT two horns)",
+        "EARS: 2 small rectangular ears",
+        "TAIL: short with tufted tip"
+      ],
+      "anatomical_count_constraints": {
+        "horns_on_nose": "1 (single horn — Indian one-horned rhinoceros; NEVER 2 horns, that would be an African rhino)",
+        "legs_visible": "4 (all four legs as distinct outlines)",
+        "ears": "2 small rectangular",
+        "tail": "1 short tufted"
+      },
+      "decoration_density": "ornate",
       "iucn_status": "Vulnerable",
       "seed_block_start": 8200
     },
@@ -296,7 +346,21 @@
       "signature_action": "leaping between branches, mane visible in motion",
       "rest_pose_for_species": "seated calmly, hands folded, tail curved",
       "style_reference_path": "generated/madhubani_animals/_legacy/indian_animals_v3/08_lion_tailed_macaque_madhubani_tshirt.png",
-      "style_reference_strength": 0.6,
+      "style_reference_strength": 0.72,
+      "required_decoration_zones": [
+        "SILVER MANE (signature): radiant folk sunburst around the dark face — cream-white and gold-yellow rays with vermillion tips",
+        "FACE: dark face with almond eye + closed mouth in serene contemplative expression (NEVER round cartoon eyes)",
+        "BODY: one chest medallion + a sparse leaf-vein band on the limbs (NOT all-over pattern)",
+        "TAIL: curved with leaf-shaped tuft visible at the tip",
+        "GROUND: small dotted ground line + peepal-leaf sprig beside the figure"
+      ],
+      "anatomical_count_constraints": {
+        "legs_visible": "2 (seated pose with hands folded)",
+        "arms_visible": "2 (hands folded in lap or resting)",
+        "eyes_visible": "2 (frontal portrait) or 1 (side profile) — almond eyes NOT round cartoon eyes",
+        "tail": "1 with leaf-shaped tuft at tip"
+      },
+      "decoration_density": "balanced",
       "iucn_status": "Endangered",
       "seed_block_start": 8800
     },
@@ -391,7 +455,23 @@
       "signature_action": "tail fanned in full radial display, head turned profile",
       "rest_pose_for_species": "perched with tail trailing, head alert",
       "style_reference_path": "generated/madhubani_animals/_learning/pass_examples/peacock_v3.png",
-      "style_reference_strength": 0.6,
+      "style_reference_strength": 0.72,
+      "required_decoration_zones": [
+        "CREST: 3-5 fan feathers on top of head, each tipped with vermillion bead",
+        "FACE / EYE-REGION: indigo body with a white-and-vermillion folk pattern around the eye",
+        "NECK: long elegant neck rendered in deep indigo with a white-pearl folk-pattern collar",
+        "BODY / WING (most important): wing covered in DENSE multi-color folk panels — minimum 4 distinct zones each with floral medallions in indigo/leaf-green/saffron/vermillion + white-pearl accents; the wing must NOT be a flat indigo shape",
+        "TAIL (the signature): tail covered in 8-12 eye-spot ocellus motifs rendered as folk roundels (concentric circles in saffron/vermillion/leaf-green/indigo), each ocellus distinct — the tail is the most ornate part of the bird and MUST be densely patterned",
+        "FEET: vermillion + saffron anklets above the visible feet"
+      ],
+      "anatomical_count_constraints": {
+        "legs_visible": "2 (both legs on perch or ground line)",
+        "eyes_visible": "1 in side profile",
+        "crest_feathers": "3 to 5 (NOT one giant plume, NOT zero)",
+        "bill": "1 pointed downward-curving",
+        "tail_eye_spots": "8 to 12 distinct ocellus motifs"
+      },
+      "decoration_density": "maximal",
       "iucn_status": "Least Concern",
       "seed_block_start": 9800
     },
@@ -505,7 +585,24 @@
       "signature_action": "crouched on a Himalayan ledge, tail flicked",
       "rest_pose_for_species": "seated with tail wrapped around body for warmth",
       "style_reference_path": "generated/madhubani_animals/_legacy/indian_animals_v3/07_snow_leopard_madhubani_tshirt.png",
-      "style_reference_strength": 0.6,
+      "style_reference_strength": 0.72,
+      "required_decoration_zones": [
+        "FOREHEAD: small tikka medallion",
+        "NECK: folk collar band",
+        "BODY: 4-5 SPARSE rosette medallions placed at specific zones (one shoulder, one flank, one hip, one base-of-tail) — vermillion-centered with saffron petals — NOT all-over rosette pattern (sparseness is the key)",
+        "BACK: one decorated saddle-band across the back",
+        "NECK BAND: gold-yellow folk band",
+        "FOUR ANKLETS: dotted folk bands at each leg joint",
+        "TAIL: long flowing held low, with banded folk pattern (NOT a fluffy realistic snow-leopard tail)"
+      ],
+      "anatomical_count_constraints": {
+        "legs_visible": "4 (all four legs as distinct outlines, near and far pair both fully drawn)",
+        "eyes_visible": "1 in side profile (almond)",
+        "ears": "2 rounded",
+        "tail": "1 long flowing held low",
+        "rosettes": "4 to 5 SPARSE folk medallions (not all-over)"
+      },
+      "decoration_density": "balanced",
       "iucn_status": "Vulnerable",
       "seed_block_start": 8700
     },
@@ -828,7 +925,20 @@
       "signature_action": "rearing with hood fully spread, head high",
       "rest_pose_for_species": "coiled with hood lowered, head resting on coils",
       "style_reference_path": "generated/madhubani_animals/_legacy/indian_animals_v3/06_king_cobra_madhubani_tshirt.png",
-      "style_reference_strength": 0.6,
+      "style_reference_strength": 0.72,
+      "required_decoration_zones": [
+        "HOOD (most important): the spread hood covered in dense Madhubani folk patterns — central mandala-style medallion + spectacle-pattern eye-spots + folk floral border around the edge",
+        "BODY: serpent coils covered in alternating folk panels — vermillion + saffron bands, leaf-green vine motifs, dot patterns, NOT plain forest-teal",
+        "BELLY-SCALES: rendered as alternating cream and indigo horizontal bands along the belly side of the coils",
+        "FRAME: optional decorative floral border in the four corners of the canvas (matches the kohbar wedding-diagram convention)"
+      ],
+      "anatomical_count_constraints": {
+        "tongue": "either NOT visible (mouth closed, default) OR exactly ONE forked tongue with a single split-tip at the very end — the tongue is ONE structure that forks at the tip only, NOT two separate tongues, NOT a Y-shape from the mouth, NOT two parallel tongues",
+        "eyes_visible": "2 (frontal hood view shows both) or 1 (side profile)",
+        "hood_lobes": "2 (one on each side of the head, forming the spread hood)",
+        "fangs": "not visible (mouth closed, default)"
+      },
+      "decoration_density": "ornate",
       "iucn_status": "Vulnerable",
       "seed_block_start": 8500
     },
@@ -886,7 +996,23 @@
       "rest_pose_for_species": "kneeling on forelegs with hindquarters tucked under, horns held upright, eye looking forward in repose",
       "anatomy_must_include": "spiral corkscrew horns (NOT straight, NOT branching like deer antlers) rising up and outward in a graceful double-twist; sharp white-on-indigo two-tone pattern with the white cheek patch + chin + belly clearly delineated against the indigo upper body as solid flat folk shapes; almond eye not round cartoon eye; this is an antelope NOT a deer",
       "style_reference_path": "generated/madhubani_animals/_learning/pass_examples/blackbuck_v3.png",
-      "style_reference_strength": 0.6,
+      "style_reference_strength": 0.72,
+      "required_decoration_zones": [
+        "FOREHEAD: tikka medallion between the horns",
+        "NECK: folk collar in vermillion + saffron",
+        "BODY INTERIOR: large sun-mandala medallion on the flank + sparse leaf-vein bands across the back (matches pass_examples/blackbuck_v3 style)",
+        "WHITE CHEEK PATCH: rendered as flat folk shape (cream/white), sharply delineated against the indigo upper body",
+        "WHITE BELLY: similar flat folk treatment",
+        "FOUR ANKLETS: vermillion bands at each leg joint",
+        "TAIL: short with white underside as folk panel"
+      ],
+      "anatomical_count_constraints": {
+        "legs_visible": "4 (all four legs as distinct outlines)",
+        "horns": "2 spiral corkscrew horns rising up and outward (not branching like deer antlers; NOT straight)",
+        "eyes_visible": "1 in side profile (almond)",
+        "white_areas": "cheek + chin + belly clearly delineated as flat cream folk shapes"
+      },
+      "decoration_density": "ornate",
       "iucn_status": "Least Concern",
       "seed_block_start": 12300
     }

@@ -335,8 +335,83 @@ def build_subject_string(animal: dict, pose: dict, register: str) -> str:
         _ground_mark_clause(pose_slug, animal),
         "8-12 small ornamental flourishes scattered tastefully in negative space",
         "modern Indian streetwear",
+        # Phase-A (2026-05-20) — per-species REQUIRED decoration zones from
+        # animals.json. These name-and-shame the specific zones the rendered
+        # output must show. Previously the engine asked for "seven distinct
+        # zones" generically; that landed about half the time. The per-
+        # species spec is stricter and species-aware.
+        _required_decoration_zones_clause(animal),
+        # Phase-A — per-species anatomical count constraints. Fixes the
+        # two-tongues-cobra class of hallucination: explicit per-feature
+        # count + per-feature anti-pattern wording.
+        _anatomical_counts_clause(animal),
+        # Phase-A — per-species decoration density target (ornate / maximal /
+        # balanced / minimal). Drives how MUCH of the body silhouette is
+        # patterned vs left as flat color field.
+        _decoration_density_clause(animal),
     ]
     return ", ".join(p for p in parts if p)
+
+
+def _required_decoration_zones_clause(animal: dict) -> str:
+    """Phase-A: surface required_decoration_zones from animals.json as a
+    loud mandatory clause in the prompt. Each listed zone must be visibly
+    present in the rendered output."""
+    zones = animal.get("required_decoration_zones") or []
+    if not zones:
+        return ""
+    bulleted = "; ".join(zones)
+    return (
+        f"MANDATORY DECORATION ZONES (ALL must be visibly present in the rendered output — failure on any one means the design is incomplete): "
+        f"{bulleted}"
+    )
+
+
+def _anatomical_counts_clause(animal: dict) -> str:
+    """Phase-A: surface anatomical_count_constraints from animals.json as a
+    strict per-feature count clause. Fixes the two-tongues cobra class of
+    hallucination by being explicit about COUNTS and anti-patterns."""
+    constraints = animal.get("anatomical_count_constraints") or {}
+    if not constraints:
+        return ""
+    items = "; ".join(f"{k}: {v}" for k, v in constraints.items())
+    return (
+        f"ANATOMICAL COUNTS (strict — these specific feature-count rules MUST be satisfied for the species identity to read correctly): "
+        f"{items}"
+    )
+
+
+def _decoration_density_clause(animal: dict) -> str:
+    """Phase-A: per-species decoration density target. Maps the density enum
+    to an explicit prose description of how much of the body silhouette is
+    decorated vs left as flat color field."""
+    density = (animal.get("decoration_density") or "ornate").lower()
+    descriptions = {
+        "minimal": (
+            "DECORATION DENSITY: minimal — body silhouette is mostly flat folk color; "
+            "at most one or two small interior accents; the focus is on the clean "
+            "outline + flat fill, in the Kachni line-school spirit"
+        ),
+        "balanced": (
+            "DECORATION DENSITY: balanced — 3-4 distinct interior decoration zones "
+            "with multi-color folk panels; the body between zones stays as clean flat "
+            "color field; the 'tasteful merch mark' sweet spot"
+        ),
+        "ornate": (
+            "DECORATION DENSITY: ornate — 5-7 distinct interior decoration zones across "
+            "the body silhouette; saddle blanket + leg anklets + neck collar + forehead "
+            "tikka + body-zone medallions; classic full Madhubani density; the body is "
+            "ornately patterned but anatomy remains clearly readable"
+        ),
+        "maximal": (
+            "DECORATION DENSITY: maximal — the body silhouette is ALMOST ENTIRELY "
+            "covered in multi-color folk patterns (8+ distinct ornament zones; very "
+            "little flat-color body field visible between zones); the maximum Madhubani "
+            "density appropriate to species like peacock where the tail/plumage IS the "
+            "primary visual statement"
+        ),
+    }
+    return descriptions.get(density, descriptions["ornate"])
 
 
 def build_config_string(register: str) -> str:
