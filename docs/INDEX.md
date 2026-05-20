@@ -79,6 +79,7 @@ flowchart LR
 | [ROADMAP.md](ROADMAP.md) | Public roadmap — shipped / in-progress / next / explicitly not in scope. |
 | [ART_REASONING_ENGINE.md](ART_REASONING_ENGINE.md) | Architecture spec for schema-driven verification, retry loops, and feedback memory in the art reasoning engine. |
 | [QC_AGREEMENT_STUDY.md](QC_AGREEMENT_STUDY.md) | Measurement study: auto-QC vs human review (F1 0.50 → 0.67 → 0.89 with learned discriminator). |
+| [RHINO_E2E_TEST_2026-05-20.md](RHINO_E2E_TEST_2026-05-20.md) | End-to-end demonstration of the Art Reasoning Engine on the rhino species across v1/v2/v3 + pass_example variants. |
 | [LORA_TRAINING_RECIPE.md](LORA_TRAINING_RECIPE.md) | Apple-Silicon LoRA pilot recipe + pilot-run results. |
 | [TRANSLATION_AGENT_HANDOFF.md](TRANSLATION_AGENT_HANDOFF.md) | Parallel-lane handoff: 10-task translation north star including measured BLEU/chrF and one trained probe. |
 | [OSS_READINESS_AGENT_HANDOFF.md](OSS_READINESS_AGENT_HANDOFF.md) | Historical audit that drove the OSS-readiness work shipped 2026-05-20. |

@@ -28,11 +28,17 @@ Open an issue first for anything in "In progress" so we don't collide.
 - Kontext img2img wired into Madhubani renders with per-species `--style-reference` defaults
 
 ### Quality + trust layer
-- 9-check Madhubani QC rubric: color floor, corners, centering, body fill, text leak, eye character, anatomy (informational), pattern density, decoration zone presence ([madhubani_qc.py](../bin/madhubani_qc.py))
+- 10-check Madhubani QC rubric: color floor, corners, centering, body fill, text leak, eye character, decoration zone presence (active) + anatomy, pattern density, anatomy feature count (informational, per the QC agreement study's measured-discrimination posture). [madhubani_qc.py](../bin/madhubani_qc.py)
 - Shared blockers / `publishable: true|false` contract across engines ([engine_qc.py](../bin/engine_qc.py))
 - Phase A schema enrichment — `required_decoration_zones`, `anatomical_count_constraints`, `decoration_density` in `animals.json`
 - Phase B.1 — `pattern_density` verification primitive (Δ-E LAB measurement of decoration coverage vs body fill)
 - Phase B.2 — `decoration_zone_presence` check (named zones examined against non-body-fill pixels)
+- Phase B.3 — `anatomy_feature_count` heuristic (tongue / horns_on_nose / tail_eye_spots) with free-text constraint parser + numpy-only CC labeling
+- **Phase C.1 — multi-seed best-of-N picker** ([best_of_n.py](../bin/best_of_n.py)). Composite = 0.6 × rubric_pass_fraction + 0.4 × CLIP likeness. Auditable ranked manifest; deterministic tie-break.
+- **Phase C.2 — Art Reasoning Engine retry-with-targeted-boost loop** ([art_reasoning_engine.py](../bin/art_reasoning_engine.py) + [boost_prompts.json](../brand/madhubani/boost_prompts.json)). Severity-weighted weakest-check picker driven by *measured* QC discrimination; injectable `render_fn`; idempotent prompt append.
+- **Auto-QC ↔ human agreement measurement** — F1 0.33 baseline → 0.67 after data-driven heuristic tuning → **F1 0.89 with the learned CLIP+sklearn probe** ([QC_AGREEMENT_STUDY](QC_AGREEMENT_STUDY.md), [qc_agreement_study.py](../bin/qc_agreement_study.py))
+- **Learned Madhubani-likeness discriminator** — CLIP ViT-B/32 + sklearn LogisticRegression, weights at [brand/madhubani/madhubani_likeness_v1.npz](../brand/madhubani/madhubani_likeness_v1.npz), training script [train_madhubani_likeness.py](../bin/train_madhubani_likeness.py)
+- **Rhino end-to-end demonstration** — full pipeline exercised on real renders ([RHINO_E2E_TEST_2026-05-20](RHINO_E2E_TEST_2026-05-20.md))
 - `forge doctor --deep` pre-flight covering Metal, mflux, Ollama, Whisper, model cache
 - Free-memory guard before heavy FLUX renders + auto-clamp of Kontext renders to ≤1280×720
 - Multi-seed batch P1 — single `mflux-generate --seed S1 S2 S3 S4` invocation, **−60.8%** wall-clock measured on 4-seed cool/schnell ([QUALITY_FINDINGS](QUALITY_FINDINGS_2026-05-20.md))
@@ -61,9 +67,9 @@ Open an issue first for anything in "In progress" so we don't collide.
 
 ## In progress
 
-- **LoRA pilot smoke run** — `mflux-train` against `z-image-turbo` with the 50-image Mithila corpus. Pipeline shipped: [`bin/forge_madhubani_lora.py`](../bin/forge_madhubani_lora.py) + [`LORA_TRAINING_RECIPE`](LORA_TRAINING_RECIPE.md). Smoke run completes in ~7 min at 512 px on M5 Max; checkpoint will land at `training/madhubani_lora/training/<ts>/checkpoints/lora_adapter.safetensors`. Full overnight recipe (~15 hrs) documented but not yet run.
-- **Phase B.3 — anatomy_feature_count heuristics** — queued next in the Art Reasoning Engine sequence; spec done, no code yet.
-- **HuggingFace publication of the LoRA checkpoint** — upload + model card with cultural attribution + before/after F1 measurement vs baseline auto-QC. Pending the full overnight training run.
+- **LoRA pilot follow-up** — smoke pilot shipped (9 min 31 s on M5 Max, visible style transfer documented in [LORA_TRAINING_RECIPE](LORA_TRAINING_RECIPE.md)). Overnight ~15 hr full-run + HuggingFace publication still pending.
+- **Phase D — feedback memory** — `runs.jsonl` writer + `forge madhubani learn` mining job that records winning prompts per species so the prompt distribution self-improves over time.
+- **Translation lane T1** — agreement study with measured BLEU/chrF; the sibling agent ([handoff doc](TRANSLATION_AGENT_HANDOFF.md)) is shipping this in parallel with the vision lane.
 
 ---
 
@@ -71,14 +77,14 @@ Open an issue first for anything in "In progress" so we don't collide.
 
 ### Art Reasoning Engine (closed-loop verification)
 
-Spec: [ART_REASONING_ENGINE](ART_REASONING_ENGINE.md).
+Spec: [ART_REASONING_ENGINE](ART_REASONING_ENGINE.md). End-to-end demonstration: [RHINO_E2E_TEST](RHINO_E2E_TEST_2026-05-20.md).
 
-- **B.3 — anatomy_feature_count heuristics** — Cobra renders still hallucinate two tongues; rhinos sometimes grow a second horn. Skeletonization + connected-component analysis on the subject mask, gated by `body_type`, to count tongues / horns / feet / eyes against `anatomical_count_constraints`. ETA ~4 hrs.
+- **B.3 v2 — anatomy_feature_count expansion** — v1 covers 3 features (tongue, horns_on_nose, tail_eye_spots); v2 expands to 8-10 (eyes_visible, ears, mouth, fangs, hood_lobes, tusks, …) and tunes thresholds to flip the −0.30 discrimination on the labeled corpus to positive. ETA ~4 hrs.
 - **B.4 — wire new checks into `engine_qc.derive_blockers`** — Phase B.1/B.2/B.3 currently score but do not block promotion. Plumb each into the existing blockers / `publishable` contract so `promote_pose` refuses non-passing renders by default. ETA ~1 hr.
-- **C.1 — multi-seed best-of-N selection** — Today `--seeds 4` renders 4 variants and the caller picks. Add `--pick-best N` that scores each via `madhubani_qc.score_madhubani_png()` and returns the highest-scoring variant with its score sidecar. ETA ~3 hrs.
-- **C.2 — retry-with-targeted-boost loop** — New `bin/art_reasoning_engine.py` that on QC failure identifies the weakest dimension, assembles a per-dimension prompt boost (table in the spec), and retries up to `max_attempts`. ETA ~5 hrs.
+- **forge_madhubani CLI integration of the reasoning loop** — wire `forge madhubani render <slug> --reasoning --pick-best N --max-attempts 3` so users can invoke the full C.1+C.2 loop with one flag. ETA ~1 hr.
 - **D.1 — feedback memory schema** — `brand/madhubani/learning/runs.jsonl` writer + read API. One JSON line per render attempt: scores, prompt hash, weakest dimension, boost applied. ETA ~2 hrs.
 - **D.2 — `forge madhubani learn` command** — Periodic job that mines `runs.jsonl` for prompt variants scoring highest per (species, pose, density) and outputs `species_winning_prompts.md`. ETA ~4 hrs.
+- **Replace `pattern_density` (B.1) with a learned discriminator** — the heuristic has −0.25 discrimination on the labeled set. The CLIP+sklearn pattern is proven (F1 0.89 for the global Madhubani-likeness probe); the same pattern applied per-zone would replace this heuristic cleanly. ETA ~3 hrs.
 
 ### Catalog growth
 - **`poses.json` v3 — per-body-type slot names** — "Seated peacock" is semantic nonsense even though v2 overrides the behavior. Restructure to `poses_by_body_type` so birds get `perched-resting / in-flight / tail-fanned-display / frontal-portrait` slugs natively. Keep aliases for backward compat. ETA ~3 hrs.

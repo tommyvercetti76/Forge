@@ -3,6 +3,20 @@
 > A closed-loop image-generation system that **enforces** the art identity rather than **hopes** the prompt is heard. The user named this after Phase A hit the prompt-only ceiling: even with 17,000-character prompts containing MANDATORY DECORATION ZONES + ANATOMICAL COUNTS + DECORATION DENSITY, FLUX.2 still rendered cobras with two tongues, peacocks with sparse plumage, and tigers missing the named decoration zones. The text encoder truncates past ~2k chars. Prompt iteration alone cannot solve this.
 >
 > **Established:** 2026-05-20, after Phase A. Spec doc precedes implementation.
+>
+> **Status (2026-05-20):**
+> | Phase | Status | Code |
+> | :-- | :-- | :-- |
+> | B.1 — pattern_density | shipped (informational after agreement study) | [madhubani_qc.py:_score_pattern_density](../bin/madhubani_qc.py) |
+> | B.2 — decoration_zone_presence | shipped | [madhubani_qc.py:_score_decoration_zone_presence](../bin/madhubani_qc.py) |
+> | B.3 — anatomy_feature_count | shipped (v1, informational; v2 expansion planned) | [madhubani_qc.py:_score_anatomy_feature_count](../bin/madhubani_qc.py) |
+> | C.1 — multi-seed best-of-N | shipped | [bin/best_of_n.py](../bin/best_of_n.py) |
+> | C.2 — retry-with-targeted-boost | shipped | [bin/art_reasoning_engine.py](../bin/art_reasoning_engine.py) + [boost_prompts.json](../brand/madhubani/boost_prompts.json) |
+> | D.1+D.2 — feedback memory | planned | (see ROADMAP) |
+>
+> **End-to-end demonstration:** [RHINO_E2E_TEST_2026-05-20](RHINO_E2E_TEST_2026-05-20.md) — full pipeline (rubric + CLIP probe + best-of-N + boost composer) exercised on 4 rhino variants. Picker correctly ranks v3 (composite 0.8207) at top and v1 mascot (0.7056) at bottom; engine proposes the right boost for each ("URGENT PALETTE FIX" for v1's color_floor failure).
+>
+> **Measurement methodology:** [QC_AGREEMENT_STUDY](QC_AGREEMENT_STUDY.md) — auto-QC measured against human review at F1 0.33 baseline → 0.67 after data-driven heuristic tuning → 0.89 with the learned CLIP+sklearn probe.
 
 ---
 

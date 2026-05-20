@@ -100,8 +100,9 @@ runtime smoke checks only.</sub>
 | 3 | **Trust layer for unattended runs** — naïve QC returns one boolean; you can't tell why a run failed *and* you can't tell if the QC itself is right. | 9-check rubric + `blockers.json` sidecars + `publishable: true/false`. Auto-QC is **measured against human review** and the heuristic ceiling (F1 0.67) was broken by a CLIP + sklearn linear probe trained on weak era-bucket labels: **F1 0.89, recall 1.0** on user-curated gold-standard test. | [madhubani_qc.py](bin/madhubani_qc.py) · [train_madhubani_likeness.py](bin/train_madhubani_likeness.py) · [QC_AGREEMENT_STUDY](docs/QC_AGREEMENT_STUDY.md) |
 | 4 | **Multi-seed wall-clock** — looping `mflux` once per seed pays the Python startup and model load N times. | One `mflux-generate --seed S1 S2 S3 S4` invocation collapses the cold-load tax. **−60.8%** measured on cool/schnell. | [QUALITY_FINDINGS](docs/QUALITY_FINDINGS_2026-05-20.md) |
 | 5 | **Cultural-heritage attribution** — generative tools risk extractive use of folk traditions. | 50 open-licensed Wikimedia references with `attribution.json` receipts per asset + a dedicated heritage doc. | [CULTURAL_HERITAGE](docs/CULTURAL_HERITAGE_ATTRIBUTION.md) · [references/](brand/references/README.md) |
-| 6 | **Closed-loop verification** — prompt iteration hits a context ceiling and you can't tell whether the next change is helping. | Art Reasoning Engine that auto-checks renders against rubric items. **Shipped:** pattern-density (B.1), decoration-zone-presence (B.2). **Planned:** anatomy-count, multi-seed best-of-N, retry-with-boost. | [ART_REASONING_ENGINE](docs/ART_REASONING_ENGINE.md) |
+| 6 | **Closed-loop verification** — prompt iteration hits a context ceiling and you can't tell whether the next change is helping. | Art Reasoning Engine that auto-checks renders against rubric items. **Shipped:** pattern-density (B.1), decoration-zone-presence (B.2), anatomy-count (B.3), composite best-of-N picker (C.1), retry-with-targeted-boost loop (C.2). Full pipeline exercised end-to-end on the rhino species — picker ranks v3 baseline at composite 0.8207 over v1 mascot at 0.7056; engine proposes the right palette-fix boost for the loser. **Planned:** D.1+D.2 feedback memory. | [ART_REASONING_ENGINE](docs/ART_REASONING_ENGINE.md) · [RHINO_E2E_TEST](docs/RHINO_E2E_TEST_2026-05-20.md) · [art_reasoning_engine.py](bin/art_reasoning_engine.py) · [best_of_n.py](bin/best_of_n.py) |
 | 7 | **Inference-only is not ML** — calling someone else's checkpoint is a step short of training. | Pilot LoRA shipped: 50-image Mithila corpus → `mflux-train` on `z-image-turbo` with auto-derived captions, 4-bit quantization. **Pilot completed in 9 min 31 s on M5 Max**; visible style transfer from photoreal to ink-line folk-art between step 0 and step 50 (see [pilot gallery](docs/gallery/lora_pilot/)). Full overnight recipe (~15 hrs at 768 px) documented. | [LORA_TRAINING_RECIPE](docs/LORA_TRAINING_RECIPE.md) · [forge_madhubani_lora.py](bin/forge_madhubani_lora.py) |
+| 8 | **Translation without a measurement gate is unverifiable** — a multilingual pipeline needs ground-truth deltas before round-trip QC, punctuation restore, subtitles, or TTS benchmarks can mean anything. | T1 agreement study: 20 aligned EN/HI/MR paragraphs through the production Sarvam Ollama path, measured with SacreBLEU. Headline: **BLEU 47.81 EN→HI**, **25.82 EN→MR**, **62.24 HI→EN**, **57.36 MR→EN**, plus chrF2, named-entity preservation, and glossary hit-rate. | [translate_agreement_study.py](bin/translate_agreement_study.py) · [TRANSLATION_AGREEMENT_STUDY](docs/TRANSLATION_AGREEMENT_STUDY.md) |
 
 ---
 
@@ -119,11 +120,10 @@ runtime smoke checks only.</sub>
   first thing to run when renders behave strangely.
 - **Two audiobook surfaces.** `forge audiobook` is the general CLI wrapper.
   `bin/audiobook.py` is the deeper multilingual ASMR/book-video pipeline.
-- **10-page book localization (Hindi/English/Marathi) is a target, not a guarantee.** Audit, gaps,
-  target pipeline, and definition of done live in
+- **Full-page audiobook coverage is supported in `bin/audiobook.py`.** Batch mode now defaults to
+  complete page-window narration; use `--spoken-words N` or `--coverage excerpt` only when you
+  intentionally want an excerpt. Remaining audiobook audit gaps live in
   [docs/BOOK_LOCALIZATION_AUDIT_HANDOFF.md](docs/BOOK_LOCALIZATION_AUDIT_HANDOFF.md).
-- **`bin/audiobook.py --batch-pages 10 --spoken-words 150`** speaks the first 150 words of each
-  10-page batch by default. That is excerpt mode, not full-page translation coverage.
 
 </details>
 
@@ -541,14 +541,15 @@ python3 bin/audiobook.py \
   --langs en,hi,mr \
   --batch-pages 10 \
   --page-words 250 \
-  --spoken-words 150 \
+  --full-page \
   --subtitles srt
 ```
 
-For full 10-page subtitle/audio translation, do not treat `--spoken-words 150`
-as complete coverage. Follow
-[docs/BOOK_LOCALIZATION_AUDIT_HANDOFF.md](docs/BOOK_LOCALIZATION_AUDIT_HANDOFF.md)
-before promising production accuracy.
+For a short demo excerpt instead of complete page coverage, pass
+`--coverage excerpt --spoken-words 150`. Every run writes a manifest coverage
+receipt with source words, narrated words, and coverage ratio. Subtitle sidecars
+use the approved translated text as canonical content and Whisper word timings
+only for alignment; `--subtitles vtt` writes a real `WEBVTT` file.
 
 ### Process A Video
 
