@@ -69,7 +69,8 @@
   },
 
   "rules": {
-    "color_floor_minimum_present": 4,
+    "color_floor_minimum_present": 3,
+    "_color_floor_minimum_present_history": "Loosened 4 -> 3 on 2026-05-20 after QC_AGREEMENT_STUDY found color_floor rejected 3 of 4 user-curated v3 pass examples (peacock, tiger, elephant). Authentic Madhubani palettes are often concentrated in 3 dominant hues plus accents under the 0.1% pixel floor.",
     "color_floor_max_distance_delta_e": 15,
     "body_fill_must_be_one_of": ["#1a2952", "#5a3a1f", "#1f4a3f"],
     "body_fill_must_not_be": ["#000000", "#F5EFE3"],

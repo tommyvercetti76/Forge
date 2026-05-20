@@ -86,14 +86,27 @@ LEG_PILLAR_SKIP_BODY_TYPES = frozenset({"serpent", "cetacean"})
 
 # Checks that ship in the QC output as informational only — their `pass`
 # field is still computed and reported, but `auto_qc_pass` ignores them.
-# The 2026-05-20 A2 corpus check (docs/A2_CORPUS_CHECK_2026-05-20.md) found
-# `anatomy` fires on >10% of the known-good corpus (side-profile quadrupeds
-# routinely show only 2 leg pillars because the far legs are occluded by
-# the near legs); the proxy is too strict to gate promotion until either
-# a foreground/background mask separates the limbs or the pose set is
-# constrained to legs-spread compositions. Until then anatomy is reported
-# but does not block.
-DISABLED_BY_DEFAULT_CHECKS: frozenset[str] = frozenset({"anatomy"})
+#
+# History:
+#
+#   `anatomy` — disabled by A2 (docs/A2_CORPUS_CHECK_2026-05-20.md) after
+#   the proxy fired on side-profile quadrupeds with occluded legs. The
+#   first round of docs/QC_AGREEMENT_STUDY.md suggested promoting it
+#   active (+0.30 discrimination on 9 samples), but a measured re-run
+#   tanked recall — anatomy failed peacock_v3 (perched 1-leg bird),
+#   blackbuck_v3, rhino_v3, and 4 of 8 v3 baseline renders. The +0.30
+#   gap on 9 samples was a sample-size artifact; A2's original finding
+#   holds. Keeping anatomy disabled until a foreground/background mask
+#   resolves the occluded-leg problem.
+#
+#   `pattern_density` — was active. The agreement study found *negative*
+#   discrimination (-0.25 gap): mascot-style v1 renders are densely
+#   colored across the whole silhouette and pass the density floor,
+#   while restrained authentic-palette renders (peacock_v3, the v3
+#   baseline peacock) dip below it. The Δ-E LAB heuristic does not
+#   separate "real decoration" from "bright cartoon color." Demoting to
+#   informational until B.3+ replaces it with a learned discriminator.
+DISABLED_BY_DEFAULT_CHECKS: frozenset[str] = frozenset({"anatomy", "pattern_density"})
 
 
 def _hex_to_rgb(value: str) -> tuple[int, int, int]:
@@ -611,7 +624,11 @@ def score_madhubani_png(
         center_y = (y0 + y1 + 1) / 2 / height
         center_delta_x = abs(center_x - 0.5)
         center_delta_y = abs(center_y - 0.5)
-        centered_pass = 0.50 <= bbox_width_ratio <= 0.85 and center_delta_x <= 0.05 and center_delta_y <= 0.10
+        # Bbox-width upper bound loosened 0.85 -> 0.92 on 2026-05-20 after
+        # docs/QC_AGREEMENT_STUDY.md found this check rejected wide
+        # quadrupeds in side profile (rhino_v3, v3 rhino baseline) that
+        # the human had passed. Center-delta tolerances unchanged.
+        centered_pass = 0.50 <= bbox_width_ratio <= 0.92 and center_delta_x <= 0.05 and center_delta_y <= 0.10
     else:
         x0 = y0 = x1 = y1 = 0
         bbox_width_ratio = bbox_height_ratio = center_x = center_y = center_delta_x = center_delta_y = 0.0
