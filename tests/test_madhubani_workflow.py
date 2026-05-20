@@ -39,7 +39,7 @@ class MadhubaniWorkflowTests(unittest.TestCase):
                 self.assertEqual(manifest["status"], "DRY_RUN")
                 self.assertEqual(manifest["pose_count"], 1)
                 self.assertEqual(manifest["jobs"], 1)
-                self.assertEqual(manifest["auto_qc_contract"], "4/7 rubric checks machine-scored; promotion blocks failed auto-QC unless --force")
+                self.assertEqual(manifest["auto_qc_contract"], "7/7 rubric checks machine-scored; promotion blocks failed auto-QC unless --force")
                 event_log = forge_madhubani.GEN_DIR / "workflow-events.jsonl"
                 self.assertIn('"action": "render_set"', event_log.read_text(encoding="utf-8"))
             finally:

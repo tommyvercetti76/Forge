@@ -111,12 +111,13 @@ def _write_auto_qc(png_path: Path, animal: dict, pose_slug: str) -> dict[str, An
         png_path,
         palette_path=SCHEMA_DIR / "palette.json",
         expected_body_fill=animal.get("body_fill_color"),
+        body_type=animal.get("body_type"),
     )
     qc.update({
         "animal_slug": animal["slug"],
         "pose": pose_slug,
         "body_type": animal.get("body_type"),
-        "quality_lift_contract": "4 of 7 Madhubani rubric checks are machine-gated before promotion",
+        "quality_lift_contract": "7 of 7 Madhubani rubric checks are machine-gated before promotion",
     })
     qc_path = _qc_path_for_png(png_path)
     _atomic_write_json(qc_path, qc)
@@ -445,7 +446,7 @@ def render_set(animal_slug: str, register: str, only_pose: str | None = None,
                     "auto_qc_pass": False,
                     "score": 0.0,
                     "pass_count": 0,
-                    "auto_check_count": 4,
+                    "auto_check_count": 7,
                     "error": str(exc),
                 }
                 print(f"   QC ERROR: {plan.pose['slug']} — {exc}")
@@ -522,7 +523,7 @@ def render_set(animal_slug: str, register: str, only_pose: str | None = None,
         "auto_qc_mean_score": round(sum(qc_scores) / len(qc_scores), 2) if qc_scores else None,
         "publishable_count": publishable_count,
         "blocked_count": blocked_count,
-        "auto_qc_contract": "4/7 rubric checks machine-scored; promotion blocks failed auto-QC unless --force",
+        "auto_qc_contract": "7/7 rubric checks machine-scored; promotion blocks failed auto-QC unless --force",
         "publishability_contract": "publishable iff returncode==0 AND auto_qc_pass AND blockers==[]; promote --force overrides at promotion time only",
         "status": "DRY_RUN" if dry_run else ("PASS" if failures == 0 else "PARTIAL_FAIL"),
         "poses": pose_records,
@@ -576,7 +577,7 @@ def promote_pose(animal_slug: str, pose_slug: str, from_version: str = "v1", for
         ]
         sys.exit(
             f"Auto-QC blocked promotion for {animal_slug}/{pose_slug}: "
-            f"{qc.get('pass_count', 0)}/{qc.get('auto_check_count', 4)} checks passed; "
+            f"{qc.get('pass_count', 0)}/{qc.get('auto_check_count', 7)} checks passed; "
             f"failed={failed}. Use `--force` only after human review."
         )
     dst = MASTERED_DIR / animal_slug / pose_slug

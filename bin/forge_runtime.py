@@ -267,6 +267,8 @@ def translate_texts_ollama(
     source_lang: str = "en",
     model: str | None = None,
     timeout: float = 180,
+    glossary: dict[str, dict[str, str]] | None = None,
+    out_report: dict | None = None,
 ) -> list[str]:
     """Translate a batch of text strings with local Ollama, preserving item count/order.
 
@@ -275,6 +277,17 @@ def translate_texts_ollama(
     (e.g. sarvam-translate occasionally echoes `<अनुवाद>`), fall through to
     one-at-a-time translation. Last-resort fallback returns the original text
     with a warning so the pipeline keeps moving instead of crashing.
+
+    Optional quality plumbing (off by default — when both ``glossary`` and
+    ``out_report`` are ``None``, output is byte-identical to the legacy path):
+
+    * ``glossary`` is a two-level dict keyed by target language, then
+      ``source-term -> target-term``. Only ``glossary[target_lang]`` is
+      consulted, so a single registry can carry many languages.
+    * ``out_report`` is a caller-provided dict that gets populated with
+      ``glossary_violations``, ``leakage_flags``, ``repeated_lines``, and
+      ``repeated_line_value`` after the successful return. None of these
+      raise — they are advisory signals for the caller to act on.
     """
     if not texts:
         return []
@@ -283,42 +296,145 @@ def translate_texts_ollama(
     if target_lang == source_lang:
         return list(texts)
 
+    # Resolve per-language glossary slice once; this lets us pass it cheaply
+    # into _translate_once for prompt injection.
+    glossary_for_lang: dict[str, str] | None = None
+    if glossary:
+        raw_terms = glossary.get(target_lang)
+        if isinstance(raw_terms, dict) and raw_terms:
+            glossary_for_lang = {str(k): str(v) for k, v in raw_terms.items() if k and v}
+
     # Try batch translation with rising temperature.
+    translated: list[str] | None = None
     for attempt, temp in enumerate((0.1, 0.4, 0.7), start=1):
         try:
-            return _translate_once(
+            translated = _translate_once(
                 texts, target_lang, source_lang=source_lang, model=model,
                 timeout=timeout, temperature=temp,
+                glossary=glossary_for_lang,
             )
+            break
         except _PlaceholderTranslationError as e:
             sys.stderr.write(
                 f"  ! translate {target_lang!r} attempt {attempt}/3 (T={temp}) "
                 f"returned placeholder; retrying. ({e})\n"
             )
 
-    # Batch failed all 3 retries → try one-at-a-time; this often works because the
-    # model handles a single string with a clearer prompt better than a numbered batch.
-    sys.stderr.write(f"  ! translate {target_lang!r}: batch failed, falling back to per-item.\n")
-    out: list[str] = []
-    for text in texts:
-        item_done = False
-        for temp in (0.1, 0.5):
-            try:
-                result = _translate_once(
-                    [text], target_lang, source_lang=source_lang, model=model,
-                    timeout=timeout, temperature=temp,
+    if translated is None:
+        # Batch failed all 3 retries → try one-at-a-time; this often works because the
+        # model handles a single string with a clearer prompt better than a numbered batch.
+        sys.stderr.write(f"  ! translate {target_lang!r}: batch failed, falling back to per-item.\n")
+        out: list[str] = []
+        for text in texts:
+            item_done = False
+            for temp in (0.1, 0.5):
+                try:
+                    result = _translate_once(
+                        [text], target_lang, source_lang=source_lang, model=model,
+                        timeout=timeout, temperature=temp,
+                        glossary=glossary_for_lang,
+                    )
+                    out.append(result[0])
+                    item_done = True
+                    break
+                except _PlaceholderTranslationError:
+                    continue
+            if not item_done:
+                sys.stderr.write(
+                    f"  ! translate {target_lang!r}: gave up on one item, using source: {text[:60]!r}\n"
                 )
-                out.append(result[0])
-                item_done = True
-                break
-            except _PlaceholderTranslationError:
+                out.append(text)  # deterministic fallback — never crash the pipeline
+        translated = out
+
+    # Populate the optional out_report only when the caller asked for it.
+    # Keeping this branch behind `out_report is not None` preserves byte-identical
+    # behavior for the existing call sites (audiobook flow, episode flow, etc.).
+    if out_report is not None:
+        _populate_translation_report(
+            out_report,
+            source_texts=texts,
+            translated_texts=translated,
+            target_lang=target_lang,
+            glossary_for_lang=glossary_for_lang,
+        )
+    return translated
+
+
+def _populate_translation_report(
+    out_report: dict,
+    *,
+    source_texts: list[str],
+    translated_texts: list[str],
+    target_lang: str,
+    glossary_for_lang: dict[str, str] | None,
+) -> None:
+    """Fill out_report with glossary / leakage / repeated-line flags.
+
+    All checks are advisory — they never mutate the translation. The caller
+    decides whether to surface, retry, or block on each flag.
+    """
+    glossary_violations: list[dict[str, Any]] = []
+    leakage_flags: list[dict[str, Any]] = []
+    repeated_lines = False
+    repeated_line_value: str | None = None
+
+    # Glossary check — case-insensitive whole-word match on the source side,
+    # presence check on the target side (substring is enough; the target term
+    # may attach to script-specific suffixes).
+    if glossary_for_lang:
+        for idx, (src, tgt) in enumerate(zip(source_texts, translated_texts)):
+            for source_term, target_term in glossary_for_lang.items():
+                if not source_term or not target_term:
+                    continue
+                pattern = re.compile(
+                    rf"(?<!\w){re.escape(source_term)}(?!\w)",
+                    flags=re.IGNORECASE,
+                )
+                if pattern.search(src) and target_term not in tgt:
+                    glossary_violations.append({
+                        "line_index": idx,
+                        "expected_term": target_term,
+                        "missing_in": tgt,
+                    })
+
+    # Leakage check — only meaningful when the target language is not English.
+    if target_lang not in {"en", "english"}:
+        ascii_word_re = re.compile(r"[A-Za-z][A-Za-z'\-]*")
+        for idx, line in enumerate(translated_texts):
+            tokens = line.split()
+            if not tokens:
                 continue
-        if not item_done:
-            sys.stderr.write(
-                f"  ! translate {target_lang!r}: gave up on one item, using source: {text[:60]!r}\n"
-            )
-            out.append(text)  # deterministic fallback — never crash the pipeline
-    return out
+            ascii_word_count = sum(1 for t in tokens if ascii_word_re.fullmatch(t))
+            fraction = ascii_word_count / len(tokens)
+            if fraction > 0.30:
+                leakage_flags.append({
+                    "line_index": idx,
+                    "ascii_word_fraction": fraction,
+                    "text": line,
+                })
+
+    # Repeated-line blocker — 3+ consecutive identical non-empty output lines
+    # whose value is NOT present identically anywhere in the input. (Legitimate
+    # repetition like "Yes." three times in a row stays unflagged when it
+    # already appears in the source.)
+    source_set = {s for s in source_texts}
+    run_value: str | None = None
+    run_length = 0
+    for line in translated_texts:
+        if line and run_value is not None and line == run_value:
+            run_length += 1
+        else:
+            run_value = line if line else None
+            run_length = 1 if line else 0
+        if run_length >= 3 and run_value is not None and run_value not in source_set:
+            repeated_lines = True
+            repeated_line_value = run_value
+            break
+
+    out_report["glossary_violations"] = glossary_violations
+    out_report["leakage_flags"] = leakage_flags
+    out_report["repeated_lines"] = repeated_lines
+    out_report["repeated_line_value"] = repeated_line_value
 
 
 class _PlaceholderTranslationError(ValueError):
@@ -333,6 +449,7 @@ def _translate_once(
     model: str | None,
     timeout: float,
     temperature: float,
+    glossary: dict[str, str] | None = None,
 ) -> list[str]:
     system = (
         "You are a professional media localization engine. Translate faithfully, "
@@ -340,6 +457,14 @@ def _translate_once(
         "Output ONLY the translated text — never labels, placeholders, brackets, "
         "or explanations."
     )
+    if glossary:
+        glossary_block_lines = [
+            "Glossary — these source-term → target-term mappings MUST be applied "
+            "exactly, with no exceptions, every time the source term appears:",
+        ]
+        for source_term, target_term in glossary.items():
+            glossary_block_lines.append(f'- "{source_term}" → "{target_term}"')
+        system = "\n".join(glossary_block_lines) + "\n\n" + system
     if len(texts) == 1:
         prompt = (
             f"Translate the following text from {language_name(source_lang)} "

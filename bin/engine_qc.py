@@ -63,6 +63,13 @@ def derive_blockers(qc: dict[str, Any] | None) -> list[dict[str, Any]]:
         check = checks.get(name)
         if not isinstance(check, dict):
             continue
+        # Checks marked `disabled_by_default` are informational only — they
+        # still appear in the QC sidecar with their pass/fail verdict, but
+        # they must not gate publishability. The QC author is the
+        # authoritative source on which checks are disabled (e.g. a check
+        # with too high a false-positive rate on the curated corpus).
+        if check.get("disabled_by_default"):
+            continue
         if check.get("pass") is False:
             out.append({
                 "check": name,

@@ -1,9 +1,10 @@
 """Automatic QC gates for the Madhubani tee catalog.
 
-This module covers the four rubric checks that are intentionally mechanical:
-palette floor, clean corners, centered subject, and saturated body fill. It is
-not a replacement for the human review gates around anatomy, expression, and
-Madhubani read.
+This module covers the seven rubric checks that are intentionally mechanical:
+palette floor, clean corners, centered subject, saturated body fill, anatomy
+(body-type leg count), text-leak (OCR), and eye character (head-region
+luminance contrast). It is not a replacement for the human review gates
+around expression nuance, Madhubani read, and series cohesion.
 """
 
 from __future__ import annotations
@@ -16,7 +17,30 @@ import numpy as np
 from PIL import Image
 
 
-AUTO_CHECK_COUNT = 4
+AUTO_CHECK_COUNT = 7
+
+# Body-type → expected leg-pillar count under _score_anatomy. Body types
+# absent from the map skip the leg-count check entirely (pass by definition).
+LEG_PILLAR_EXPECTATIONS: dict[str, int] = {
+    "heavy-quadruped": 3,
+    "lean-predator": 3,
+    "lean-quadruped": 3,
+    "armored-quadruped": 3,
+    "primate": 3,
+    "bird": 2,
+}
+LEG_PILLAR_SKIP_BODY_TYPES = frozenset({"serpent", "cetacean"})
+
+# Checks that ship in the QC output as informational only — their `pass`
+# field is still computed and reported, but `auto_qc_pass` ignores them.
+# The 2026-05-20 A2 corpus check (docs/A2_CORPUS_CHECK_2026-05-20.md) found
+# `anatomy` fires on >10% of the known-good corpus (side-profile quadrupeds
+# routinely show only 2 leg pillars because the far legs are occluded by
+# the near legs); the proxy is too strict to gate promotion until either
+# a foreground/background mask separates the limbs or the pose set is
+# constrained to legs-spread compositions. Until then anatomy is reported
+# but does not block.
+DISABLED_BY_DEFAULT_CHECKS: frozenset[str] = frozenset({"anatomy"})
 
 
 def _hex_to_rgb(value: str) -> tuple[int, int, int]:
@@ -71,11 +95,201 @@ def _downsample_image(path: Path, max_dim: int = 768) -> tuple[np.ndarray, np.nd
     return rgb, alpha, original_size
 
 
+def _score_anatomy(subject_mask: np.ndarray, body_type: str | None) -> dict[str, Any]:
+    """Leg-count proxy from the subject mask, dispatched by body_type.
+
+    For quadrupeds / primates / birds we scan the bottom 30% of the subject
+    mask column-by-column. A column is a "leg pillar" if its bottom-band
+    coverage exceeds 60%; pillars must be separated by ≥4 columns of <20%
+    coverage to avoid counting one wide trunk as two legs. Body types whose
+    anatomy_rules do not require visible legs (serpent, cetacean, or any
+    body_type the engine doesn't know) pass by definition.
+
+    Returns the actual pillar count even when the check passes-by-definition,
+    so manifest diffs surface what the proxy saw.
+    """
+    body_type_label = (body_type or "").strip()
+    expected = LEG_PILLAR_EXPECTATIONS.get(body_type_label, 0)
+
+    # No subject pixels means nothing to count; treat as fail unless the
+    # body_type is one of the no-leg families.
+    if not subject_mask.any():
+        return {
+            "pass": body_type_label in LEG_PILLAR_SKIP_BODY_TYPES,
+            "body_type": body_type_label,
+            "leg_pillars_detected": 0,
+            "leg_pillars_expected": expected,
+        }
+
+    ys, xs = np.where(subject_mask)
+    x0, x1 = int(xs.min()), int(xs.max())
+    y0, y1 = int(ys.min()), int(ys.max())
+    bbox_height = y1 - y0 + 1
+    bbox_width = x1 - x0 + 1
+
+    # Bottom 30% of the subject bounding box.
+    band_top = y0 + int(round(bbox_height * 0.7))
+    band = subject_mask[band_top:y1 + 1, x0:x1 + 1]
+    if band.size == 0:
+        return {
+            "pass": body_type_label in LEG_PILLAR_SKIP_BODY_TYPES,
+            "body_type": body_type_label,
+            "leg_pillars_detected": 0,
+            "leg_pillars_expected": expected,
+        }
+
+    column_coverage = band.mean(axis=0) if band.shape[0] > 0 else np.zeros(bbox_width, dtype=np.float32)
+    pillar_threshold = 0.60
+    gap_threshold = 0.20
+    min_gap_columns = 4
+
+    pillars = 0
+    in_pillar = False
+    gap_counter = 0
+    for value in column_coverage:
+        v = float(value)
+        if v >= pillar_threshold:
+            if not in_pillar:
+                pillars += 1
+                in_pillar = True
+            gap_counter = 0
+        elif v < gap_threshold:
+            gap_counter += 1
+            if in_pillar and gap_counter >= min_gap_columns:
+                in_pillar = False
+        # 0.20–0.60 mid-zone: neither extends a pillar nor counts as a clean
+        # gap; treat it as ambiguous transition territory.
+
+    if body_type_label in LEG_PILLAR_SKIP_BODY_TYPES:
+        passed = True
+    elif expected == 0:
+        # Unknown body_type, no legs expected → pass by definition.
+        passed = True
+    else:
+        passed = pillars >= expected
+
+    return {
+        "pass": passed,
+        "body_type": body_type_label,
+        "leg_pillars_detected": int(pillars),
+        "leg_pillars_expected": int(expected),
+        "disabled_by_default": "anatomy" in DISABLED_BY_DEFAULT_CHECKS,
+    }
+
+
+def _score_text_leak(png_path: Path) -> dict[str, Any]:
+    """OCR-based text-leak detector. pytesseract is optional — missing dep
+    becomes a skipped (passing) result, not a failure, so the rubric isn't
+    held hostage by a system dependency.
+
+    Failure modes:
+      - any Devanagari character (U+0900–U+097F) in the recognized text
+      - more than 10 characters of recognized text (after whitespace strip)
+
+    The high length threshold tolerates the false positives that OCR engines
+    routinely emit on ornament patterns (stray "I", "l", noise glyphs); only
+    when the text starts to look like actual words do we fail.
+    """
+    try:
+        import pytesseract  # type: ignore[import-not-found]
+    except ImportError:
+        return {
+            "pass": True,
+            "skipped": True,
+            "reason": "pytesseract not installed",
+        }
+
+    try:
+        text = pytesseract.image_to_string(Image.open(png_path), lang="eng+hin")
+    except Exception as exc:  # pragma: no cover — defensive: missing language pack, runtime errors
+        return {
+            "pass": True,
+            "skipped": True,
+            "reason": f"pytesseract failed: {exc}",
+        }
+
+    cleaned = text.strip()
+    devanagari = sum(1 for ch in cleaned if "ऀ" <= ch <= "ॿ")
+    text_length = len(cleaned)
+    fail = text_length > 10 or devanagari > 0
+    return {
+        "pass": not fail,
+        "skipped": False,
+        "ocr_text_length": text_length,
+        "devanagari_chars": devanagari,
+        "preview": cleaned[:80],
+    }
+
+
+def _score_eye_character(rgb: np.ndarray, subject_mask: np.ndarray) -> dict[str, Any]:
+    """Head-band luminance contrast as a proxy for "alert eyes present".
+
+    Madhubani folk-icons place eyes as small high-contrast marks against a
+    saturated body fill. Within the top 25% of the subject bounding box, an
+    alert eye produces a wide luminance spread (dark pupil + light sclera +
+    fur). A uniform face — blob, blurred, or missing eyes — produces a
+    narrow spread. We threshold on (max - min) > 80 on the 8-bit scale.
+    """
+    if not subject_mask.any():
+        return {
+            "pass": False,
+            "head_band_pixel_count": 0,
+            "luminance_min": 0,
+            "luminance_max": 0,
+            "luminance_std": 0.0,
+        }
+
+    ys, xs = np.where(subject_mask)
+    y0, y1 = int(ys.min()), int(ys.max())
+    bbox_height = y1 - y0 + 1
+    head_band_bottom = y0 + max(1, int(round(bbox_height * 0.25)))
+
+    head_band_mask = np.zeros_like(subject_mask)
+    head_band_mask[y0:head_band_bottom, :] = subject_mask[y0:head_band_bottom, :]
+    if not head_band_mask.any():
+        return {
+            "pass": False,
+            "head_band_pixel_count": 0,
+            "luminance_min": 0,
+            "luminance_max": 0,
+            "luminance_std": 0.0,
+        }
+
+    # ITU-R BT.601 luminance — sturdy for 8-bit RGB without needing Lab.
+    luminance = (
+        0.299 * rgb[..., 0].astype(np.float32)
+        + 0.587 * rgb[..., 1].astype(np.float32)
+        + 0.114 * rgb[..., 2].astype(np.float32)
+    )
+    samples = luminance[head_band_mask]
+    if samples.size == 0:
+        return {
+            "pass": False,
+            "head_band_pixel_count": 0,
+            "luminance_min": 0,
+            "luminance_max": 0,
+            "luminance_std": 0.0,
+        }
+
+    lum_min = int(round(float(samples.min())))
+    lum_max = int(round(float(samples.max())))
+    lum_std = float(samples.std())
+    contrast = lum_max - lum_min
+    return {
+        "pass": contrast > 80,
+        "head_band_pixel_count": int(samples.size),
+        "luminance_min": lum_min,
+        "luminance_max": lum_max,
+        "luminance_std": round(lum_std, 3),
+    }
+
+
 def score_madhubani_png(
     png_path: Path,
     *,
     palette_path: Path,
     expected_body_fill: str | None = None,
+    body_type: str | None = None,
 ) -> dict[str, Any]:
     palette = _load_palette(palette_path)
     rules = palette.get("rules", {})
@@ -157,6 +371,10 @@ def score_madhubani_png(
         best_body_fraction = black_fraction = cream_fraction = 0.0
     body_fill_pass = best_body_fraction >= 0.02 and black_fraction < 0.80 and cream_fraction < 0.35
 
+    anatomy_check = _score_anatomy(subject_mask, body_type)
+    text_leak_check = _score_text_leak(png_path)
+    eye_character_check = _score_eye_character(rgb, subject_mask)
+
     checks = {
         "color_floor": {
             "pass": color_floor_pass,
@@ -186,8 +404,21 @@ def score_madhubani_png(
             "cream_subject_fraction": round(cream_fraction, 5),
             "body_fill_fractions": body_fill_fractions,
         },
+        "anatomy": anatomy_check,
+        "text_leak": text_leak_check,
+        "eye_character": eye_character_check,
     }
-    pass_count = sum(1 for item in checks.values() if item["pass"])
+    # Active checks are everything except those marked disabled_by_default —
+    # disabled checks still run and report (informational), but they do not
+    # affect `pass_count` or `auto_qc_pass`. Skipped checks (optional deps
+    # missing) count as passes so the rubric isn't penalised for system-level
+    # gaps.
+    active_checks = {
+        name: item for name, item in checks.items()
+        if name not in DISABLED_BY_DEFAULT_CHECKS
+    }
+    pass_count = sum(1 for item in active_checks.values() if item.get("pass"))
+    active_check_count = len(active_checks)
     return {
         "schema": "forge.madhubani_auto_qc.v1",
         "png_path": str(png_path),
@@ -196,8 +427,10 @@ def score_madhubani_png(
         "sampled_width": width,
         "sampled_height": height,
         "auto_check_count": AUTO_CHECK_COUNT,
+        "active_check_count": active_check_count,
+        "disabled_by_default": sorted(DISABLED_BY_DEFAULT_CHECKS),
         "pass_count": pass_count,
-        "score": round(pass_count / AUTO_CHECK_COUNT * 100, 2),
-        "auto_qc_pass": pass_count == AUTO_CHECK_COUNT,
+        "score": round(pass_count / active_check_count * 100, 2) if active_check_count else 0.0,
+        "auto_qc_pass": pass_count == active_check_count,
         "checks": checks,
     }

@@ -1,0 +1,48 @@
+{
+  "version": "1.0.0",
+  "schema": "forge.species_iconography.v1",
+  "established": "2026-05-20",
+  "notes": "Per-species iconography phrases consulted by the minimalist-tshirt engine. Phrases are positive compositional anchors appended after master citations and before universal negatives. Source: docs/QUALITY_FINDINGS_2026-05-20.md, 'Per-species iconography (Lever B) - first draft' section.",
+  "species": {
+    "tiger": {
+      "identity": "amber-gold eyes with vertical slit pupils; sharp white ocelli behind both ears; 8-12 long pale whiskers per side; rust-orange body with broken vertical black stripes; pale belly fur",
+      "aliases": ["bengal-tiger", "royal-bengal-tiger", "bengal tiger", "royal bengal tiger"]
+    },
+    "peacock": {
+      "identity": "iridescent blue-green neck; ocellus eye-spots on tail feathers; crest of small fan feathers on head; bright orange feet",
+      "aliases": ["peafowl", "indian-peafowl", "blue-peafowl"]
+    },
+    "elephant": {
+      "identity": "small alert eyes with long lashes; trunk with visible ring lines; tusks (for males) or short tushes; broad triangular ears; wrinkled grey skin texture",
+      "aliases": ["asian-elephant", "indian-elephant", "tusker"]
+    },
+    "cobra": {
+      "identity": "flared hood with two oval black eye-spots; forked tongue mid-flicker; pale belly scales; defined diamond head",
+      "aliases": ["snake", "king-cobra", "naga", "serpent"]
+    },
+    "fish": {
+      "identity": "large round eyes; gill plates clearly delineated; layered overlapping scales; paired fins + tail",
+      "aliases": ["carp", "matsya", "river-fish"]
+    },
+    "horse": {
+      "identity": "bright forward-set eyes; long mane and tail in continuous strokes; visible muscle lines on flank",
+      "aliases": ["stallion", "mare", "pony"]
+    },
+    "deer": {
+      "identity": "large dark eyes; white throat patch; branching antlers (males) or smooth poll (females); slender legs",
+      "aliases": ["stag", "doe", "chital", "spotted-deer"]
+    },
+    "parrot": {
+      "identity": "strong curved beak; visible cere above beak; long pointed tail feathers; defined wing bars",
+      "aliases": ["macaw", "popti-parrot", "rose-ringed-parakeet", "parakeet"]
+    },
+    "turtle": {
+      "identity": "geometric scute pattern on shell; lined skin folds at neck; webbed feet",
+      "aliases": ["tortoise", "kurma", "sea-turtle"]
+    },
+    "lion": {
+      "identity": "round eyes with golden iris; full ringed mane (males); muscular shoulder; tufted tail tip",
+      "aliases": ["asiatic-lion", "lioness", "simha"]
+    }
+  }
+}

@@ -50,6 +50,7 @@ from forge_runtime import (
     translate_texts_ollama,
     validate_audio,
 )
+import input_adapter
 
 
 # ─────────────── language config ───────────────
@@ -1202,7 +1203,7 @@ def main() -> int:
 
     # 1. Parse full book
     print(cyan(f"▶ parsing transcript: {args.rtf}"))
-    full_text = parse_rtf(args.rtf)
+    full_text = input_adapter.read_as_text(args.rtf, kind="rtf")["text"]
     wc_full = word_count(full_text)
     print(f"  · full: {wc_full:,} words / {len(full_text):,} chars")
 

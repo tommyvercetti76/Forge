@@ -24,13 +24,137 @@ Public surface:
 from __future__ import annotations
 
 import json
+import re
 from dataclasses import asdict, dataclass, field, fields
+from pathlib import Path
 from typing import Any, ClassVar
 
 from _engine_base import (
     Directive, Engine, EnumBank, EnumValue,
     assemble_masters_line, normalize_subject, require,
 )
+
+
+# ────────────────────────────────────────────────────────────────────────────
+# Species iconography table (Lever B) — loaded once at module import time.
+#
+# Backs the per-species iconography injection in MinimalistTShirtEngine.build()
+# below. The table is sourced from brand/madhubani/species_iconography.json so
+# editors can tune phrases without touching code. On disk-read failure (file
+# missing or malformed) we degrade gracefully — the engine then behaves exactly
+# as it did before this feature shipped.
+#
+# Schema (forge.species_iconography.v1):
+#   {
+#     "species": {
+#       "<lower-case key>": {
+#         "identity": "<phrase appended after master citations>",
+#         "aliases":  ["<other-name-1>", "<other-name-2>"]
+#       },
+#       ...
+#     }
+#   }
+# ────────────────────────────────────────────────────────────────────────────
+
+
+_SPECIES_ICONOGRAPHY_PATH = (
+    Path(__file__).resolve().parent.parent
+    / "brand" / "madhubani" / "species_iconography.json"
+)
+
+
+def _load_species_iconography(path: Path = _SPECIES_ICONOGRAPHY_PATH) -> dict[str, Any]:
+    """Read and normalize the species iconography table once.
+
+    Returns a dict with two indexes:
+      * "by_key"   — {species_key: {"identity": str, "aliases": tuple[str, ...]}}
+      * "lookup"   — {alias_or_key_lowercased: (species_key, matched_via)}
+        where ``matched_via`` is "key" when the lookup string equals the species
+        key itself, and "alias" otherwise.
+    Returns {"by_key": {}, "lookup": {}} on missing or malformed input.
+    """
+    try:
+        raw = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return {"by_key": {}, "lookup": {}}
+    species = raw.get("species") or {}
+    by_key: dict[str, dict[str, Any]] = {}
+    lookup: dict[str, tuple[str, str]] = {}
+    for raw_key, entry in species.items():
+        if not isinstance(entry, dict):
+            continue
+        key = str(raw_key).strip().lower()
+        identity = str(entry.get("identity") or "").strip()
+        if not key or not identity:
+            continue
+        aliases_raw = entry.get("aliases") or []
+        aliases = tuple(
+            str(a).strip().lower()
+            for a in aliases_raw
+            if isinstance(a, str) and str(a).strip()
+        )
+        by_key[key] = {"identity": identity, "aliases": aliases}
+        # The species key itself wins over an alias if both appear in the
+        # subject string. We register the key entry first; aliases never
+        # overwrite a key entry.
+        lookup.setdefault(key, (key, "key"))
+        for alias in aliases:
+            lookup.setdefault(alias, (key, "alias"))
+    return {"by_key": by_key, "lookup": lookup}
+
+
+_SPECIES_ICONOGRAPHY: dict[str, Any] = _load_species_iconography()
+
+
+# Sentinel used in audit dicts when no species was matched. Kept in one place
+# so the test suite can pin the contract.
+_SPECIES_ICONOGRAPHY_MISS: dict[str, Any] = {"species": None}
+
+
+def _word_pattern(token: str) -> re.Pattern[str]:
+    """Build a case-insensitive whole-word regex for a species key or alias.
+
+    The token may contain hyphens or spaces (e.g. "royal bengal tiger" or
+    "bengal-tiger"); we tolerate either separator at runtime by collapsing
+    runs of non-alphanumeric characters to ``\\W+`` inside the pattern.
+    """
+    parts = re.split(r"[\W_]+", token.strip())
+    parts = [re.escape(p) for p in parts if p]
+    if not parts:
+        return re.compile(r"(?!x)x")  # never matches
+    body = r"[\W_]+".join(parts)
+    return re.compile(rf"(?<![A-Za-z0-9]){body}(?![A-Za-z0-9])", re.IGNORECASE)
+
+
+def _match_species(subject: str, table: dict[str, Any] | None = None) -> dict[str, Any] | None:
+    """Scan ``subject`` for the first matching species key or alias.
+
+    The keys themselves take priority over aliases, and within each group
+    longer tokens take priority over shorter ones — "royal bengal tiger" wins
+    over "tiger" if both appear. Returns ``None`` on no hit.
+    """
+    table = table or _SPECIES_ICONOGRAPHY
+    lookup = table.get("lookup", {})
+    by_key = table.get("by_key", {})
+    if not subject or not lookup:
+        return None
+    # Sort tokens: keys first, then longer first within each group.
+    tokens = sorted(
+        lookup.items(),
+        key=lambda kv: (0 if kv[1][1] == "key" else 1, -len(kv[0])),
+    )
+    for token, (species_key, matched_via) in tokens:
+        if _word_pattern(token).search(subject):
+            entry = by_key.get(species_key)
+            if not entry:
+                continue
+            return {
+                "species": species_key,
+                "phrase": entry["identity"],
+                "matched_via": token,
+                "match_kind": matched_via,
+            }
+    return None
 
 
 # ════════════════════════════════════════════════════════════════════════════
@@ -3493,6 +3617,10 @@ class MinimalistTShirtConfig:
     production: MTProductionConfig = field(default_factory=MTProductionConfig)
     composition: MTCompositionConfig = field(default_factory=MTCompositionConfig)
     seed: int = 1
+    # Per-species iconography injection (Lever B, 2026-05-20). Default-on.
+    # Recipes can set this to ``False`` to suppress the appended phrase if
+    # they prefer to spell out the iconography themselves in `subject`.
+    species_iconography: bool = True
 
 
 class MinimalistTShirtEngine(Engine):
@@ -3906,6 +4034,27 @@ class MinimalistTShirtEngine(Engine):
         ]
 
         prompt = "\n\n".join(prompt_parts)
+
+        # ── Per-species iconography (Lever B, 2026-05-20) ──
+        # After master citations and before universal negatives, append the
+        # iconography phrase for the matched species. Recipes may opt out by
+        # setting ``species_iconography=False`` on the config (default-on).
+        species_iconography_enabled = bool(
+            getattr(config, "species_iconography", True)
+        )
+        if species_iconography_enabled:
+            hit = _match_species(clean_subject)
+            if hit is not None:
+                prompt = prompt + f"\n\n — species: {hit['phrase']}"
+                audit["species_iconography"] = {
+                    "species": hit["species"],
+                    "phrase": hit["phrase"],
+                    "matched_via": hit["matched_via"],
+                }
+            else:
+                audit["species_iconography"] = dict(_SPECIES_ICONOGRAPHY_MISS)
+        else:
+            audit["species_iconography"] = {"species": None, "disabled": True}
 
         return Directive(
             engine=cls.name,
