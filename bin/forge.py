@@ -1544,20 +1544,25 @@ def flux_generate_batch(
     if step_count < 1:
         sys.exit(red("--steps must be >= 1"))
 
-    ready, reason = _flux_model_ready(model)
-    if not ready:
-        repo = _FLUX_REPO_MAP.get(model, model)
-        sys.exit(
-            red(f"FLUX preflight failed: {reason}") + "\n"
-            + dim(f"  this run wants FLUX.1-{model}, but it's not fully cached.\n\n")
-            + "  Options:\n"
-            + f"  1. Complete the download (resumable):\n"
-            + f"       hf download {repo}\n"
-            + "  2. Switch the preset to a model you HAVE — edit brand/presets/"
-              f"{preset['id']}.json,\n     change flux.model to 'schnell' (or 'dev', whichever is cached).\n"
-            + "  3. Inspect what's cached:\n"
-            + "       forge models scan --full\n"
-        )
+    # FLUX.1 family preflight only — FLUX.2 / Z-Image have different repo
+    # layouts and the mflux-generate-flux2 / -z-image binaries handle their
+    # own download. Without this guard the FLUX.1-only `_FLUX_REPO_MAP`
+    # incorrectly says FLUX.2-klein-4b isn't cached even when it is.
+    if _model_family(model) == "flux1":
+        ready, reason = _flux_model_ready(model)
+        if not ready:
+            repo = _FLUX_REPO_MAP.get(model, model)
+            sys.exit(
+                red(f"FLUX preflight failed: {reason}") + "\n"
+                + dim(f"  this run wants FLUX.1-{model}, but it's not fully cached.\n\n")
+                + "  Options:\n"
+                + f"  1. Complete the download (resumable):\n"
+                + f"       hf download {repo}\n"
+                + "  2. Switch the preset to a model you HAVE — edit brand/presets/"
+                  f"{preset['id']}.json,\n     change flux.model to 'schnell' (or 'dev', whichever is cached).\n"
+                + "  3. Inspect what's cached:\n"
+                + "       forge models scan --full\n"
+            )
 
     full_prompt = build_flux_prompt(preset, concept, series=series)
 
