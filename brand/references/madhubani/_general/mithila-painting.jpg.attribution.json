@@ -1,0 +1,18 @@
+{
+  "source_url": "https://commons.wikimedia.org/wiki/File:Mithila_Painting.jpg",
+  "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Mithila_Painting.jpg?width=1280",
+  "wikimedia_title": "File:Mithila Painting.jpg",
+  "artist": "Shravan012",
+  "credit": "Own work",
+  "date": "2024-05-20 18:39:24",
+  "license": "CC BY-SA 4.0",
+  "license_url": "https://creativecommons.org/licenses/by-sa/4.0",
+  "permitted_uses": [
+    "LoRA training",
+    "Kontext seed",
+    "private reference"
+  ],
+  "added_by": "auto-curator/wikimedia-commons",
+  "added_at": "2026-05-20T15:20:05+00:00",
+  "notes": "Downloaded at thumbnail width 1280px from Wikimedia CDN; original 1232x2048 image/jpeg."
+}

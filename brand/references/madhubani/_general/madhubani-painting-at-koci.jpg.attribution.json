@@ -1,0 +1,18 @@
+{
+  "source_url": "https://commons.wikimedia.org/wiki/File:Madhubani_painting_at_Koci.jpg",
+  "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Madhubani_painting_at_Koci.jpg?width=1280",
+  "wikimedia_title": "File:Madhubani painting at Koci.jpg",
+  "artist": "Chiring chandan",
+  "credit": "Own work",
+  "date": "2024-02-21 14:40:40",
+  "license": "CC BY-SA 4.0",
+  "license_url": "https://creativecommons.org/licenses/by-sa/4.0",
+  "permitted_uses": [
+    "LoRA training",
+    "Kontext seed",
+    "private reference"
+  ],
+  "added_by": "auto-curator/wikimedia-commons",
+  "added_at": "2026-05-20T15:19:44+00:00",
+  "notes": "Downloaded at thumbnail width 1280px from Wikimedia CDN; original 4000x2250 image/jpeg."
+}

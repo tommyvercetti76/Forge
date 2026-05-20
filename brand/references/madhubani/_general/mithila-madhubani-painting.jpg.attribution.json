@@ -1,0 +1,18 @@
+{
+  "source_url": "https://commons.wikimedia.org/wiki/File:Mithila-Madhubani_Painting.jpg",
+  "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Mithila-Madhubani_Painting.jpg?width=1280",
+  "wikimedia_title": "File:Mithila-Madhubani Painting.jpg",
+  "artist": "Unknown authorUnknown author",
+  "credit": "Freepik",
+  "date": "2024-12-15 17:57:15",
+  "license": "CC0",
+  "license_url": "http://creativecommons.org/publicdomain/zero/1.0/deed.en",
+  "permitted_uses": [
+    "LoRA training",
+    "Kontext seed",
+    "private reference"
+  ],
+  "added_by": "auto-curator/wikimedia-commons",
+  "added_at": "2026-05-20T15:20:01+00:00",
+  "notes": "Downloaded at thumbnail width 1280px from Wikimedia CDN; original 1127x1127 image/jpeg."
+}

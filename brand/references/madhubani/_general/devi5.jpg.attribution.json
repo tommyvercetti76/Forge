@@ -1,0 +1,18 @@
+{
+  "source_url": "https://commons.wikimedia.org/wiki/File:Devi5.jpg",
+  "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Devi5.jpg?width=1280",
+  "wikimedia_title": "File:Devi5.jpg",
+  "artist": "Mahasundari devi",
+  "credit": "Own work",
+  "date": "2013-10-11 19:47:04",
+  "license": "CC BY-SA 3.0",
+  "license_url": "https://creativecommons.org/licenses/by-sa/3.0",
+  "permitted_uses": [
+    "LoRA training",
+    "Kontext seed",
+    "private reference"
+  ],
+  "added_by": "auto-curator/wikimedia-commons",
+  "added_at": "2026-05-20T15:19:22+00:00",
+  "notes": "Downloaded at thumbnail width 1280px from Wikimedia CDN; original 500x375 image/jpeg."
+}

@@ -1,0 +1,18 @@
+{
+  "source_url": "https://commons.wikimedia.org/wiki/File:Madhubani_Mahavidyas.jpg",
+  "image_url": "https://upload.wikimedia.org/wikipedia/commons/6/67/Madhubani_Mahavidyas.jpg",
+  "wikimedia_title": "File:Madhubani Mahavidyas.jpg",
+  "artist": "toyin adepoju",
+  "credit": "the_birth_of_ten_mahavidyas_with_shiva_parvati_dk47.jpg",
+  "date": "2011-09-18 06:25:01",
+  "license": "CC BY-SA 3.0",
+  "license_url": "https://creativecommons.org/licenses/by-sa/3.0",
+  "permitted_uses": [
+    "LoRA training",
+    "Kontext seed",
+    "private reference"
+  ],
+  "added_by": "auto-curator/wikimedia-commons",
+  "added_at": "2026-05-20T15:15:35+00:00",
+  "notes": "Resolution 623x850; image/jpeg; downloaded from Wikimedia Commons."
+}

@@ -1,0 +1,18 @@
+{
+  "source_url": "https://commons.wikimedia.org/wiki/File:Madhubani_Fish_Motif_with_Stylized_Geometric_Scales_and_Red-Toned_Accents_from_Mithila_India.png",
+  "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Madhubani_Fish_Motif_with_Stylized_Geometric_Scales_and_Red-Toned_Accents_from_Mithila_India.png?width=1280",
+  "wikimedia_title": "File:Madhubani Fish Motif with Stylized Geometric Scales and Red-Toned Accents from Mithila India.png",
+  "artist": "Art Projects MKCL KF",
+  "credit": "Own work",
+  "date": "2025-03-05 11:31:31",
+  "license": "CC BY-SA 4.0",
+  "license_url": "https://creativecommons.org/licenses/by-sa/4.0",
+  "permitted_uses": [
+    "LoRA training",
+    "Kontext seed",
+    "private reference"
+  ],
+  "added_by": "auto-curator/wikimedia-commons",
+  "added_at": "2026-05-20T15:18:23+00:00",
+  "notes": "Downloaded at thumbnail width 1280px from Wikimedia CDN; original 236x257 image/png."
+}

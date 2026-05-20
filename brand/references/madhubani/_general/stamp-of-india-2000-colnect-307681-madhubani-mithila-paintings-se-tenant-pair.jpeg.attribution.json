@@ -1,0 +1,18 @@
+{
+  "source_url": "https://commons.wikimedia.org/wiki/File:Stamp_of_India_-_2000_-_Colnect_307681_-_Madhubani_Mithila_Paintings_-_se_tenant_pair.jpeg",
+  "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Stamp_of_India_-_2000_-_Colnect_307681_-_Madhubani_Mithila_Paintings_-_se_tenant_pair.jpeg?width=1280",
+  "wikimedia_title": "File:Stamp of India - 2000 - Colnect 307681 - Madhubani Mithila Paintings - se tenant pair.jpeg",
+  "artist": "Post of India",
+  "credit": "https://colnect.com/en/stamps/stamp/307681-Madhubani_Mithila_Paintings_-_se-tenant_pair-Madhubani_Mithila_Paintings-India",
+  "date": "2021-01-10 12:31:25",
+  "license": "GODL-India",
+  "license_url": "https://data.gov.in/sites/default/files/Gazette_Notification_OGDL.pdf",
+  "permitted_uses": [
+    "LoRA training",
+    "Kontext seed",
+    "private reference"
+  ],
+  "added_by": "auto-curator/wikimedia-commons",
+  "added_at": "2026-05-20T15:20:18+00:00",
+  "notes": "Downloaded at thumbnail width 1280px from Wikimedia CDN; original 1024x621 image/jpeg."
+}

@@ -1,0 +1,18 @@
+{
+  "source_url": "https://commons.wikimedia.org/wiki/File:Dadi5.JPG",
+  "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Dadi5.JPG?width=1280",
+  "wikimedia_title": "File:Dadi5.JPG",
+  "artist": "Mahasundari devi",
+  "credit": "Own work",
+  "date": "2013-10-11 20:24:27",
+  "license": "CC BY-SA 3.0",
+  "license_url": "https://creativecommons.org/licenses/by-sa/3.0",
+  "permitted_uses": [
+    "LoRA training",
+    "Kontext seed",
+    "private reference"
+  ],
+  "added_by": "auto-curator/wikimedia-commons",
+  "added_at": "2026-05-20T15:19:19+00:00",
+  "notes": "Downloaded at thumbnail width 1280px from Wikimedia CDN; original 2048x1536 image/jpeg."
+}

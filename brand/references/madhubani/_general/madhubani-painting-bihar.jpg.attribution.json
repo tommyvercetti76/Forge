@@ -1,0 +1,18 @@
+{
+  "source_url": "https://commons.wikimedia.org/wiki/File:Madhubani_painting,_Bihar.jpg",
+  "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Madhubani_painting%2C_Bihar.jpg?width=1280",
+  "wikimedia_title": "File:Madhubani painting, Bihar.jpg",
+  "artist": "Jean-Etienne Minh-Duy Poirrier from Bruxelles, Belgium",
+  "credit": "Madhubani painting, Bihar",
+  "date": "2015-02-28 13:54:32",
+  "license": "CC BY-SA 2.0",
+  "license_url": "https://creativecommons.org/licenses/by-sa/2.0",
+  "permitted_uses": [
+    "LoRA training",
+    "Kontext seed",
+    "private reference"
+  ],
+  "added_by": "auto-curator/wikimedia-commons",
+  "added_at": "2026-05-20T15:19:39+00:00",
+  "notes": "Downloaded at thumbnail width 1280px from Wikimedia CDN; original 3888x2592 image/jpeg."
+}

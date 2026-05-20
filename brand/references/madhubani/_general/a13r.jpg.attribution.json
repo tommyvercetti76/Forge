@@ -1,0 +1,18 @@
+{
+  "source_url": "https://commons.wikimedia.org/wiki/File:A13r.jpg",
+  "image_url": "https://upload.wikimedia.org/wikipedia/commons/0/06/A13r.jpg",
+  "wikimedia_title": "File:A13r.jpg",
+  "artist": "Adwayt and co",
+  "credit": "Own work",
+  "date": "2016-05-07 09:52:57",
+  "license": "CC BY-SA 4.0",
+  "license_url": "https://creativecommons.org/licenses/by-sa/4.0",
+  "permitted_uses": [
+    "LoRA training",
+    "Kontext seed",
+    "private reference"
+  ],
+  "added_by": "auto-curator/wikimedia-commons",
+  "added_at": "2026-05-20T15:15:34+00:00",
+  "notes": "Resolution 2336x3504; image/jpeg; downloaded from Wikimedia Commons."
+}

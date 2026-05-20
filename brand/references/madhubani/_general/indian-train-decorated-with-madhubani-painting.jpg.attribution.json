@@ -1,0 +1,18 @@
+{
+  "source_url": "https://commons.wikimedia.org/wiki/File:Indian_train_decorated_with_Madhubani_painting.jpg",
+  "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Indian_train_decorated_with_Madhubani_painting.jpg?width=1280",
+  "wikimedia_title": "File:Indian train decorated with Madhubani painting.jpg",
+  "artist": "Karan",
+  "credit": "Own work",
+  "date": "2020-02-05 10:01:16",
+  "license": "CC BY-SA 4.0",
+  "license_url": "https://creativecommons.org/licenses/by-sa/4.0",
+  "permitted_uses": [
+    "LoRA training",
+    "Kontext seed",
+    "private reference"
+  ],
+  "added_by": "auto-curator/wikimedia-commons",
+  "added_at": "2026-05-20T15:19:28+00:00",
+  "notes": "Downloaded at thumbnail width 1280px from Wikimedia CDN; original 4032x2268 image/jpeg."
+}

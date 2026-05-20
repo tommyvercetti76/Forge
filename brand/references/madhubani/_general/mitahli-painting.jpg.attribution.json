@@ -1,0 +1,18 @@
+{
+  "source_url": "https://commons.wikimedia.org/wiki/File:Mitahli_Painting.jpg",
+  "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Mitahli_Painting.jpg?width=1280",
+  "wikimedia_title": "File:Mitahli Painting.jpg",
+  "artist": "YashinderBahga",
+  "credit": "Own work",
+  "date": "2024-03-28 11:39:59",
+  "license": "CC0",
+  "license_url": "http://creativecommons.org/publicdomain/zero/1.0/deed.en",
+  "permitted_uses": [
+    "LoRA training",
+    "Kontext seed",
+    "private reference"
+  ],
+  "added_by": "auto-curator/wikimedia-commons",
+  "added_at": "2026-05-20T15:18:46+00:00",
+  "notes": "Downloaded at thumbnail width 1280px from Wikimedia CDN; original 3547x1631 image/jpeg."
+}

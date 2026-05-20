@@ -1,0 +1,18 @@
+{
+  "source_url": "https://commons.wikimedia.org/wiki/File:Stamp_of_India_-_2000_-_Colnect_161156_-_%E2%80%9CFlower_Girls%E2%80%9D_Nirmala_Devi.jpeg",
+  "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Stamp_of_India_-_2000_-_Colnect_161156_-_%E2%80%9CFlower_Girls%E2%80%9D_Nirmala_Devi.jpeg?width=1280",
+  "wikimedia_title": "File:Stamp of India - 2000 - Colnect 161156 - “Flower Girls” Nirmala Devi.jpeg",
+  "artist": "Post of India",
+  "credit": "https://colnect.com/en/stamps/stamp/161156-%E2%80%9CFlower_Girls%E2%80%9D_Nirmala_Devi-Madhubani_Mithila_Paintings-India",
+  "date": "2021-01-10 12:23:39",
+  "license": "GODL-India",
+  "license_url": "https://data.gov.in/sites/default/files/Gazette_Notification_OGDL.pdf",
+  "permitted_uses": [
+    "LoRA training",
+    "Kontext seed",
+    "private reference"
+  ],
+  "added_by": "auto-curator/wikimedia-commons",
+  "added_at": "2026-05-20T15:18:56+00:00",
+  "notes": "Downloaded at thumbnail width 1280px from Wikimedia CDN; original 351x300 image/jpeg."
+}

@@ -1,0 +1,18 @@
+{
+  "source_url": "https://commons.wikimedia.org/wiki/File:Devi6.JPG",
+  "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Devi6.JPG?width=1280",
+  "wikimedia_title": "File:Devi6.JPG",
+  "artist": "devi",
+  "credit": "Own work",
+  "date": "2013-10-11 20:03:00",
+  "license": "CC BY 3.0",
+  "license_url": "https://creativecommons.org/licenses/by/3.0",
+  "permitted_uses": [
+    "LoRA training",
+    "Kontext seed",
+    "private reference"
+  ],
+  "added_by": "auto-curator/wikimedia-commons",
+  "added_at": "2026-05-20T15:19:25+00:00",
+  "notes": "Downloaded at thumbnail width 1280px from Wikimedia CDN; original 2592x1944 image/jpeg."
+}

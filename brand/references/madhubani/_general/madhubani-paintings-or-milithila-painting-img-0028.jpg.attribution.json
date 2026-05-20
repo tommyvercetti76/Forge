@@ -1,0 +1,18 @@
+{
+  "source_url": "https://commons.wikimedia.org/wiki/File:Madhubani_paintings_or_Milithila_Painting_-IMG_0028.jpg",
+  "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Madhubani_paintings_or_Milithila_Painting_-IMG_0028.jpg?width=1280",
+  "wikimedia_title": "File:Madhubani paintings or Milithila Painting -IMG 0028.jpg",
+  "artist": "Raj Gopal Singh Verma राजगोपाल सिंह वर्मा",
+  "credit": "https://www.flickr.com/photos/rgsverma/20416326843/",
+  "date": "2019-07-09 06:53:07",
+  "license": "CC BY 2.0",
+  "license_url": "https://creativecommons.org/licenses/by/2.0",
+  "permitted_uses": [
+    "LoRA training",
+    "Kontext seed",
+    "private reference"
+  ],
+  "added_by": "auto-curator/wikimedia-commons",
+  "added_at": "2026-05-20T15:18:40+00:00",
+  "notes": "Downloaded at thumbnail width 1280px from Wikimedia CDN; original 4000x2664 image/jpeg."
+}

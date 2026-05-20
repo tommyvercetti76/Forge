@@ -100,7 +100,8 @@
     "namdapha": {"state": "Arunachal Pradesh", "ordinal": 17},
     "chilika": {"state": "Odisha", "ordinal": 18},
     "silent-valley": {"state": "Kerala", "ordinal": 19},
-    "marine-kutch": {"state": "Gujarat", "ordinal": 20}
+    "marine-kutch": {"state": "Gujarat", "ordinal": 20},
+    "velavadar": {"state": "Gujarat", "ordinal": 21}
   },
 
   "animals": [
@@ -858,6 +859,25 @@
       "iucn_status": "Endangered",
       "conservation_note": "One of the most rapidly declining waterbirds in South Asia; coastal Gujarat (including the Marine National Park region) and central Indian rivers are key habitat. Fewer than 4000 mature birds remain.",
       "seed_block_start": 12200
+    },
+    {
+      "slug": "blackbuck",
+      "display_name": "Indian Blackbuck",
+      "binomial": "Antilope cervicapra",
+      "series": "indian",
+      "park": "velavadar",
+      "park_state": "Gujarat",
+      "ordinal_in_series": 41,
+      "body_type": "lean-quadruped",
+      "body_fill_color": "#1a2952",
+      "body_fill_color_name": "deep-indigo",
+      "signature_features": "elegant spiral horns rising in graceful corkscrew curves, sharply two-toned coat (deep upper body, white belly + cheek + chin), slender muscular neck, almond eye with calm contemplative gaze, slim tapered tail",
+      "signature_action": "leaping mid-stride with all four legs off the ground in the species' iconic 'pronk' bound, horns held high, head facing forward",
+      "rest_pose_for_species": "kneeling on forelegs with hindquarters tucked under, horns held upright, eye looking forward in repose",
+      "anatomy_must_include": "spiral corkscrew horns (NOT straight, NOT branching like deer antlers) rising up and outward in a graceful double-twist; sharp white-on-indigo two-tone pattern with the white cheek patch + chin + belly clearly delineated against the indigo upper body as solid flat folk shapes; almond eye not round cartoon eye; this is an antelope NOT a deer",
+      "iucn_status": "Least Concern",
+      "conservation_note": "Vehicle (vahana) of the goddess Saraswati in Hindu iconography. Velavadar Blackbuck National Park in Gujarat protects the largest known blackbuck population on the planet — a flat saline grassland sanctuary where the species' iconic pronking leap can be observed at scale.",
+      "seed_block_start": 12300
     }
   ],
 

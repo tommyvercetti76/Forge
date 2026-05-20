@@ -1,0 +1,18 @@
+{
+  "source_url": "https://commons.wikimedia.org/wiki/File:The_Birth_of_Sita_-_Raja_Janaka_of_Mithila_carrying_her_in_his_lap.jpg",
+  "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/The_Birth_of_Sita_-_Raja_Janaka_of_Mithila_carrying_her_in_his_lap.jpg?width=1280",
+  "wikimedia_title": "File:The Birth of Sita - Raja Janaka of Mithila carrying her in his lap.jpg",
+  "artist": "anonymous",
+  "credit": "https://artsandculture.google.com/asset/the-birth-of-sita-raja-janaka-of-mithila-carrying-her-in-his-lap-unknown/8QHnAMesQjmEAQ",
+  "date": "2023-01-15 13:38:28",
+  "license": "Public domain",
+  "license_url": "",
+  "permitted_uses": [
+    "LoRA training",
+    "Kontext seed",
+    "private reference"
+  ],
+  "added_by": "auto-curator/wikimedia-commons",
+  "added_at": "2026-05-20T15:20:22+00:00",
+  "notes": "Downloaded at thumbnail width 1280px from Wikimedia CDN; original 10745x6870 image/jpeg."
+}

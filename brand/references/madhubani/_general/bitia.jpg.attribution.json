@@ -1,0 +1,18 @@
+{
+  "source_url": "https://commons.wikimedia.org/wiki/File:Bitia.jpg",
+  "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Bitia.jpg?width=1280",
+  "wikimedia_title": "File:Bitia.jpg",
+  "artist": "Bharti Dayal",
+  "credit": "Own work",
+  "date": "2016-09-13 11:56:08",
+  "license": "CC BY-SA 4.0",
+  "license_url": "https://creativecommons.org/licenses/by-sa/4.0",
+  "permitted_uses": [
+    "LoRA training",
+    "Kontext seed",
+    "private reference"
+  ],
+  "added_by": "auto-curator/wikimedia-commons",
+  "added_at": "2026-05-20T15:17:46+00:00",
+  "notes": "Downloaded at thumbnail width 1280px from Wikimedia CDN; original 942x1280 image/jpeg."
+}

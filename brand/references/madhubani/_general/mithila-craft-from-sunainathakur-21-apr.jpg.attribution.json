@@ -1,0 +1,18 @@
+{
+  "source_url": "https://commons.wikimedia.org/wiki/File:Mithila-Craft-from-SunainaThakur-21-Apr.jpg",
+  "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Mithila-Craft-from-SunainaThakur-21-Apr.jpg?width=1280",
+  "wikimedia_title": "File:Mithila-Craft-from-SunainaThakur-21-Apr.jpg",
+  "artist": "Shrishej",
+  "credit": "Own work",
+  "date": "2025-04-01 19:00:19",
+  "license": "CC BY-SA 4.0",
+  "license_url": "https://creativecommons.org/licenses/by-sa/4.0",
+  "permitted_uses": [
+    "LoRA training",
+    "Kontext seed",
+    "private reference"
+  ],
+  "added_by": "auto-curator/wikimedia-commons",
+  "added_at": "2026-05-20T15:18:50+00:00",
+  "notes": "Downloaded at thumbnail width 1280px from Wikimedia CDN; original 1724x2384 image/jpeg."
+}
