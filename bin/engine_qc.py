@@ -155,3 +155,70 @@ def summarize(blockers: list[dict[str, Any]]) -> str:
         return "publishable"
     names = ", ".join(sorted({b["check"] for b in blockers}))
     return f"{len(blockers)} blocker(s): {names}"
+
+
+# ─────────────── translation blockers (B6) ───────────────
+
+def translation_report_to_qc(report: dict[str, Any] | None) -> dict[str, Any]:
+    """Adapt a translate_texts_ollama `out_report` into the QC sidecar schema
+    so `derive_blockers` and `write_blockers_json` can consume it unchanged.
+
+    Fields mapped:
+      - glossary_violations (list)      → check "glossary_enforced"   (fails iff list non-empty)
+      - leakage_flags       (list)      → check "no_english_leakage" (fails iff list non-empty)
+      - repeated_lines      (bool)      → check "no_repeated_lines"  (fails iff True)
+
+    Empty/missing report → QC with all three checks passing.
+    """
+    report = report or {}
+    glossary_violations = report.get("glossary_violations") or []
+    leakage_flags = report.get("leakage_flags") or []
+    repeated_lines = bool(report.get("repeated_lines"))
+
+    checks = {
+        "glossary_enforced": {
+            "pass": not glossary_violations,
+            "violation_count": len(glossary_violations),
+            "violations": glossary_violations,
+        },
+        "no_english_leakage": {
+            "pass": not leakage_flags,
+            "flag_count": len(leakage_flags),
+            "flags": leakage_flags,
+        },
+        "no_repeated_lines": {
+            "pass": not repeated_lines,
+            "repeated_line_value": report.get("repeated_line_value"),
+        },
+    }
+    pass_count = sum(1 for c in checks.values() if c["pass"])
+    return {
+        "schema": "forge.translation_qc.v1",
+        "auto_check_count": len(checks),
+        "pass_count": pass_count,
+        "auto_qc_pass": pass_count == len(checks),
+        "checks": checks,
+    }
+
+
+def write_translation_blockers(
+    output_path: Path,
+    report: dict[str, Any] | None,
+) -> tuple[Path | None, list[dict[str, Any]], bool]:
+    """For a translation artifact (whose primary file is at `output_path`,
+    e.g. `out/translation.txt`), write `<output_path>.qc.json` (always) and
+    `<output_path>.blockers.json` (only when blockers exist).
+
+    Returns `(blockers_json_path or None, blockers, publishable_strict)`.
+    `publishable_strict` is the strict reading (no --allow-qc-warnings); the
+    caller (web UI / CLI) decides whether to honor it.
+    """
+    output_path = Path(output_path)
+    qc = translation_report_to_qc(report)
+    # Match qc_path_for_png convention (strip ext + .qc.json) so the path the
+    # blockers.json refers to actually resolves on disk.
+    qc_path = qc_path_for_png(output_path)
+    qc_path.parent.mkdir(parents=True, exist_ok=True)
+    qc_path.write_text(json.dumps(qc, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+    blockers_path, blockers = write_blockers_json(output_path, qc)
+    return blockers_path, blockers, qc["auto_qc_pass"]

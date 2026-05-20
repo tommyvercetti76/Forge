@@ -147,5 +147,74 @@ class PublishabilityTests(unittest.TestCase):
         self.assertIn("2 blocker", summary)
 
 
+class TranslationBlockersTests(unittest.TestCase):
+    """B6 — translation_report_to_qc + write_translation_blockers."""
+
+    def test_empty_report_passes_all_checks(self) -> None:
+        from engine_qc import translation_report_to_qc
+        qc = translation_report_to_qc(None)
+        self.assertTrue(qc["auto_qc_pass"])
+        self.assertEqual(qc["pass_count"], 3)
+        self.assertEqual(qc["auto_check_count"], 3)
+        self.assertEqual(qc["schema"], "forge.translation_qc.v1")
+        for check in qc["checks"].values():
+            self.assertTrue(check["pass"])
+
+    def test_glossary_violation_fails_glossary_check(self) -> None:
+        from engine_qc import translation_report_to_qc, derive_blockers
+        report = {
+            "glossary_violations": [{"line_index": 0, "expected_term": "बाघ", "missing_in": "see the tiger"}],
+            "leakage_flags": [],
+            "repeated_lines": False,
+        }
+        qc = translation_report_to_qc(report)
+        self.assertFalse(qc["auto_qc_pass"])
+        self.assertFalse(qc["checks"]["glossary_enforced"]["pass"])
+        # And it bubbles up through the standard derive_blockers
+        blockers = derive_blockers(qc)
+        self.assertEqual({b["check"] for b in blockers}, {"glossary_enforced"})
+
+    def test_leakage_flag_fails_leakage_check(self) -> None:
+        from engine_qc import translation_report_to_qc, derive_blockers
+        report = {"glossary_violations": [], "leakage_flags": [{"line_index": 2, "ascii_word_fraction": 0.8, "text": "hello world"}], "repeated_lines": False}
+        qc = translation_report_to_qc(report)
+        self.assertFalse(qc["checks"]["no_english_leakage"]["pass"])
+        self.assertEqual({b["check"] for b in derive_blockers(qc)}, {"no_english_leakage"})
+
+    def test_repeated_lines_fails_repeated_check(self) -> None:
+        from engine_qc import translation_report_to_qc, derive_blockers
+        report = {"glossary_violations": [], "leakage_flags": [], "repeated_lines": True, "repeated_line_value": "मुझे माफ़ करें।"}
+        qc = translation_report_to_qc(report)
+        self.assertFalse(qc["checks"]["no_repeated_lines"]["pass"])
+        self.assertEqual({b["check"] for b in derive_blockers(qc)}, {"no_repeated_lines"})
+
+    def test_write_translation_blockers_writes_both_sidecars_on_failure(self) -> None:
+        from engine_qc import write_translation_blockers
+        with TemporaryDirectory() as td:
+            out_path = Path(td) / "translation.txt"
+            out_path.write_text("see the tiger", encoding="utf-8")
+            report = {
+                "glossary_violations": [{"line_index": 0, "expected_term": "बाघ", "missing_in": "see the tiger"}],
+                "leakage_flags": [], "repeated_lines": False,
+            }
+            blockers_path, blockers, publishable = write_translation_blockers(out_path, report)
+            self.assertFalse(publishable)
+            self.assertEqual(len(blockers), 1)
+            self.assertTrue((out_path.with_suffix(".qc.json")).exists())
+            self.assertIsNotNone(blockers_path)
+            self.assertTrue(blockers_path.exists())
+
+    def test_write_translation_blockers_writes_only_qc_on_success(self) -> None:
+        from engine_qc import write_translation_blockers
+        with TemporaryDirectory() as td:
+            out_path = Path(td) / "translation.txt"
+            out_path.write_text("see the tiger", encoding="utf-8")
+            blockers_path, blockers, publishable = write_translation_blockers(out_path, None)
+            self.assertTrue(publishable)
+            self.assertEqual(blockers, [])
+            self.assertIsNone(blockers_path)
+            self.assertTrue((out_path.with_suffix(".qc.json")).exists())
+
+
 if __name__ == "__main__":
     unittest.main()
