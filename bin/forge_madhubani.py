@@ -408,12 +408,19 @@ def execute_render(
     dry_run: bool = False,
     metal_slots: int | None = None,
 ) -> int:
-    """Run `forge.py engine render minimalist-tshirt` for a single pose."""
+    """Run `forge.py engine render minimalist-tshirt` for a single pose.
+
+    Routes via --profile madhubani so the FLUX.2-klein-4b base model is used
+    (empirically validated 2026-05-20 against FLUX.1-dev — see PROFILES["madhubani"]
+    docstring in forge.py). The dispatcher in forge.py:mflux_cli_for() picks
+    the mflux-generate-flux2 binary based on the profile's flux_model.
+    """
     cmd = [
         sys.executable, str(FORGE_BIN),
         "engine", "render", "minimalist-tshirt",
         "--subject", plan.subject_string,
         "--config", plan.config_string,
+        "--profile", "madhubani",
         "--seed", str(plan.seed),
         "--steps", str(steps),
         "--out", str(plan.out_path),

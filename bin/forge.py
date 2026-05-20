@@ -63,6 +63,18 @@ from mandala_engine import (
     write_mandala,
 )
 from minimal_animal_engine import MinimalAnimalConfig, write_minimal_animal
+from mockup_compositor import (
+    Placement,
+    TemplateSpec,
+    compose_template_mockup,
+    download_open_svg_set,
+    download_template_files,
+    generate_tshirt_template_set,
+    list_designs,
+    load_template_manifest,
+    parse_box,
+    write_batch_manifest,
+)
 
 HERE = Path(__file__).resolve().parent
 FORGE_HOME = Path(os.environ.get("FORGE_HOME") or HERE.parent).resolve()
@@ -283,6 +295,79 @@ def _mflux_runtime_args(quantize: int | None = None) -> list[str]:
         args.extend(["--mlx-cache-limit-gb", str(MLX_CACHE_LIMIT_GB)])
     return args
 
+
+# Model family → mflux binary dispatcher (2026-05-20).
+# mflux ships separate CLIs per architecture: `mflux-generate` is FLUX.1,
+# `mflux-generate-flux2` is FLUX.2, `mflux-generate-z-image-turbo` is the
+# Z-Image Turbo variant, etc. The flag schemas are identical across them,
+# so callers can just swap the binary name and keep the same argv tail.
+#
+# Default is mflux-generate (FLUX.1) — every pre-existing caller continues
+# to work unchanged. Add new families here as PROFILES adopts them.
+_MFLUX_BIN_BY_FAMILY = {
+    "flux1": "mflux-generate",
+    "flux2": "mflux-generate-flux2",
+    "z-image-turbo": "mflux-generate-z-image-turbo",
+    "z-image": "mflux-generate-z-image",
+}
+
+
+def _model_family(model: str) -> str:
+    """Map a model identifier (PROFILES.flux_model / engine model) to the family."""
+    m = (model or "").lower()
+    if m.startswith("flux2-"):
+        return "flux2"
+    if m == "z-image-turbo":
+        return "z-image-turbo"
+    if m == "z-image":
+        return "z-image"
+    # FLUX.1 family: dev, schnell, krea-dev, dev-krea, etc. Also the default.
+    return "flux1"
+
+
+def mflux_cli_for(model: str) -> str:
+    """Return the correct mflux-generate-* binary for the given model name.
+
+    `model` is the value from PROFILES["<profile>"]["flux_model"] or the
+    engine's resolved model. Examples:
+      mflux_cli_for("dev")              -> "mflux-generate"
+      mflux_cli_for("flux2-klein-4b")   -> "mflux-generate-flux2"
+      mflux_cli_for("z-image-turbo")    -> "mflux-generate-z-image-turbo"
+    """
+    return _MFLUX_BIN_BY_FAMILY[_model_family(model)]
+
+
+def _model_accepts_arbitrary_guidance(model: str) -> bool:
+    """FLUX.2 klein (non-base) and Z-Image-Turbo variants are distilled —
+    mflux rejects arbitrary --guidance values for them with the error
+    "--guidance is only supported for FLUX.2 base models. Use --guidance 1.0."
+    For these, we skip the --guidance flag entirely (mflux uses its baked-in
+    default). The full FLUX.2-klein-base-* variants and all FLUX.1 models
+    accept arbitrary guidance."""
+    m = (model or "").lower()
+    if _model_family(model) == "flux2":
+        # klein-base-* accepts guidance; bare klein-* and other non-base do not.
+        return "-base-" in m
+    if _model_family(model) in {"z-image", "z-image-turbo"}:
+        return False
+    return True  # FLUX.1 family + any other future family
+
+
+def _mflux_child_env() -> dict:
+    """Augment the child env so mflux-generate-* uses ~/Models/huggingface
+    instead of the default ~/.cache/huggingface. Without this, FLUX.2 and
+    Z-Image runs miss components on first use because mflux's path
+    resolution falls back to the standard HF cache for some components.
+    Discovered 2026-05-20 during the FLUX.2 probe (z-image-turbo render
+    failed with `text_encoder_2 not found` until HF_HOME was pinned)."""
+    env = child_env() if "child_env" in globals() else dict(os.environ)
+    forge_hf_home = os.environ.get("FORGE_HF_HOME") or os.environ.get("HF_HOME")
+    if not forge_hf_home:
+        forge_hf_home = str(Path.home() / "Models" / "huggingface")
+    env["HF_HOME"] = forge_hf_home
+    env["HUGGINGFACE_HUB_CACHE"] = str(Path(forge_hf_home) / "hub")
+    return env
+
 VOICE_TIMEOUT_SEC = float(os.environ.get("FORGE_VOICE_TIMEOUT_SEC", "600"))
 # Cooldown between consecutive heavy mflux gens — lets the Metal GPU/SoC dissipate heat
 # rather than running pinned at 100%. 0 = off. 10–30 s is reasonable on a hot chassis.
@@ -303,6 +388,18 @@ PROFILES = {
     # eye character, and edge detail. Override with `--no-refine` if the heat
     # cost or the extra wall-clock isn't wanted.
     "quality":  {"flux_model": "dev",     "flux_steps": 36, "flux_guidance": None, "cooldown": 0.0, "quantize": 8, "default_refine": True},
+    # madhubani (2026-05-20) — FLUX.2-klein-4b base. Empirically validated
+    # against FLUX.1-dev for Madhubani folk-art: FLUX.2 honors the
+    # body_fill_color directive AND renders multi-color folk panels inside
+    # the body silhouette (the "decorated INSIDE with seven distinct zones"
+    # clause), where FLUX.1-dev systematically ignored both. 25 steps at q4
+    # produces a print-quality Madhubani render in ~22s — 10× faster than
+    # FLUX.1-dev quality at 4 min. mflux dispatches to mflux-generate-flux2
+    # automatically via mflux_cli_for(model).
+    "madhubani": {
+        "flux_model": "flux2-klein-4b", "flux_steps": 25, "flux_guidance": None,
+        "cooldown": 0.0, "quantize": 4,
+    },
 }
 
 _TMP_PATHS: set[Path] = set()
@@ -399,6 +496,7 @@ def run_subprocess(
     check: bool = True,
     heartbeat_label: str | None = None,
     heartbeat_seconds: float | None = None,
+    env: dict | None = None,
 ) -> subprocess.CompletedProcess:
     display = _cmd_display(cmd)
     proc = subprocess.Popen(
@@ -407,7 +505,7 @@ def run_subprocess(
         stdout=subprocess.PIPE if capture_output else None,
         stderr=subprocess.PIPE if capture_output else None,
         text=text,
-        env=child_env(),
+        env=env if env is not None else child_env(),
     )
     _CHILD_PROCS.add(proc)
     stdout = stderr = None
@@ -1256,21 +1354,25 @@ def flux_generate(
     if step_count < 1:
         sys.exit(red("--steps must be >= 1"))
 
-    # P0: pre-flight — refuse to silently trigger a multi-GB download
-    ready, reason = _flux_model_ready(model)
-    if not ready:
-        repo = _FLUX_REPO_MAP.get(model, model)
-        sys.exit(
-            red(f"FLUX preflight failed: {reason}") + "\n"
-            + dim(f"  this run wants FLUX.1-{model}, but it's not fully cached.\n\n")
-            + "  Options:\n"
-            + f"  1. Complete the download (resumable):\n"
-            + f"       hf download {repo}\n"
-            + "  2. Switch the preset to a model you HAVE — edit brand/presets/"
-              f"{preset['id']}.json,\n     change flux.model to 'schnell' (or 'dev', whichever is cached).\n"
-            + "  3. Inspect what's cached:\n"
-            + "       forge models scan --full\n"
-        )
+    # P0: pre-flight — refuse to silently trigger a multi-GB download.
+    # Only applies to FLUX.1 family — _flux_model_ready inspects the FLUX.1
+    # snapshot layout. FLUX.2 / Z-Image have different repos and weight
+    # structures; mflux-generate-flux2 / -z-image handle their own download.
+    if _model_family(model) == "flux1":
+        ready, reason = _flux_model_ready(model)
+        if not ready:
+            repo = _FLUX_REPO_MAP.get(model, model)
+            sys.exit(
+                red(f"FLUX preflight failed: {reason}") + "\n"
+                + dim(f"  this run wants FLUX.1-{model}, but it's not fully cached.\n\n")
+                + "  Options:\n"
+                + f"  1. Complete the download (resumable):\n"
+                + f"       hf download {repo}\n"
+                + "  2. Switch the preset to a model you HAVE — edit brand/presets/"
+                  f"{preset['id']}.json,\n     change flux.model to 'schnell' (or 'dev', whichever is cached).\n"
+                + "  3. Inspect what's cached:\n"
+                + "       forge models scan --full\n"
+            )
 
     # Series + preset together — see build_flux_prompt for block layout.
     full_prompt = build_flux_prompt(preset, concept, series=series)
@@ -1312,14 +1414,17 @@ def flux_generate(
     # Profile can override quantize (e.g. "quality" keeps dev/36 on q8).
     if quantize is None and profile and "quantize" in PROFILES.get(profile, {}):
         quantize = PROFILES[profile]["quantize"]
+    mflux_bin = mflux_cli_for(model)
     cmd = [
-        "mflux-generate",
+        mflux_bin,
         *_mflux_runtime_args(quantize),
         "--model", model, "--prompt", full_prompt,
         "--width", str(eff_w), "--height", str(eff_h),
-        "--steps", str(step_count), "--guidance", str(guidance),
+        "--steps", str(step_count),
         "--seed", str(seed), "--output", str(tmp_out),
     ]
+    if _model_accepts_arbitrary_guidance(model):
+        cmd.extend(["--guidance", str(guidance)])
     if eff_loras:
         # mflux: --lora-paths and --lora-scales each take space-separated values
         cmd.extend(["--lora-paths", *eff_loras])
@@ -1329,7 +1434,7 @@ def flux_generate(
     lora_tag = f" loras={len(eff_loras)}" if eff_loras else ""
     q_resolved = _resolve_quantize(quantize)
     q_tag = f" q{q_resolved}" if q_resolved else " fp16"
-    print(dim(f"  $ mflux-generate [{mode_tag}]{q_tag} model={model} steps={step_count} guidance={guidance} seed={seed}{series_tag}{lora_tag}"))
+    print(dim(f"  $ {mflux_bin} [{mode_tag}]{q_tag} model={model} steps={step_count} guidance={guidance} seed={seed}{series_tag}{lora_tag}"))
     if not draft and not profile and steps is not None and step_count < int(flux["steps"]):
         print(dim("  · lower steps reduce sustained Metal/GPU load and heat; quality may drop a bit"))
     try:
@@ -1345,6 +1450,7 @@ def flux_generate(
                 cmd, check=True, timeout=MFLUX_TIMEOUT_SEC,
                 heartbeat_label=f"mflux {model}/{step_count} steps",
                 heartbeat_seconds=MFLUX_HEARTBEAT_SEC,
+                env=_mflux_child_env(),
             )
     except Exception:
         if tmp_out.exists():
@@ -1457,15 +1563,18 @@ def flux_generate_batch(
     out_paths[0].parent.mkdir(parents=True, exist_ok=True)
     staging_dir = Path(tempfile.mkdtemp(prefix=".forge-batch-", dir=str(out_paths[0].parent)))
 
+    mflux_bin = mflux_cli_for(model)
     cmd = [
-        "mflux-generate",
+        mflux_bin,
         *_mflux_runtime_args(quantize),
         "--model", model, "--prompt", full_prompt,
         "--width", str(eff_w), "--height", str(eff_h),
-        "--steps", str(step_count), "--guidance", str(guidance),
+        "--steps", str(step_count),
         "--seed", *[str(s) for s in seeds],
         "--output", str(staging_dir / "img.png"),
     ]
+    if _model_accepts_arbitrary_guidance(model):
+        cmd.extend(["--guidance", str(guidance)])
     if eff_loras:
         cmd.extend(["--lora-paths", *eff_loras])
         cmd.extend(["--lora-scales", *[str(s) for s in eff_scales]])
@@ -1475,7 +1584,7 @@ def flux_generate_batch(
     q_tag = f" q{q_resolved}" if q_resolved else " fp16"
     lora_tag = f" loras={len(eff_loras)}" if eff_loras else ""
     seeds_tag = ",".join(str(s) for s in seeds)
-    print(dim(f"  $ mflux-generate [{mode_tag}]{q_tag} model={model} steps={step_count} guidance={guidance} seeds=[{seeds_tag}] batch{lora_tag}"))
+    print(dim(f"  $ {mflux_bin} [{mode_tag}]{q_tag} model={model} steps={step_count} guidance={guidance} seeds=[{seeds_tag}] batch{lora_tag}"))
 
     try:
         try:
@@ -1490,6 +1599,7 @@ def flux_generate_batch(
                 cmd, check=True, timeout=MFLUX_TIMEOUT_SEC,
                 heartbeat_label=f"mflux batch {model}/{step_count}×{len(seeds)}",
                 heartbeat_seconds=MFLUX_HEARTBEAT_SEC,
+                env=_mflux_child_env(),
             )
     except Exception:
         shutil.rmtree(staging_dir, ignore_errors=True)
@@ -2798,6 +2908,163 @@ def cmd_minimal_animal(args) -> int:
     print(dim(f"  SVG:      {artifact['svg']}"))
     print(dim(f"  QC:       {artifact['qc']}"))
     print(dim(f"  manifest: {artifact['manifest']}"))
+    return 0
+
+
+# ─────────────── product mockups ───────────────
+
+DEFAULT_MOCKUP_TEMPLATE_ROOT = FORGE_HOME / "generated" / "mockup_templates" / "tshirt-basic"
+DEFAULT_OPEN_SVG_TEMPLATE_ROOT = FORGE_HOME / "generated" / "mockup_templates" / "open-svg"
+DEFAULT_MOCKUP_OUTPUT_ROOT = FORGE_HOME / "generated" / "mockups"
+
+
+def _mockup_template_from_args(args) -> TemplateSpec:
+    if getattr(args, "manifest", None):
+        manifest_path = Path(args.manifest).expanduser().resolve()
+        templates = load_template_manifest(manifest_path)
+        if getattr(args, "template_id", None):
+            for template in templates:
+                if template.id == args.template_id:
+                    return template
+            sys.exit(red(f"template id not found in manifest: {args.template_id}"))
+        return templates[0]
+
+    if not getattr(args, "template", None):
+        sys.exit(red("mockup create needs --template + --box, or --manifest [--template-id]"))
+    if not getattr(args, "box", None):
+        sys.exit(red("mockup create with --template needs --box x,y,width,height"))
+    template_path = Path(args.template).expanduser().resolve()
+    try:
+        placement = Placement.from_mapping(parse_box(args.box))
+    except ValueError as e:
+        sys.exit(red(str(e)))
+    return TemplateSpec(
+        id=_slugify(template_path.stem, max_len=72),
+        file=template_path,
+        placement=placement,
+        product=getattr(args, "product", None) or "product",
+        variant=getattr(args, "variant", None) or "",
+    )
+
+
+def cmd_mockup_init(args) -> int:
+    out_dir = Path(args.out or DEFAULT_MOCKUP_TEMPLATE_ROOT).expanduser().resolve()
+    try:
+        manifest = generate_tshirt_template_set(
+            out_dir,
+            count=args.count,
+            width=args.width,
+            height=args.height,
+        )
+    except ValueError as e:
+        sys.exit(red(str(e)))
+    templates = load_template_manifest(manifest)
+    print(green(f"✓ mockup templates: {out_dir}"))
+    print(dim(f"  manifest: {manifest}"))
+    print(dim(f"  variants: {len(templates)}"))
+    return 0
+
+
+def cmd_mockup_download(args) -> int:
+    out_dir = Path(args.out).expanduser().resolve()
+    try:
+        manifest = download_template_files(args.urls, out_dir)
+    except Exception as e:
+        sys.exit(red(f"download failed: {e}"))
+    print(green(f"✓ downloaded mockup files: {out_dir}"))
+    print(dim(f"  manifest: {manifest}"))
+    print(dim("  add placements with: forge mockup create --template <file> --box x,y,width,height"))
+    return 0
+
+
+def cmd_mockup_open_svg(args) -> int:
+    out_dir = Path(args.out or DEFAULT_OPEN_SVG_TEMPLATE_ROOT).expanduser().resolve()
+    try:
+        manifest = download_open_svg_set(
+            out_dir,
+            limit=args.limit,
+            source_ids=args.source_id or None,
+        )
+    except Exception as e:
+        sys.exit(red(f"open SVG download failed: {e}"))
+    templates = load_template_manifest(manifest)
+    print(green(f"✓ open SVG mockup templates: {out_dir}"))
+    print(dim(f"  manifest: {manifest}"))
+    print(dim(f"  credits:  {out_dir / 'CREDITS.md'}"))
+    print(dim(f"  assets:   {len(templates)}"))
+    return 0
+
+
+def cmd_mockup_create(args) -> int:
+    design_path = Path(args.design).expanduser().resolve()
+    if not design_path.exists():
+        sys.exit(red(f"design not found: {design_path}"))
+    template = _mockup_template_from_args(args)
+    if not template.file.exists():
+        sys.exit(red(f"template not found: {template.file}"))
+    out_path = Path(args.out).expanduser().resolve()
+    try:
+        row = compose_template_mockup(
+            design_path=design_path,
+            template=template,
+            out_path=out_path,
+            print_scale=args.print_scale,
+            trim=not args.no_trim,
+        )
+    except ValueError as e:
+        sys.exit(red(str(e)))
+    receipt_path = out_path.with_suffix(out_path.suffix + ".json")
+    write_json(receipt_path, row)
+    print(green(f"✓ mockup: {out_path}"))
+    print(dim(f"  template: {template.id}"))
+    print(dim(f"  receipt:  {receipt_path}"))
+    return 0
+
+
+def cmd_mockup_batch(args) -> int:
+    design_dir = Path(args.design_dir).expanduser().resolve()
+    manifest_path = Path(args.manifest).expanduser().resolve()
+    out_dir = Path(args.out or DEFAULT_MOCKUP_OUTPUT_ROOT).expanduser().resolve()
+    if not design_dir.exists():
+        sys.exit(red(f"design directory not found: {design_dir}"))
+    if not manifest_path.exists():
+        sys.exit(red(f"template manifest not found: {manifest_path}"))
+    templates = load_template_manifest(manifest_path)
+    designs = list_designs(design_dir, pattern=args.pattern)
+    if args.design_limit is not None:
+        designs = designs[: args.design_limit]
+    if args.template_limit is not None:
+        templates = templates[: args.template_limit]
+    if not designs:
+        sys.exit(red(f"no designs matched {args.pattern!r} in {design_dir}"))
+    rows: list[dict[str, Any]] = []
+    total = len(designs) * len(templates)
+    print(dim(f"  · creating {total} mockups ({len(designs)} designs × {len(templates)} templates)"))
+    for design_path in designs:
+        design_slug = _slugify(design_path.stem.replace(".transparent", ""), max_len=72)
+        for template in templates:
+            if args.output_format == "auto":
+                suffix = ".svg" if template.file.suffix.lower() == ".svg" else ".jpg"
+            else:
+                suffix = f".{args.output_format.lstrip('.')}"
+            out_path = out_dir / design_slug / f"{design_slug}__{template.id}{suffix}"
+            try:
+                rows.append(
+                    compose_template_mockup(
+                        design_path=design_path,
+                        template=template,
+                        out_path=out_path,
+                        print_scale=args.print_scale,
+                        trim=not args.no_trim,
+                    )
+                )
+            except ValueError as e:
+                sys.exit(red(str(e)))
+    batch_manifest = out_dir / "mockup-batch-manifest.json"
+    write_batch_manifest(batch_manifest, rows)
+    print(green(f"✓ mockups: {out_dir}"))
+    print(dim(f"  count:    {len(rows)}"))
+    print(dim(f"  manifest: {batch_manifest}"))
     return 0
 
 
@@ -5466,6 +5733,7 @@ def print_menu(short: bool = True) -> None:
     print(f"  forge {bold('audiobook')}    book/text → narrated + translated audiobook")
     print(f"  forge {bold('mandala')}      exact procedural radial mandala (SVG + PNG + QC)")
     print(f"  forge {bold('childrens-book')} symmetric drawing-book pages (not diffusion)")
+    print(f"  forge {bold('mockup')}       open SVG product mockups from transparent print-art PNGs")
     print(f"  forge {bold('thumbnail')}    render one branded thumbnail (text → image)")
     print(f"  forge {bold('edit')}         restyle / edit an existing image")
     print(f"  forge {bold('voice')}        synthesize voiceover audio")
@@ -5589,6 +5857,62 @@ def main() -> int:
                        help="skip the Metal readiness guard; exact 8-line construction itself is procedural")
     p_min.add_argument("--out")
     p_min.set_defaults(func=cmd_minimal_animal)
+
+    p_mock = sub.add_parser("mockup", help="download/scaffold product templates and compose storefront mockups")
+    mock_sub = p_mock.add_subparsers(dest="mockup_cmd", required=True)
+
+    mock_init = mock_sub.add_parser("init", help="offline fallback: create procedural blank T-shirt templates and placement manifest")
+    mock_init.add_argument("--out", default=str(DEFAULT_MOCKUP_TEMPLATE_ROOT),
+                           help="output template directory")
+    mock_init.add_argument("--count", type=int, default=50,
+                           help="number of built-in color variants to generate (default 50)")
+    mock_init.add_argument("--width", type=int, default=1600)
+    mock_init.add_argument("--height", type=int, default=2000)
+    mock_init.set_defaults(func=cmd_mockup_init)
+
+    mock_download = mock_sub.add_parser("download", help="download image mockup templates from direct/GitHub file URLs")
+    mock_download.add_argument("urls", nargs="+", help="direct image URL or GitHub blob URL")
+    mock_download.add_argument("--out", required=True, help="directory to store downloaded template files")
+    mock_download.set_defaults(func=cmd_mockup_download)
+
+    mock_open_svg = mock_sub.add_parser("open-svg", help="download curated open-license SVG product templates with credit files")
+    mock_open_svg.add_argument("--out", default=str(DEFAULT_OPEN_SVG_TEMPLATE_ROOT),
+                               help="output directory for SVG assets, manifest, and credits")
+    mock_open_svg.add_argument("--limit", type=int, default=None,
+                               help="download only the first N curated sources")
+    mock_open_svg.add_argument("--source-id", action="append", default=None,
+                               help="download one curated source id; repeatable")
+    mock_open_svg.set_defaults(func=cmd_mockup_open_svg)
+
+    mock_create = mock_sub.add_parser("create", help="compose one design onto one product template")
+    mock_create.add_argument("--design", required=True, help="transparent PNG print art")
+    mock_create.add_argument("--template", help="template image path; pair with --box")
+    mock_create.add_argument("--box", help="print placement as x,y,width,height; pixels or relative 0..1")
+    mock_create.add_argument("--manifest", help="template manifest from `forge mockup init`")
+    mock_create.add_argument("--template-id", help="template id inside --manifest; defaults to first template")
+    mock_create.add_argument("--product", default="product")
+    mock_create.add_argument("--variant", default="")
+    mock_create.add_argument("--print-scale", type=float, default=0.88,
+                             help="fraction of placement box filled by artwork")
+    mock_create.add_argument("--no-trim", action="store_true", help="preserve transparent padding in the design image")
+    mock_create.add_argument("--out", required=True)
+    mock_create.set_defaults(func=cmd_mockup_create)
+
+    mock_batch = mock_sub.add_parser("batch", help="compose every design in a folder across every template variant")
+    mock_batch.add_argument("--design-dir", required=True, help="directory containing transparent print-art PNGs")
+    mock_batch.add_argument("--pattern", default="*.transparent.png",
+                            help="glob for designs inside --design-dir")
+    mock_batch.add_argument("--manifest", required=True, help="template manifest from `forge mockup init`")
+    mock_batch.add_argument("--out", default=str(DEFAULT_MOCKUP_OUTPUT_ROOT), help="output directory")
+    mock_batch.add_argument("--design-limit", type=int, default=None,
+                            help="limit number of designs from --design-dir")
+    mock_batch.add_argument("--template-limit", type=int, default=None,
+                            help="limit number of templates from manifest")
+    mock_batch.add_argument("--output-format", choices=["auto", "svg", "png", "jpg"], default="auto",
+                            help="auto writes SVG for SVG templates and JPG for raster templates")
+    mock_batch.add_argument("--print-scale", type=float, default=0.88)
+    mock_batch.add_argument("--no-trim", action="store_true", help="preserve transparent padding in design images")
+    mock_batch.set_defaults(func=cmd_mockup_batch)
 
     # forge engine — domain-expert style engines (noir-cinema, wildlife-photo, etc.)
     p_eng = sub.add_parser("engine", help="domain-expert style engines (specialist FLUX prompt builders)")
