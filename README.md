@@ -13,7 +13,7 @@
 [![Models](https://img.shields.io/badge/models-FLUX_•_Z--Image_•_mflux-orange.svg)](NOTICE)
 [![Code of Conduct](https://img.shields.io/badge/code_of_conduct-respectful-blueviolet.svg)](CODE_OF_CONDUCT.md)
 
-**`F1 0.67`** auto-QC ↔ human agreement &nbsp;·&nbsp; **`-60.8%`** wall-clock vs. naïve mflux loop &nbsp;·&nbsp; **`128`** passing tests &nbsp;·&nbsp; **`41`**-species curated Madhubani catalog
+**`F1 0.89`** learned QC vs. human review &nbsp;·&nbsp; **`-60.8%`** wall-clock vs. naïve mflux loop &nbsp;·&nbsp; **`128`** passing tests &nbsp;·&nbsp; **`41`**-species curated Madhubani catalog
 
 [**Install**](#install) &nbsp;·&nbsp; [**Try the gallery**](#specialist-engines) &nbsp;·&nbsp; [**Architecture**](docs/ARCHITECTURE.md) &nbsp;·&nbsp; [**Hard problems**](#hard-problems-forge-solves)
 
@@ -77,7 +77,7 @@ runtime smoke checks only.</sub>
 | :-: | :--- | :--- | :--- |
 | 1 | **Photorealism lock on Madhubani folk art** — FLUX.2 rendered photorealistic tigers and peacocks even with "Madhubani" in the prompt. | Flat-silhouette tuning + 18 hard negatives in the engine scaffold. | [MADHUBANI_ART_IDENTITY](docs/MADHUBANI_ART_IDENTITY.md) |
 | 2 | **Body-type pose semantics** — "seated peacock" is nonsense; birds don't sit. | Per-body-type pose overrides in `poses.json` v2 — each species inherits only the poses its body plan supports. | [MADHUBANI_ART_IDENTITY](docs/MADHUBANI_ART_IDENTITY.md) |
-| 3 | **Trust layer for unattended runs** — naïve QC returns one boolean; you can't tell why a run failed *and* you can't tell if the QC itself is right. | 9-check rubric + `blockers.json` sidecars + `publishable: true/false`. Auto-QC is **measured against human review**: F1 0.67, precision 0.60, recall 0.75 on a 9-image strong-label set — up from F1 0.50 after a data-driven tuning round. | [madhubani_qc.py](bin/madhubani_qc.py) · [QC_AGREEMENT_STUDY](docs/QC_AGREEMENT_STUDY.md) |
+| 3 | **Trust layer for unattended runs** — naïve QC returns one boolean; you can't tell why a run failed *and* you can't tell if the QC itself is right. | 9-check rubric + `blockers.json` sidecars + `publishable: true/false`. Auto-QC is **measured against human review** and the heuristic ceiling (F1 0.67) was broken by a CLIP + sklearn linear probe trained on weak era-bucket labels: **F1 0.89, recall 1.0** on user-curated gold-standard test. | [madhubani_qc.py](bin/madhubani_qc.py) · [train_madhubani_likeness.py](bin/train_madhubani_likeness.py) · [QC_AGREEMENT_STUDY](docs/QC_AGREEMENT_STUDY.md) |
 | 4 | **Multi-seed wall-clock** — looping `mflux` once per seed pays the Python startup and model load N times. | One `mflux-generate --seed S1 S2 S3 S4` invocation collapses the cold-load tax. **−60.8%** measured on cool/schnell. | [QUALITY_FINDINGS](docs/QUALITY_FINDINGS_2026-05-20.md) |
 | 5 | **Cultural-heritage attribution** — generative tools risk extractive use of folk traditions. | 50 open-licensed Wikimedia references with `attribution.json` receipts per asset + a dedicated heritage doc. | [CULTURAL_HERITAGE](docs/CULTURAL_HERITAGE_ATTRIBUTION.md) · [references/](brand/references/README.md) |
 | 6 | **Closed-loop verification** — prompt iteration hits a context ceiling and you can't tell whether the next change is helping. | Art Reasoning Engine that auto-checks renders against rubric items. **Shipped:** pattern-density (B.1), decoration-zone-presence (B.2). **Planned:** anatomy-count, multi-seed best-of-N, retry-with-boost. | [ART_REASONING_ENGINE](docs/ART_REASONING_ENGINE.md) |

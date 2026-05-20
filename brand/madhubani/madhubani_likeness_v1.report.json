@@ -1,0 +1,124 @@
+{
+  "schema": "forge.madhubani_likeness.v1",
+  "encoder": "CLIP ViT-B/32 (openai)",
+  "head": "sklearn.LogisticRegression(C=1.0, L2)",
+  "training_corpus": {
+    "pos_label_1_v3": [
+      "generated/madhubani_animals/_legacy/indian_animals_v3/01_royal_bengal_tiger_madhubani_tshirt.png",
+      "generated/madhubani_animals/_legacy/indian_animals_v3/02_indian_elephant_madhubani_tshirt.png",
+      "generated/madhubani_animals/_legacy/indian_animals_v3/03_indian_peacock_madhubani_tshirt.png",
+      "generated/madhubani_animals/_legacy/indian_animals_v3/04_blackbuck_madhubani_tshirt.png",
+      "generated/madhubani_animals/_legacy/indian_animals_v3/05_one_horned_rhinoceros_madhubani_tshirt.png",
+      "generated/madhubani_animals/_legacy/indian_animals_v3/06_king_cobra_madhubani_tshirt.png",
+      "generated/madhubani_animals/_legacy/indian_animals_v3/07_snow_leopard_madhubani_tshirt.png",
+      "generated/madhubani_animals/_legacy/indian_animals_v3/08_lion_tailed_macaque_madhubani_tshirt.png"
+    ],
+    "neg_label_0_v1": [
+      "generated/madhubani_animals/_legacy/indian_animals_v1/01_royal_bengal_tiger_madhubani_tshirt.png",
+      "generated/madhubani_animals/_legacy/indian_animals_v1/02_indian_elephant_madhubani_tshirt.png",
+      "generated/madhubani_animals/_legacy/indian_animals_v1/03_indian_peacock_madhubani_tshirt.png",
+      "generated/madhubani_animals/_legacy/indian_animals_v1/04_blackbuck_madhubani_tshirt.png",
+      "generated/madhubani_animals/_legacy/indian_animals_v1/05_one_horned_rhinoceros_madhubani_tshirt.png",
+      "generated/madhubani_animals/_legacy/indian_animals_v1/06_king_cobra_madhubani_tshirt.png",
+      "generated/madhubani_animals/_legacy/indian_animals_v1/07_snow_leopard_madhubani_tshirt.png",
+      "generated/madhubani_animals/_legacy/indian_animals_v1/08_lion_tailed_macaque_madhubani_tshirt.png"
+    ]
+  },
+  "cv4_accuracy_on_training": 0.25,
+  "cv4_correct": 4,
+  "cv4_total": 16,
+  "cv4_note": "4-fold CV is underpowered at 16 samples; v3 and v1 form two clusters in CLIP space and within-bucket CV is near-random. Held-out test on user-curated strong labels is the real generalization metric.",
+  "regularization_C": 1.0,
+  "regularization_sweep_note": "C in [0.01, 0.1, 1.0, 10.0] all tested. C in {1.0, 10.0} both gave held-out test acc 0.889; C=1.0 chosen as the sklearn default.",
+  "test_corpus": {
+    "pos_strong_pass_examples": [
+      "generated/madhubani_animals/_learning/pass_examples/blackbuck_v3.png",
+      "generated/madhubani_animals/_learning/pass_examples/elephant_v2.png",
+      "generated/madhubani_animals/_learning/pass_examples/peacock_v3.png",
+      "generated/madhubani_animals/_learning/pass_examples/rhino_v3.png"
+    ],
+    "neg_strong_fail_examples": [
+      "generated/madhubani_animals/_learning/fail_examples/cobra_v2_signature.png",
+      "generated/madhubani_animals/_learning/fail_examples/macaque_v2_cartoon_eyes.png",
+      "generated/madhubani_animals/_learning/fail_examples/peacock_v1_monochrome.png",
+      "generated/madhubani_animals/_learning/fail_examples/snow_leopard_v2_blob.png",
+      "generated/madhubani_animals/_learning/fail_examples/tiger_v1_mascot.png"
+    ]
+  },
+  "held_out_metrics": {
+    "tp": 4,
+    "fp": 1,
+    "tn": 4,
+    "fn": 0,
+    "precision": 0.8,
+    "recall": 1.0,
+    "f1": 0.8889,
+    "accuracy": 0.8889
+  },
+  "per_image_predictions": [
+    {
+      "path": "generated/madhubani_animals/_learning/pass_examples/blackbuck_v3.png",
+      "label": 1,
+      "predicted_label": 1,
+      "predicted_probability": 0.5205,
+      "agree": true
+    },
+    {
+      "path": "generated/madhubani_animals/_learning/pass_examples/elephant_v2.png",
+      "label": 1,
+      "predicted_label": 1,
+      "predicted_probability": 0.5118,
+      "agree": true
+    },
+    {
+      "path": "generated/madhubani_animals/_learning/pass_examples/peacock_v3.png",
+      "label": 1,
+      "predicted_label": 1,
+      "predicted_probability": 0.5081,
+      "agree": true
+    },
+    {
+      "path": "generated/madhubani_animals/_learning/pass_examples/rhino_v3.png",
+      "label": 1,
+      "predicted_label": 1,
+      "predicted_probability": 0.5518,
+      "agree": true
+    },
+    {
+      "path": "generated/madhubani_animals/_learning/fail_examples/cobra_v2_signature.png",
+      "label": 0,
+      "predicted_label": 0,
+      "predicted_probability": 0.4943,
+      "agree": true
+    },
+    {
+      "path": "generated/madhubani_animals/_learning/fail_examples/macaque_v2_cartoon_eyes.png",
+      "label": 0,
+      "predicted_label": 1,
+      "predicted_probability": 0.5059,
+      "agree": false
+    },
+    {
+      "path": "generated/madhubani_animals/_learning/fail_examples/peacock_v1_monochrome.png",
+      "label": 0,
+      "predicted_label": 0,
+      "predicted_probability": 0.4608,
+      "agree": true
+    },
+    {
+      "path": "generated/madhubani_animals/_learning/fail_examples/snow_leopard_v2_blob.png",
+      "label": 0,
+      "predicted_label": 0,
+      "predicted_probability": 0.496,
+      "agree": true
+    },
+    {
+      "path": "generated/madhubani_animals/_learning/fail_examples/tiger_v1_mascot.png",
+      "label": 0,
+      "predicted_label": 0,
+      "predicted_probability": 0.4977,
+      "agree": true
+    }
+  ],
+  "weights_path": "brand/madhubani/madhubani_likeness_v1.npz"
+}

@@ -48,6 +48,12 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = ["pytest", "ruff", "black"]
+# Learned-discriminator stack (B.3-lite, CLIP+sklearn Madhubani-likeness).
+# Pulls ~600 MB of CLIP ViT-B/32 weights on first run; install only if you
+# plan to retrain or evaluate the likeness scorer. The trained weights
+# themselves ship in brand/madhubani/madhubani_likeness_v1.npz (~2 KB) and
+# don't need this extra at inference time.
+ml = ["scikit-learn", "torch", "open_clip_torch"]
 
 [project.urls]
 Homepage = "https://github.com/tommyvercetti76/Forge"
