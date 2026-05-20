@@ -304,7 +304,23 @@ def build_subject_string(animal: dict, pose: dict, register: str) -> str:
         animal.get("signature_features", "").strip().rstrip("."),
         _eye_character_clause(pose_slug, pose.get("eye_character_intent", "calm folk-icon presence")),
         "mouth closed",
-        f"body filled with saturated {body_color} ({body_hex}){texture_clause}",
+        # A1.5 — pre-trained species color OVERRIDE.
+        # The bare "body filled with X" phrase loses to FLUX's pre-trained
+        # species signal for high-pull species (tiger=orange, lion=tan,
+        # parrot=green). Use hard language + explicit anti-natural-color
+        # framing so the model treats the folk fill as non-negotiable.
+        (
+            f"BODY FILL OVERRIDE (CRITICAL — this OVERRIDES the model's "
+            f"pretrained species-natural color): the entire body silhouette "
+            f"MUST be flat-filled with saturated {body_color} ({body_hex}) "
+            f"as the dominant base color — this is a Madhubani folk-art "
+            f"convention, NOT a naturalistic species render. DO NOT use "
+            f"natural species coloring (no natural tiger orange, no realistic "
+            f"lion tan, no realistic peacock blue body, no national-geographic-"
+            f"style fur/feather/skin tones). The {body_color} fill is the "
+            f"canvas; multi-color folk panels go ON TOP of it"
+            f"{texture_clause}"
+        ),
         ("decorated INSIDE with seven distinct zones of hand-drawn multi-color "
          "Madhubani ornament — tikka medallion on forehead, leaf-vein panel at ear, "
          "dot-band at neck, large ornamental panel on back, vine motif at shoulder, "

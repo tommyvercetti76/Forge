@@ -3673,6 +3673,20 @@ class MinimalistTShirtEngine(Engine):
         # Stray painter marks: v1 cobra had a tiny squiggle bottom-right.
         "artist signature glyph", "painter mark in corner",
         "hand-drawn signature squiggle", "calligraphic monogram",
+        # A1.6 — anti-natural-color negatives (2026-05-20).
+        # FLUX has overwhelming pretrained signals for species-natural color
+        # (Royal Bengal Tiger → bright orange, Lion → tan, Peacock → blue,
+        # Parrot → green). For Madhubani folk-art renders the body must be
+        # the convention color (deep-indigo / walnut-brown / forest-teal) with
+        # multi-color folk panels ON TOP. These negatives push the model
+        # away from the natural-species reading even when the subject name
+        # carries a strong pull. Paired with A1.5's BODY FILL OVERRIDE.
+        "natural species coloration", "naturalistic animal coloring",
+        "photorealistic fur color", "national-geographic-style species color",
+        "realistic tiger orange body", "natural orange tiger body",
+        "natural lion tan body", "natural peacock blue body",
+        "natural parrot green body", "natural species fur tones",
+        "wildlife-photograph color palette", "naturalistic species rendering",
     )
     default_lora_stack: ClassVar[tuple[tuple[str, float], ...]] = ()
 
@@ -3709,7 +3723,16 @@ class MinimalistTShirtEngine(Engine):
         background = cls.BACKGROUND.validate(cmp.background)
         border = cls.BORDER.validate(cmp.border)
 
-        clean_subject = normalize_subject(sub.subject, max_chars=520)
+        # A1.7 (2026-05-20) — bump from 520 to 2000. The Madhubani driver
+        # produces subjects ~1730 chars long (BODY FILL OVERRIDE + 7-zone
+        # decoration spec + ground mark + ornaments + register). The old 520
+        # cap was silently truncating them mid-word, dropping the body-fill
+        # color directive, decoration zones, ground mark, and everything after
+        # — which is why tigers came out as bare orange cartoons instead of
+        # navy-bodied folk icons. The truncation also hid the bug because no
+        # error was raised. Engines with shorter free-text subjects (e.g.
+        # noir-cinema at 400, others at 220) keep their tighter caps.
+        clean_subject = normalize_subject(sub.subject, max_chars=2000)
 
         if cmp.placement == "left-pocket" and cmp.layout in {"stacked-symbols", "repeat-mini-pattern"}:
             # This is allowed, but the prompt needs extra reduction pressure.
