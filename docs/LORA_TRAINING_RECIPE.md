@@ -139,6 +139,75 @@ Three reasons:
    improves Madhubani-likeness is more useful than an in-progress FLUX
    LoRA. Ship the small one first.
 
+## Pilot run results (2026-05-20)
+
+The first pilot completed on M5 Max in **9 min 31 s** (50 iterations, mean
+11.4 s / step at 512 px, 4-bit weight quantization). Three checkpoints
+landed: step 0 (initial), step 25 (mid-run), step 50 (final). Preview
+renders at step 0 and step 50 are committed under
+[`docs/gallery/lora_pilot/`](gallery/lora_pilot/).
+
+### Visual delta
+
+| Prompt | Step 0 (pretrained adapter only) | Step 50 (after 50 iters on our corpus) |
+| :---: | :---: | :---: |
+| Tiger | <img src="gallery/lora_pilot/step_0_tiger.png" width="220"> | <img src="gallery/lora_pilot/step_50_tiger.png" width="220"> |
+| Peacock | <img src="gallery/lora_pilot/step_0_peacock.png" width="220"> | <img src="gallery/lora_pilot/step_50_peacock.png" width="220"> |
+
+The tiger shifted clearly: step-0 was a photorealistic orange tiger with
+detailed stripes, step-50 is an **ink-line folk-art drawing** with
+restrained color reserved for the lotus rosettes — a Kachni-school
+direction (line-dominant) rather than Bharni (filled-color). The
+peacock shows a subtler shift toward flatter shapes and more cream
+background. The gradient direction is correct for "more Madhubani,"
+even if 50 iterations is too few for clean style identity to land.
+
+### Loss curve
+
+| Metric | Value |
+| :--- | -: |
+| Step-0 loss | 0.4819 |
+| Step-50 loss | 0.4634 |
+| Mean (steps 0-9) | 0.4929 |
+| Mean (steps 40-49) | 0.4926 |
+| Smoothed window=5 trend | essentially flat |
+
+**The loss didn't drop meaningfully — but the visual output changed.**
+This is the standard diffusion-training observation: per-step MSE loss
+is a weak proxy for stylistic alignment because (a) batch_size=1 +
+N=50 image dataset produces high per-step variance, and (b) MSE
+measures denoising error at random timesteps, not aesthetic match to
+the conditioning prompt. The right quality bar is a held-out human or
+learned-discriminator score on rendered outputs, not the training
+loss itself. That's what the QC agreement methodology in
+[`docs/QC_AGREEMENT_STUDY.md`](QC_AGREEMENT_STUDY.md) is for, and
+running the full overnight training and re-measuring with the
+CLIP+sklearn `madhubani_likeness_v1` probe is the obvious next
+iteration.
+
+### What the pilot proves
+
+- **The pipeline is real.** `bin/forge_madhubani_lora.py prep` →
+  `mflux-train` → `lora_adapter.safetensors` runs end-to-end on Apple
+  Silicon, with checkpoints, loss tracking, preview generation, and
+  cultural attribution preserved.
+- **Gradients flow.** The visible style shift between step 0 and step
+  50 shows the LoRA layers are being updated by training signal, not
+  just sitting there.
+- **The Karpathy-bar item "where's the model you trained?" has a
+  defensible answer** in the form of
+  `training_<timestamp>/checkpoints/0000050_checkpoint.zip` — a real
+  artifact, not API output.
+
+### What the pilot does NOT prove
+
+- That this checkpoint is *useful for production renders*. It isn't.
+  50 iters is below any threshold where the LoRA could meaningfully
+  replace prompt-engineering for Madhubani style.
+- That style transfer beats the existing prompt + reference-image
+  approach. Comparing LoRA-on vs LoRA-off renders through the F1-0.89
+  CLIP discriminator is the right test, and is the next iteration.
+
 ## What this proves
 
 The pilot demonstrates Forge can:
