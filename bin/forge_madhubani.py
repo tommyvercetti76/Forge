@@ -337,12 +337,21 @@ def build_config_string(register: str) -> str:
     ])
 
 
-def compute_seed(animal: dict, pose: dict, retry: bool) -> int:
+def compute_seed(animal: dict, pose: dict, retry: bool, series_lock: bool = False) -> int:
     """Per-animal seed block + per-pose offset + optional retry offset.
+
+    When series_lock=True (the A3 visual-bible mode), the per-pose offset is
+    dropped so all four poses of one animal share the same noise vector.
+    Pose differentiation then comes from the pose-specific subject string
+    only — the animal's "personality" (eye character, palette micro-choices,
+    framing micro-choices that FLUX makes from the noise seed) stays
+    consistent across the catalog row. Retry offset still fires so retry
+    runs land in v2/ with a distinct (but still series-locked) seed.
+
     Spec lives in brand/madhubani/poses.json seed_allocation."""
     base = int(animal.get("seed_block_start", 8000))
     offsets = load_poses()["seed_allocation"]["ordinal_offset_in_block"]
-    offset = int(offsets.get(pose["slug"], 0))
+    offset = 0 if series_lock else int(offsets.get(pose["slug"], 0))
     if retry:
         offset += int(offsets.get("retry-offset", 50))
     return base + offset
@@ -351,7 +360,7 @@ def compute_seed(animal: dict, pose: dict, retry: bool) -> int:
 # --- Render planning + execution ----------------------------------------
 
 
-def plan_render(animal_slug: str, pose_slug: str, register: str, retry: bool, version: str | None = None) -> RenderPlan:
+def plan_render(animal_slug: str, pose_slug: str, register: str, retry: bool, version: str | None = None, series_lock: bool = False) -> RenderPlan:
     animal = find_animal(animal_slug)
     pose = find_pose(pose_slug)
     body_type = find_body_type(animal["body_type"])
@@ -359,7 +368,7 @@ def plan_render(animal_slug: str, pose_slug: str, register: str, retry: bool, ve
     if version is None:
         version = "v2" if retry else "v1"
 
-    seed = compute_seed(animal, pose, retry)
+    seed = compute_seed(animal, pose, retry, series_lock=series_lock)
     out_dir = ATTEMPTS_DIR / animal_slug / version
     out_dir.mkdir(parents=True, exist_ok=True)
     out_file = out_dir / f"{pose['ordinal']:02d}_{animal_slug}_{pose_slug}.png"
@@ -411,8 +420,11 @@ def execute_render(
 
 def render_set(animal_slug: str, register: str, only_pose: str | None = None,
                retry: bool = False, steps: int = MADHUBANI_DEFAULT_STEPS,
-               dry_run: bool = False, jobs: int = 1) -> int:
-    """Render a full 4-pose set (or one pose) for an animal."""
+               dry_run: bool = False, jobs: int = 1, series_lock: bool = False) -> int:
+    """Render a full 4-pose set (or one pose) for an animal.
+
+    When series_lock=True, all poses share the animal's base seed (A3 visual-
+    bible mode) — same noise vector, pose differentiated by prompt only."""
     poses = load_poses()["poses"]
     if only_pose:
         poses = [p for p in poses if p["slug"] == only_pose]
@@ -429,8 +441,10 @@ def render_set(animal_slug: str, register: str, only_pose: str | None = None,
     print(f"\n═══ Rendering {animal_slug} × {len(poses)} pose(s) in {register} register ═══")
     if jobs > 1:
         print(f"   parallel jobs: {jobs} (requests FORGE_METAL_SLOTS={jobs} for child renders if unset; runtime still caps by memory)")
+    if series_lock:
+        print(f"   series-lock: ON — all poses share the same base seed for visual-bible consistency")
     failures = 0
-    plans = [plan_render(animal_slug, pose["slug"], register, retry, version=version) for pose in poses]
+    plans = [plan_render(animal_slug, pose["slug"], register, retry, version=version, series_lock=series_lock) for pose in poses]
     result_by_pose: dict[str, dict[str, Any]] = {}
 
     def run_plan(plan: RenderPlan) -> dict[str, Any]:
@@ -514,6 +528,7 @@ def render_set(animal_slug: str, register: str, only_pose: str | None = None,
         "retry": retry,
         "steps": steps,
         "jobs": jobs,
+        "series_lock": series_lock,
         "expected_parallel_wall_clock_reduction_pct": expected_speedup,
         "dry_run": dry_run,
         "pose_count": len(poses),
@@ -604,6 +619,9 @@ def promote_pose(animal_slug: str, pose_slug: str, from_version: str = "v1", for
             print(f"   ✓ {dst_file.relative_to(ROOT)}")
         else:
             print(f"   - (skipped, not found: {src.name})")
+    # A4: when --force overrides failed checks, surface which checks were
+    # overridden so the workflow log carries the why, not just the fact.
+    overridden_blockers = engine_qc.derive_blockers(qc) if (force and not qc.get("auto_qc_pass")) else []
     event_log = _append_workflow_event("promote_pose", {
         "animal_slug": animal_slug,
         "pose": pose_slug,
@@ -612,7 +630,12 @@ def promote_pose(animal_slug: str, pose_slug: str, from_version: str = "v1", for
         "auto_qc_score": qc.get("score"),
         "auto_qc_pass": qc.get("auto_qc_pass"),
         "force": force,
+        "overridden_blockers": [b["check"] for b in overridden_blockers],
+        "overridden_blockers_detail": overridden_blockers,
     })
+    if overridden_blockers:
+        names = ", ".join(b["check"] for b in overridden_blockers)
+        print(f"   ! force-promoted despite blockers: {names}")
     print(f"\n✓ Promoted {animal_slug}/{pose_slug} from {from_version}")
     print(f"   Workflow log: {_display(event_log)}")
     print(f"   Next: run `card {animal_slug}` to regenerate ARTIST_CARD.md with this pose marked MASTERED.")
@@ -1253,6 +1276,8 @@ def main() -> int:
                           help="Parallel pose renders for a set; child renders request matching Metal slots and runtime caps by memory")
     p_render.add_argument("--dry-run", action="store_true",
                           help="Print what would be rendered without calling FLUX")
+    p_render.add_argument("--series-seed", action="store_true", dest="series_seed",
+                          help="Visual-bible mode: lock the SAME base seed across all 4 poses so one animal renders as one consistent character with pose-text differentiating actual stance. Default OFF preserves per-pose seed offsets.")
 
     # promote
     p_prom = sub.add_parser("promote", help="Copy a passing pose from attempts/ → mastered/")
@@ -1304,6 +1329,7 @@ def main() -> int:
             steps=args.steps,
             dry_run=args.dry_run,
             jobs=args.jobs,
+            series_lock=getattr(args, "series_seed", False),
         )
     if args.cmd == "promote":
         promote_pose(args.animal_slug, args.pose_slug, from_version=args.from_version, force=args.force); return 0
