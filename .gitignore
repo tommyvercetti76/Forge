@@ -60,6 +60,9 @@ output/
 outputs/
 generated/
 forge-out/
+
+# Gallery DB, lock files, and other per-machine runtime state.
+.forge-state/
 *.mp4
 *.mov
 *.m4v
