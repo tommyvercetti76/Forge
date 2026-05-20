@@ -1,0 +1,65 @@
+{
+  "$schema": "./_schema/boost_prompts.schema.json",
+  "version": "1.0.0",
+  "established": "2026-05-20",
+  "description": "Per-check prompt boosts for the Art Reasoning Engine retry loop (Phase C.2). When a render fails check X with measured value Y vs target Z, the engine looks up boosts[X] and prepends/appends `boost_clause` to the subject string for the next attempt. The phrasing uses the same imperative register as the existing minimalist-tshirt engine scaffold (URGENT / ABSOLUTE) so the model treats it with the same weight.",
+
+  "boosts": {
+    "color_floor": {
+      "trigger": "color_floor failed — render uses fewer than the floor count of folk-palette hues (each must occupy >= 0.1% of canvas)",
+      "boost_clause": "URGENT PALETTE FIX: the render is using too few folk-palette hues. Include AT LEAST 4 distinct colors from the Madhubani folk palette — deep-indigo (#1a2952), walnut-brown (#5a3a1f), saffron-orange (#e87722), vermillion (#c8261f), leaf-green (#3d7d3d), gold-yellow (#e8b827). Each color must be visible in at least one decoration zone. NO monochromatic renders. NO desaturated palettes."
+    },
+    "corners_clean": {
+      "trigger": "corners_clean failed — non-background pixels in the four canvas corners (likely page edge artifacts or framing)",
+      "boost_clause": "URGENT FRAMING FIX: the four canvas corners must be cream (#F5EFE3) background ONLY — no subject pixels, no decoration motifs, no border frames touching the corners. Pull the subject inward away from the canvas edges."
+    },
+    "subject_centered": {
+      "trigger": "subject_centered failed — bounding box too small, too large, or off-center",
+      "boost_clause": "URGENT FRAMING FIX: the subject must occupy 50%-92% of the canvas width and be centered horizontally (center delta <= 5%) and roughly centered vertically (center delta <= 10%). NOT a tiny subject in a sea of background, NOT cropped against an edge."
+    },
+    "body_fill": {
+      "trigger": "body_fill failed — body silhouette uses wrong dominant color, or mostly black/cream interior",
+      "boost_clause": "URGENT BODY COLOR FIX: the body silhouette must be ONE of the three saturated folk body-fill colors — deep-indigo (#1a2952), walnut-brown (#5a3a1f), or forest-teal (#1f4a3f). NOT a black silhouette, NOT a cream/light interior, NOT a photorealistic species color (no actual tiger orange, no actual peacock blue-photoreal)."
+    },
+    "anatomy": {
+      "trigger": "anatomy failed — leg-pillar count mismatches body_type expectation (informational, often false-positive on side profile)",
+      "boost_clause": "FRAMING FIX: draw ALL anatomical limbs as DISTINCT outlines. For quadrupeds: 4 separate leg pillars visible, near and far pair both rendered (do not collapse far legs into the body). For birds: 2 perched feet visible. For serpents: coil/curve shape, no implied legs."
+    },
+    "text_leak": {
+      "trigger": "text_leak failed — OCR detected text characters in the render (signature, watermark, caption leak)",
+      "boost_clause": "ABSOLUTE NO-TEXT RULE: the render must contain ZERO readable text. No signatures, no captions, no watermarks, no glyph artifacts. Pure imagery only."
+    },
+    "eye_character": {
+      "trigger": "eye_character failed — head band luminance contrast is too low (eyes not distinct from face)",
+      "boost_clause": "URGENT EYE FIX: the eye must be a DISTINCT folk almond eye — single curved-line eye outline in black (#000000), with the pupil filled black and the sclera left as the body fill color or cream. NOT cartoon round eyes. NOT photorealistic eyes. NOT no visible eye. The eye band (top 25% of the subject) must show strong dark/light contrast from the eye structure."
+    },
+    "pattern_density": {
+      "trigger": "pattern_density failed — fraction of subject decorated (Δ-E from body_fill > 14) is below the declared decoration_density band",
+      "boost_clause": "URGENT DECORATION DENSITY FIX: the subject silhouette is TOO SPARSE. Add more multi-color folk decoration ON TOP of the body fill — saddle blanket, leg anklets, neck collar, shoulder medallion, hip rosette, tail rings. The body MUST NOT read as a flat single-color shape. Target {target_band} density (at least {target_min:.0%} of the subject decorated)."
+    },
+    "decoration_zone_presence": {
+      "trigger": "decoration_zone_presence failed — one or more required_decoration_zones from animals.json have no decoration",
+      "boost_clause": "URGENT ZONE COVERAGE FIX: the following required decoration zones are MISSING or undecorated and MUST be rendered — {missing_zones_list}. Each zone needs at least one folk motif (medallion, dot band, vine, ocellus, anklet) visible in flat folk-color over the body fill."
+    },
+    "anatomy_feature_count": {
+      "trigger": "anatomy_feature_count failed — measured count of {feature} ({measured}) is outside expected range",
+      "boost_clause": "ABSOLUTE ANATOMY COUNT FIX for {feature}: the render must show {expected_text}. {failure_specific_clause}"
+    }
+  },
+
+  "feature_specific_clauses": {
+    "tongue": {
+      "too_many": "Cobras and serpents have EXACTLY ONE forked tongue with a single split-tip at the very end — ONE structure that forks at the tip, NOT two separate tongues, NOT a Y-shape from the mouth, NOT two parallel tongues. For mouth-closed poses, do not render any tongue at all.",
+      "unexpected_zero": "The render is missing a required tongue structure. Add ONE forked tongue extending from the mouth with a clear split tip."
+    },
+    "horns_on_nose": {
+      "too_many": "This is an INDIAN one-horned rhinoceros (Rhinoceros unicornis) — ONE single nose horn ONLY. Two horns is the African rhino species and is WRONG for this catalog. Render exactly one horn on the snout.",
+      "unexpected_zero": "The rhino is missing its signature nose horn. Render exactly one prominent horn rising from the snout."
+    },
+    "tail_eye_spots": {
+      "too_many": "The peacock tail is over-decorated. Reduce to 8-12 distinct ocellus (eye-spot) motifs along the tail fan; each ocellus is a concentric round folk-color roundel, NOT a smear of small dots.",
+      "too_few": "The peacock tail is too sparse. Increase to 8-12 distinct ocellus motifs along the tail fan; each ocellus is a concentric round folk-color roundel in indigo/saffron/vermillion/leaf-green over the indigo tail base.",
+      "unexpected_zero": "The peacock tail has no ocellus motifs. The tail must show 8-12 distinct round eye-spot motifs (concentric roundels) — this is the peacock's signature feature."
+    }
+  }
+}
