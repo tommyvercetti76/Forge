@@ -298,7 +298,11 @@ PROFILES = {
     # Production-grade: keep q8 by default. On Apple Silicon this preserves
     # visual quality while avoiding the memory pressure that makes parallel
     # FLUX jobs page/throttle. Use --quantize 0 only for explicit fp16 tests.
-    "quality":  {"flux_model": "dev",     "flux_steps": 36, "flux_guidance": None, "cooldown": 0.0, "quantize": 8},
+    # `default_refine: True` makes `--refine` automatic at `quality` because at
+    # 36 steps the second-pass img2img polish meaningfully crystallizes fur,
+    # eye character, and edge detail. Override with `--no-refine` if the heat
+    # cost or the extra wall-clock isn't wanted.
+    "quality":  {"flux_model": "dev",     "flux_steps": 36, "flux_guidance": None, "cooldown": 0.0, "quantize": 8, "default_refine": True},
 }
 
 _TMP_PATHS: set[Path] = set()
@@ -3204,7 +3208,20 @@ def cmd_engine_render(args) -> int:
     # Default output path → ~/Desktop/forge-test/engine-renders/<engine>/<recipe-or-slug>.png
     # For multi-seed (--seeds N), output lands in a directory: <engine>/<slug>/seed{NN}.png
     seeds_n = max(1, int(getattr(args, "seeds", 1) or 1))
-    refine = bool(getattr(args, "refine", False))
+    # A6: profile-level default_refine flips refine ON when not explicitly set.
+    # `--refine` (explicit on) always wins. `--no-refine` (explicit off) wins
+    # over the profile default. Otherwise the profile decides.
+    explicit_refine = bool(getattr(args, "refine", False))
+    explicit_no_refine = bool(getattr(args, "no_refine", False))
+    profile_default_refine = bool(PROFILES.get(args.profile or "", {}).get("default_refine", False))
+    if explicit_no_refine:
+        refine = False
+    elif explicit_refine:
+        refine = True
+    else:
+        refine = profile_default_refine
+    if refine and profile_default_refine and not explicit_refine:
+        print(dim(f"  · --profile {args.profile} enables --refine by default (use --no-refine to opt out)"))
     refine_strength = float(getattr(args, "refine_strength", 0.25) or 0.25)
     # Resolution shortcuts: --ultra-res > --hi-res > explicit --width/--height >
     # engine's default_runtime width/height > falls through to THUMB_W/H (1280×720).
@@ -5601,7 +5618,9 @@ def main() -> int:
     eng_render.add_argument("--seeds", type=int, default=1,
                             help="render N variants with consecutive seeds (--seed, --seed+1, ...) into a gallery dir + HTML contact sheet. Default 1.")
     eng_render.add_argument("--refine", action="store_true",
-                            help="two-pass refinement: after FLUX-dev composes, img2img-refine at low denoise to add micro-detail. Adds ~30 s per image.")
+                            help="two-pass refinement: after FLUX-dev composes, img2img-refine at low denoise to add micro-detail. Adds ~30 s per image. NOTE: --profile quality enables this by default; use --no-refine to opt out.")
+    eng_render.add_argument("--no-refine", action="store_true", dest="no_refine",
+                            help="explicitly disable the two-pass refinement, even when --profile quality would default it on.")
     eng_render.add_argument("--refine-strength", type=float, default=0.25, dest="refine_strength",
                             help="denoising strength for refinement pass (0.05=barely-touch, 0.4=significant rework). Default 0.25.")
     eng_render.add_argument("--hi-res", action="store_true", dest="hi_res",
