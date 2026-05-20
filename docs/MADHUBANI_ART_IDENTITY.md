@@ -99,7 +99,7 @@ The v2 pose taxonomy is per-body-type. Each animal's body_type (from animals.jso
 | Cetacean / marine | **gliding-deep**, **breaching-or-surface**, **suspended-still**, **frontal-portrait** |
 | Small-mammal | **alert-standing**, **curled-resting**, **foraging**, **frontal-portrait** |
 
-**Status:** the v2 pose taxonomy is **not yet implemented** in `poses.json` (still v1). The implementation work is tracked separately; this doc declares the intent so the implementation defers to it.
+**Status:** the v2 pose taxonomy is **implemented** in `brand/madhubani/poses.json` v2.0.0. The four canonical slot names (standing-alert / seated-rest / signature-action / frontal-portrait) remain catalog positions; the `body_type_overrides` map (12 body types covered) is the source of truth for what each slot MEANS for each body type. `bin/forge_madhubani.py:build_subject_string()` consults `body_type_overrides` first and falls back to the per-slot `subject_template` only when no override applies — so a "seated-rest" bird perches on a branch, a "seated-rest" serpent coils with hood lowered, and a "seated-rest" cetacean is suspended motionless. What is **still planned** (see [`docs/FORGE_PORTFOLIO_PLAN.md`](FORGE_PORTFOLIO_PLAN.md) Lane 2): a deeper per-body-type slot-name vocabulary (e.g. `perched-resting` / `in-flight` as their own slots, not just semantic overrides on the legacy slot names).
 
 ---
 
@@ -139,7 +139,7 @@ A **density temperature** lets one species produce multiple visually-distinct SK
 | `ornate` | 5–7 | 50–80% | Today's default — saddle blanket + leg bands + medallions |
 | `maximal` | 7–9 | ≥80% | Full Madhubani density — body almost entirely patterned |
 
-**Status:** not yet implemented. Plan is `production.decoration_density: minimal | balanced | ornate | maximal` as an engine config knob. Documented here so the future implementation defers to this taxonomy.
+**Status:** implemented in Phase A (schema) + Phase B.1 (verification). Each animal in `brand/madhubani/animals.json` declares a `decoration_density` field (minimal / balanced / ornate / maximal); `bin/forge_madhubani.py:_decoration_density_clause()` injects the right directive into the subject string, and `bin/madhubani_qc.py:_score_pattern_density()` measures the rendered density against the declared band (`PATTERN_DENSITY_BANDS`) and fails the auto-QC if it's below the band's minimum. See [`docs/ART_REASONING_ENGINE.md`](ART_REASONING_ENGINE.md).
 
 ---
 
@@ -192,7 +192,7 @@ See `docs/catalog/PROMPT_GRAMMAR.md` for the full grammar; see `bin/style_engine
 | [generated/madhubani_animals/_learning/PRINCIPLES.md](../generated/madhubani_animals/_learning/PRINCIPLES.md) | The "what we learned" appendix — distilled wisdom |
 | [docs/MADHUBANI_BIBLIOGRAPHY.md](MADHUBANI_BIBLIOGRAPHY.md) | Academic + cultural citations |
 | [brand/madhubani/animals.json](../brand/madhubani/animals.json) | The 41-species catalog data |
-| [brand/madhubani/poses.json](../brand/madhubani/poses.json) | Pose dictionary (v1 generic; v2 per-body-type planned) |
+| [brand/madhubani/poses.json](../brand/madhubani/poses.json) | Pose dictionary v2.0.0 — 4 catalog slots × `body_type_overrides` for 12 body types |
 | [brand/madhubani/palette.json](../brand/madhubani/palette.json) | The 6-color folk palette with hex values |
 | [brand/madhubani/masters.json](../brand/madhubani/masters.json) | Master-painter citation data |
 | [brand/madhubani/species_iconography.json](../brand/madhubani/species_iconography.json) | Photorealistic per-species iconography (currently UNUSED by minimalist-tshirt — see code comment) |

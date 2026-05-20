@@ -69,9 +69,15 @@ Before requesting review:
 - [ ] Docs are updated when behaviour visible to users changes
       (`README.md`, files under `docs/`, engine specs).
 - [ ] Attribution is preserved for any new reference image, dataset, or
-      borrowed code. If you add a reference image, also add its entry to
-      `brand/madhubani/references/attribution.json` (or the equivalent
-      manifest for that engine) with source URL, author, and license.
+      borrowed code. If you add a Madhubani reference image, drop a
+      `<file>.attribution.json` sidecar next to it under
+      `brand/references/madhubani/<species>/` (or
+      `brand/references/madhubani/_general/` for tradition-level rather
+      than species-level imagery) with `source_url`, `author`, and
+      `license` fields — see existing sidecars and
+      `_example_attribution.json` for the schema. Other engines use the
+      same `<file>.attribution.json` convention under their own
+      `brand/references/<engine>/` tree.
 - [ ] No model weights, large binaries, generated samples, or secrets are
       committed. `.gitignore` is the source of truth; if you have to
       bypass it, explain why in the PR.

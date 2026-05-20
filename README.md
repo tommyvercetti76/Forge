@@ -4,7 +4,7 @@
 
 **Local-first generative-AI workstation for Apple Silicon**
 
-*Image · Text · Audio · No cloud APIs*
+*Image · Text · Audio · No cloud required for core local paths*
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Tests](https://img.shields.io/badge/tests-128_passing-brightgreen.svg)](#development-and-verification)

@@ -63,9 +63,14 @@ Reference imagery
 Wikimedia Commons Madhubani / Mithila reference corpus
     Licenses: CC BY-SA 4.0, CC0 1.0, GODL-India 1.0, and Public Domain on a
               per-file basis. Forge does not redistribute the binaries; only
-              the attribution manifests (`attribution.json`) live in the repo.
-    Manifest: brand/madhubani/references/attribution.json (rehydrated locally
-              via `bin/rehydrate_references.py`)
+              the per-asset `<file>.attribution.json` sidecars live in the
+              repo.
+    Manifests: brand/references/madhubani/<species>/*.attribution.json and
+               brand/references/madhubani/_general/*.attribution.json
+               (rehydrated locally via `bin/rehydrate_references.py`,
+               which walks `brand/references/` for `*.attribution.json`
+               sidecars and downloads each `source_url` next to its
+               manifest)
     Notes:   Each entry records the source URL, original author or
              contributor, license, and any required share-alike obligations.
              Downstream users of any reference image must honor the license
