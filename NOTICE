@@ -1,0 +1,96 @@
+Forge
+Copyright (c) 2026 Rohan Ramekar
+
+This product includes software developed by Rohan Ramekar, licensed under the
+MIT License (see LICENSE). It additionally depends on, links to, or generates
+output from third-party models, libraries, and reference assets whose licenses
+and attribution requirements are listed below. Users of Forge are responsible
+for complying with every license that applies to the components they actually
+load or distribute.
+
+--------------------------------------------------------------------------------
+Generative models
+--------------------------------------------------------------------------------
+
+FLUX.1-dev (Black Forest Labs)
+    License: FLUX.1 [dev] Non-Commercial License
+    URL:     https://huggingface.co/black-forest-labs/FLUX.1-dev/blob/main/LICENSE.md
+    Notes:   Research / non-commercial use only. Any commercial use of the
+             FLUX.1-dev weights, of derivatives trained on them, or of images
+             produced by them requires a separate commercial license from
+             Black Forest Labs. Forge does not grant and cannot grant that
+             license. Contact Black Forest Labs directly.
+
+FLUX.2-klein-4b (Black Forest Labs)
+    License: FLUX.2 non-commercial research license (verify exact name on the
+             model card before public release)
+    URL:     https://huggingface.co/black-forest-labs (model card)
+    Notes:   Same non-commercial constraint as FLUX.1-dev. Commercial use,
+             including selling outputs, requires a commercial license from
+             Black Forest Labs.
+
+Z-Image-Turbo
+    License: Apache License 2.0 (per its Hugging Face model card; verify on
+             the upstream card before public release)
+    URL:     model card on Hugging Face
+    Notes:   Permissive license. Forge ships no weights; users download the
+             model from the upstream source under that source's terms.
+
+--------------------------------------------------------------------------------
+Python libraries and tools
+--------------------------------------------------------------------------------
+
+mflux
+    License: MIT
+    URL:     https://github.com/filipstrand/mflux
+    Notes:   MLX-backed FLUX inference. Bundled only as a runtime dependency;
+             see the upstream LICENSE file for full terms.
+
+RealESRGAN-ncnn-vulkan
+    License: BSD 3-Clause (verify against the upstream release before public
+             release)
+    URL:     https://github.com/xinntao/Real-ESRGAN
+    Notes:   Used as an external upscaler binary invoked by Forge. Forge does
+             not redistribute the binary; users install it locally.
+
+Other Python dependencies (declared in the project manifest) ship under their
+respective licenses; consult each package's metadata.
+
+--------------------------------------------------------------------------------
+Reference imagery
+--------------------------------------------------------------------------------
+
+Wikimedia Commons Madhubani / Mithila reference corpus
+    Licenses: CC BY-SA 4.0, CC0 1.0, GODL-India 1.0, and Public Domain on a
+              per-file basis. Forge does not redistribute the binaries; only
+              the attribution manifests (`attribution.json`) live in the repo.
+    Manifest: brand/madhubani/references/attribution.json (rehydrated locally
+              via `bin/rehydrate_references.py`)
+    Notes:   Each entry records the source URL, original author or
+             contributor, license, and any required share-alike obligations.
+             Downstream users of any reference image must honor the license
+             of that specific file, not the project license.
+
+--------------------------------------------------------------------------------
+Mithila / Madhubani tradition attribution
+--------------------------------------------------------------------------------
+
+Forge generates art INSPIRED BY the Madhubani (Mithila) painting tradition of
+the Mithila region of Bihar, India. This is a living folk-art heritage,
+practiced and carried forward primarily by women painters across generations,
+and recognized in India by a Geographical Indication (GI) registration.
+The tradition is studied and produced in several historically distinct
+schools, including Bharni (filled-color), Kachni (line-only), Tantric, Godna
+(tattoo-style), and Gobar (cow-dung-base) styles. Forge does not claim to be
+authentic Madhubani painting, does not represent any practicing artist or
+cooperative, and does not sell on behalf of any practitioner. Users who want
+authentic work are strongly encouraged to commission or purchase directly
+from practitioners and recognized cooperatives. See
+docs/CULTURAL_HERITAGE_ATTRIBUTION.md for the full attribution statement.
+
+--------------------------------------------------------------------------------
+Security credit
+--------------------------------------------------------------------------------
+
+Researchers who report verified vulnerabilities under SECURITY.md are credited
+here on fix unless they decline credit.
