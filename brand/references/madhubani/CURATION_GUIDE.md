@@ -238,10 +238,48 @@ the corpus is training-ready.
    ```bash
    python3 brand/references/madhubani/_audit.py
    ```
-7. **Commit** with a message like:
+7. **Commit ONLY the `.attribution.json` file.** The image binary stays
+   on your local disk but is gitignored — never push image binaries.
+   The `.gitignore` rule at the root of the repo already covers
+   `brand/references/**/*.{jpg,jpeg,png,webp,gif,tif,tiff}`.
+   ```bash
+   git add brand/references/madhubani/<species>/<filename>.attribution.json
+   git commit -m "references: add <descriptor> from <source>"
    ```
-   references: add tiger-sita-devi-1970s from Wikimedia Commons
-   ```
+
+---
+
+## Rehydrating the corpus (fresh checkout)
+
+Because image binaries are gitignored, a fresh `git clone` arrives with
+attribution.json manifests but no image files. One command restores the
+binaries:
+
+```bash
+python3 bin/rehydrate_references.py --style madhubani
+```
+
+This script reads every `*.attribution.json` under the style subtree and
+re-downloads the binary from the recorded `image_url` (a Wikimedia
+thumbnail URL for our seed corpus). Output:
+
+```
+Rehydrating 50 manifest(s) under .../brand/references
+  [1/50] ✓ 34545016-kohbar-auspicious-marriage-diagram-dh93.jpg  (174 KB)
+  ...
+present:  0
+fetched:  50
+failed:   0
+```
+
+Useful flags:
+- `--dry-run` — preview without downloading
+- `--style madhubani` — restrict to one style subtree (default: all)
+- `--force` — re-download even if file is already present
+- `--pace 3.0` — seconds between downloads (default 3, kind to CDNs)
+
+Exit code 0 if every manifest has its binary; non-zero if any failed.
+After running, follow up with `_audit.py` to confirm corpus health.
 
 ---
 

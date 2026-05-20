@@ -82,6 +82,22 @@ forge-out/
 models/
 weights/
 
+# Reference-corpus binaries — keep ONLY the attribution.json manifests in
+# git. Anyone can rehydrate the binaries from each attribution.json's
+# source_url via `python3 bin/rehydrate_references.py`. This is the standard
+# ML pattern: version the manifest, not the (often-licensed, often-large)
+# source images. CC BY-SA + redistribution-as-mirror has nuance we'd rather
+# not carry forever in git history.
+brand/references/**/*.jpg
+brand/references/**/*.jpeg
+brand/references/**/*.png
+brand/references/**/*.webp
+brand/references/**/*.gif
+brand/references/**/*.tif
+brand/references/**/*.tiff
+# Allow the example attribution sample (still a JSON, not a binary)
+!brand/references/**/_example_attribution.json
+
 # Logs / temp
 *.log
 *.tmp
