@@ -26,14 +26,34 @@
   <br><sub><i>Madhubani folk-art peacock — Forge minimalist-tshirt engine on FLUX.1-dev</i></sub>
 </div>
 
+<br>
+
 <div align="center">
-  <img src="docs/gallery/tiger_v3.png" width="120" alt="Tiger">
-  <img src="docs/gallery/elephant_v3.png" width="120" alt="Elephant">
-  <img src="docs/gallery/blackbuck_v3.png" width="120" alt="Blackbuck">
-  <img src="docs/gallery/rhino_v3.png" width="120" alt="One-horned rhinoceros">
-  <img src="docs/gallery/cobra_v3.png" width="120" alt="King cobra">
-  <img src="docs/gallery/snow_leopard_v3.png" width="120" alt="Snow leopard">
-  <br><sub><i>Six of 41 species in the Madhubani catalog. Every render is paired with attribution manifests honoring the Mithila tradition of Bihar, India.</i></sub>
+
+**Voted-best by the maintainer** (user-curated `pass_examples/`, also the gold-standard test set for the [auto-QC agreement study](docs/QC_AGREEMENT_STUDY.md))
+
+<img src="docs/gallery/voted_peacock.png"   width="220" alt="Voted-best peacock">
+<img src="docs/gallery/voted_blackbuck.png" width="220" alt="Voted-best blackbuck">
+<img src="docs/gallery/voted_rhino.png"     width="220" alt="Voted-best one-horned rhinoceros">
+<img src="docs/gallery/voted_elephant.png"  width="220" alt="Voted-best Indian elephant">
+
+</div>
+
+<br>
+
+<div align="center">
+
+**Eight species from the 41-render catalog**
+
+<img src="docs/gallery/tiger_v3.png"        width="110" alt="Tiger">
+<img src="docs/gallery/elephant_v3.png"     width="110" alt="Elephant">
+<img src="docs/gallery/blackbuck_v3.png"    width="110" alt="Blackbuck">
+<img src="docs/gallery/rhino_v3.png"        width="110" alt="One-horned rhinoceros">
+<img src="docs/gallery/cobra_v3.png"        width="110" alt="King cobra">
+<img src="docs/gallery/snow_leopard_v3.png" width="110" alt="Snow leopard">
+<img src="docs/gallery/macaque_v3.png"      width="110" alt="Lion-tailed macaque">
+<br><sub><i>Eight of 41 species in the Madhubani catalog spanning 21 Indian national parks. Every render ships with a per-asset attribution manifest honoring the Mithila tradition of Bihar, India.</i></sub>
+
 </div>
 
 ---
@@ -665,7 +685,6 @@ Start here:
 | [SKILL.md](SKILL.md) | You need to choose the right Forge command/tool |
 | [docs/FEATURES.md](docs/FEATURES.md) | You need current feature inventory and limits |
 | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | You need system/data-flow diagrams |
-| [docs/MECHANISMS.md](docs/MECHANISMS.md) | You need runtime mechanisms and quality contracts |
 | [docs/MINIMALIST_TSHIRT_ENGINE.md](docs/MINIMALIST_TSHIRT_ENGINE.md) | You are rendering minimalist screen-printable T-shirt graphics |
 | [docs/MINIMAL_ANIMAL_LINES.md](docs/MINIMAL_ANIMAL_LINES.md) | You are exploring exact <=8-line animal marks |
 
@@ -692,7 +711,8 @@ Planning and execution:
 | [PLAN_V2.md](PLAN_V2.md) | You need the local story-studio north star |
 | [ALIGNMENT_PLAN.md](ALIGNMENT_PLAN.md) | You need the gap-to-vision execution plan |
 | [BACKLOG.md](BACKLOG.md) | You need queued feature work |
-| [docs/MASTERY_PLAN.md](docs/MASTERY_PLAN.md) | You need the mastery plan for images, thumbnails, audiobooks, coloring books, and mandalas |
+| [docs/FORGE_PORTFOLIO_PLAN.md](docs/FORGE_PORTFOLIO_PLAN.md) | You need the 5-lane portfolio-grade plan |
+| [docs/ROADMAP.md](docs/ROADMAP.md) | You need the public shipped / in-progress / next ledger |
 
 Documentation maintenance:
 

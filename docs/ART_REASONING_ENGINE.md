@@ -1,7 +1,5 @@
 # Art Reasoning Engine — architecture spec
 
-Planning companion: [ART_REASONING_ENGINE_PLAN.md](ART_REASONING_ENGINE_PLAN.md).
-
 > A closed-loop image-generation system that **enforces** the art identity rather than **hopes** the prompt is heard. The user named this after Phase A hit the prompt-only ceiling: even with 17,000-character prompts containing MANDATORY DECORATION ZONES + ANATOMICAL COUNTS + DECORATION DENSITY, FLUX.2 still rendered cobras with two tongues, peacocks with sparse plumage, and tigers missing the named decoration zones. The text encoder truncates past ~2k chars. Prompt iteration alone cannot solve this.
 >
 > **Established:** 2026-05-20, after Phase A. Spec doc precedes implementation.

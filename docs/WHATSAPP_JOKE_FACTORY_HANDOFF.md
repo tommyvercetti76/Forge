@@ -620,7 +620,7 @@ Read these files:
 - `README.md`
 - `docs/INDEX.md`
 - `docs/FEATURES.md`
-- `docs/MECHANISMS.md`
+- `docs/ARCHITECTURE.md`
 - `bin/forge.py`
 - `bin/forge_runtime.py`
 - `brand/voices.json`

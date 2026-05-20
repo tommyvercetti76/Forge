@@ -197,7 +197,6 @@ See `docs/catalog/PROMPT_GRAMMAR.md` for the full grammar; see `bin/style_engine
 | [brand/madhubani/masters.json](../brand/madhubani/masters.json) | Master-painter citation data |
 | [brand/madhubani/species_iconography.json](../brand/madhubani/species_iconography.json) | Photorealistic per-species iconography (currently UNUSED by minimalist-tshirt — see code comment) |
 | [docs/QUALITY_FINDINGS_2026-05-20.md](QUALITY_FINDINGS_2026-05-20.md) | Yesterday's performance + quality audit |
-| [docs/IMAGE_INVENTORY_2026-05-20.md](IMAGE_INVENTORY_2026-05-20.md) | Today's inventory of generated images |
 
 When any of those files conflicts with this doc, **this doc is authoritative**. Update the file.
 

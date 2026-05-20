@@ -52,7 +52,6 @@ flowchart LR
 | [../SKILL.md](../SKILL.md) | Mental model for choosing the right Forge tool and understanding how the system is built. |
 | [FEATURES.md](FEATURES.md) | Current feature inventory, command surface, outputs, mechanisms, and limits. |
 | [ARCHITECTURE.md](ARCHITECTURE.md) | System diagrams and data-flow diagrams. |
-| [MECHANISMS.md](MECHANISMS.md) | Cross-cutting implementation mechanisms and quality contracts. |
 | [MINIMALIST_TSHIRT_ENGINE.md](MINIMALIST_TSHIRT_ENGINE.md) | Specialist engine contract for minimalist screen-printable T-shirt graphics. |
 
 ## Handoffs, Audits, And Contracts
@@ -76,10 +75,13 @@ flowchart LR
 | [../PLAN_V2.md](../PLAN_V2.md) | Local story-studio north star, output contracts, architecture, M5 Max strategy, quality gates. |
 | [../ALIGNMENT_PLAN.md](../ALIGNMENT_PLAN.md) | Gap assessment, definition of aligned, and execution plan. |
 | [../BACKLOG.md](../BACKLOG.md) | Feature backlog for pipelines, style engines, plumbing, and UI/system work. |
-| [MASTERY_PLAN.md](MASTERY_PLAN.md) | Mastery plan for pictures, thumbnails, audiobooks, coloring books, and mathematical mandalas. |
-| [ART_REASONING_ENGINE_PLAN.md](ART_REASONING_ENGINE_PLAN.md) | Research-backed plan for the isolated art reasoning lab, including V1/V2 ratings and first-slice build order. |
+| [FORGE_PORTFOLIO_PLAN.md](FORGE_PORTFOLIO_PLAN.md) | 5-lane sequenced roadmap toward an ML-portfolio-grade Forge. |
+| [ROADMAP.md](ROADMAP.md) | Public roadmap — shipped / in-progress / next / explicitly not in scope. |
 | [ART_REASONING_ENGINE.md](ART_REASONING_ENGINE.md) | Architecture spec for schema-driven verification, retry loops, and feedback memory in the art reasoning engine. |
-| [OSS_READINESS_AGENT_HANDOFF.md](OSS_READINESS_AGENT_HANDOFF.md) | Agent-ready audit handoff for turning Forge into a credible public OSS portfolio project. |
+| [QC_AGREEMENT_STUDY.md](QC_AGREEMENT_STUDY.md) | Measurement study: auto-QC vs human review (F1 0.50 → 0.67 → 0.89 with learned discriminator). |
+| [LORA_TRAINING_RECIPE.md](LORA_TRAINING_RECIPE.md) | Apple-Silicon LoRA pilot recipe + pilot-run results. |
+| [TRANSLATION_AGENT_HANDOFF.md](TRANSLATION_AGENT_HANDOFF.md) | Parallel-lane handoff: 10-task translation north star including measured BLEU/chrF and one trained probe. |
+| [OSS_READINESS_AGENT_HANDOFF.md](OSS_READINESS_AGENT_HANDOFF.md) | Historical audit that drove the OSS-readiness work shipped 2026-05-20. |
 
 ## Documentation Maintenance
 

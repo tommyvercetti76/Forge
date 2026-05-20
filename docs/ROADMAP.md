@@ -71,7 +71,7 @@ Open an issue first for anything in "In progress" so we don't collide.
 
 ### Art Reasoning Engine (closed-loop verification)
 
-Spec: [ART_REASONING_ENGINE](ART_REASONING_ENGINE.md). Implementation plan: [ART_REASONING_ENGINE_PLAN](ART_REASONING_ENGINE_PLAN.md).
+Spec: [ART_REASONING_ENGINE](ART_REASONING_ENGINE.md).
 
 - **B.3 — anatomy_feature_count heuristics** — Cobra renders still hallucinate two tongues; rhinos sometimes grow a second horn. Skeletonization + connected-component analysis on the subject mask, gated by `body_type`, to count tongues / horns / feet / eyes against `anatomical_count_constraints`. ETA ~4 hrs.
 - **B.4 — wire new checks into `engine_qc.derive_blockers`** — Phase B.1/B.2/B.3 currently score but do not block promotion. Plumb each into the existing blockers / `publishable` contract so `promote_pose` refuses non-passing renders by default. ETA ~1 hr.

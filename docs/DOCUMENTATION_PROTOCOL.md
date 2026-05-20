@@ -16,9 +16,7 @@ When adding or changing a feature, update these docs in the same change:
    - Include command, outputs, mechanism, and limits.
 2. [ARCHITECTURE.md](ARCHITECTURE.md)
    - Update diagrams when data flow, state, or model usage changes.
-3. [MECHANISMS.md](MECHANISMS.md)
-   - Add cross-cutting implementation details if a new mechanism is introduced.
-4. [../README.md](../README.md)
+3. [../README.md](../README.md)
    - Add or update quickstart examples when user-facing behavior changes.
 5. [../SKILL.md](../SKILL.md)
    - Add mental-model guidance when users must choose between tools.
