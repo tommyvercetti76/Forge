@@ -331,6 +331,51 @@
     "seed": 17
   },
 
+  "madhubani-peacock-snake-pair": {
+    "engine": "indian-classical",
+    "description": "Classic Mithila peacock-and-snake motif. Maximum pattern density: double-line outlines, fish-scale tail rows, dot-cluster body fills, full 6-7 color palette on cream paper, peepal-leaf border bands.",
+    "subject": "a large peacock with fanned tail facing a coiled cobra rising to meet it, the peacock's tail filled with concentric fish-scale rows and eye-feather rosettes, the snake's body marked with chevron rows and dot-clusters, both framed by a thick double-line border with peepal-leaf and floral-rosette decorative bands on all four edges, flat saturated fills in red and yellow and green and blue and orange and black on cream paper, no shading, no gradient, no perspective",
+    "config": {
+      "style.tradition": "madhubani",
+      "style.ground": "madhubani-paper",
+      "subject.composition": "lyric-intimate"
+    },
+    "seed": 23
+  },
+  "madhubani-twin-fish-lotus-pond": {
+    "engine": "indian-classical",
+    "description": "Twin matsya (fish) facing each other in a lotus pond — traditional Mithila marriage motif. Fish-scale body rows, dot-cluster water fills, lotus rosettes, peepal-leaf borders, full chromatic palette.",
+    "subject": "two large fish facing each other nose-to-nose at the center of a lotus pond, each fish body filled with rows of fish-scale pattern and dot-clusters along the spine, lotus flowers and lotus pads scattered around them with each petal outlined in a double-line and filled with chevron rows, the water rendered as dot-cluster fields and concentric ripple bands, peepal-leaf and floral-rosette border bands stacked along the four edges of the panel, flat saturated red and yellow and green and blue and orange and black pigment on cream paper, no shading, no perspective",
+    "config": {
+      "style.tradition": "madhubani",
+      "style.ground": "madhubani-paper",
+      "subject.composition": "hieratic-centered"
+    },
+    "seed": 41
+  },
+  "madhubani-elephant-procession": {
+    "engine": "indian-classical",
+    "description": "Wedding doli elephant procession in Mithila frieze composition. Three-elephant frieze with patterned bodies (chevron rows, dot-clusters, leaf-veins), howdahs, drummers and musicians below, parrots in the upper register, dense floral border bands.",
+    "subject": "a wedding procession of three elephants walking side-by-side in a frieze, each elephant's body densely filled with chevron rows on the legs and dot-clusters on the flanks and leaf-vein patterns on the trunk, each carrying an ornamented howdah with a small figure inside, a row of drummers and musicians at the bottom of the frame walking in step, paired parrots facing each other in the upper register among peepal leaves, the entire panel framed by thick double-line borders and stacked geometric-and-floral decorative bands, flat saturated fills in red and yellow and green and blue and orange and black on cream paper, no shading, no perspective, figures arranged side-by-side",
+    "config": {
+      "style.tradition": "madhubani",
+      "style.ground": "madhubani-paper",
+      "subject.composition": "narrative-multi-figure"
+    },
+    "seed": 53
+  },
+  "madhubani-tree-of-life": {
+    "engine": "indian-classical",
+    "description": "Mithila Tree of Life (Kalpavriksha) — maximum complexity composition. Central tree with paired birds in branches, tigers and deer at the base, peacocks on lower branches, sun and moon in upper corners, dense pattern fills throughout, full 6-7 color palette.",
+    "subject": "a central Tree of Life rising up the panel with a thick double-line outlined trunk filled with chevron rows, branches spreading outward filled with leaf-vein patterns, paired parrots and paired peacocks perched facing each other on the branches with their bodies marked in fish-scale and dot-cluster rows, a tiger and a deer standing at the base of the tree on either side of the trunk with their bodies marked in chevron and dot-cluster fills, the sun as a large circle in the upper-left corner filled with concentric rosettes and the moon as a crescent in the upper-right corner filled with dot-clusters, every empty area of the background packed with small floral rosettes and peepal-leaf clusters so no negative space remains, the entire panel framed by thick double-line borders and stacked geometric-and-floral decorative bands on all four edges, flat saturated fills in red and yellow and green and blue and orange and black pigment on cream paper, no shading, no gradient, no perspective",
+    "config": {
+      "style.tradition": "madhubani",
+      "style.ground": "madhubani-paper",
+      "subject.composition": "cosmic-cosmic"
+    },
+    "seed": 67
+  },
+
   "coloring-toddler-bear-and-balloon": {
     "engine": "childrens-coloring-book",
     "description": "Toddler-age Mo Willems minimal — curious bear cub holding a balloon, big eyes, big white space.",

@@ -1602,7 +1602,18 @@ button:focus-visible {
   letter-spacing: 0.5px;
   text-transform: none;
   white-space: pre;   /* preserve leading spaces for "  ↳" nesting */
+  display: block;
 }
+.action-label { line-height: 1.2; }
+.action-hint {
+  font: 10px/1.3 var(--font-ui);
+  color: var(--muted);
+  opacity: 0.65;
+  margin-top: 3px;
+  letter-spacing: 0.3px;
+  white-space: normal;
+}
+.action.active .action-hint { color: var(--green-dim); opacity: 0.9; }
 .action:hover { background: var(--surface); color: var(--ink-bright); border-color: var(--line); transform: none; }
 .action.active {
   background: var(--surface);
@@ -2031,6 +2042,14 @@ form { padding: 18px; display: grid; gap: 14px; }
   letter-spacing: 0;
   text-transform: none;
   margin-top: 6px;
+}
+.field-hint {
+  font: 11px/1.4 var(--font-ui);
+  color: var(--muted);
+  letter-spacing: 0;
+  text-transform: none;
+  margin: 2px 0 6px 0;
+  opacity: 0.85;
 }
 
 /* Collapsed "power-user knobs" expander — wraps rarely-touched fields. */
@@ -2585,14 +2604,14 @@ const groups = [
     ["gallery", "All renders + ratings"],
   ]],
   ["CREATE", [
-    ["create",                   "▸ Create (any style — recommended)"],
-    ["thumbnail",                "▸ Thumbnail (preset + headline overlay)"],
-    ["engine",                   "▸ Other engine (advanced)"],
-    ["coloring-page",            "  · Children's coloring book (legacy direct page)"],
-    ["mandala-art-page",         "  · Mandala art (legacy direct page)"],
-    ["indian-folk-page",         "  · Indian folk art (legacy direct page)"],
-    ["stylized-cinematic-page",  "  · Stylized cinematic (legacy direct page)"],
-    ["tshirt-page",              "  · Minimalist T-shirt design (legacy direct page)"],
+    ["create",                   "▸ Create (any style — recommended)", "start here — pick a Style, get the right engine"],
+    ["thumbnail",                "▸ Thumbnail (preset + headline overlay)", "branded thumbnail + headline composited via PIL"],
+    ["engine",                   "▸ Other engine (advanced)", "raw engine + recipe picker — bypasses the Style helper"],
+    ["coloring-page",            "  · Children's coloring book", "B&W ink line art, 8.5×11 coloring page"],
+    ["mandala-art-page",         "  · Mandala art", "radial mandala raster, sacred geometry"],
+    ["indian-folk-page",         "  · Indian folk art", "Madhubani / Tanjore / Pahari / Ravi-Varma panels"],
+    ["stylized-cinematic-page",  "  · Stylized cinematic", "Tartakovsky / Mignola / Ghibli illustration"],
+    ["tshirt-page",              "  · Minimalist T-shirt design", "simplified marks for apparel screen-print (not dense panels)"],
   ]],
   ["EDIT", [
     ["edit",                     "Edit / restyle an existing image"],
@@ -2686,7 +2705,7 @@ const specs = {
     title: "Create — any style",
     fields: [
       // ── Always visible ──────────────────────────────────────────────────
-      {name:"style",        label:"Style", type:"select", options:"styleOptions", value:"childrens-coloring-book"},
+      {name:"style",        label:"What are you making? (Style)", type:"select", options:"styleOptions", value:"childrens-coloring-book", hint:"Pick the OUTPUT you want. T-shirt is for simplified apparel marks only — pick Indian folk art for dense Madhubani panels."},
       {name:"subject",      label:"Prompt — describe what you want", type:"textarea", required:true, value:"a curious bear cub holding a balloon in a meadow"},
       {name:"recipe",       label:"Recipe (optional — prefills prompt + style details)", type:"select", options:"recipesAll"},
       {name:"from_image",   label:"Source image (optional — img2img / Kontext restyle)", type:"path"},
@@ -3452,11 +3471,11 @@ function optionsFor(field) {
   if (field.options === "mtBorders") return ["none", "hairline-badge"].map(v => ({value:v, label:v}));
   // Unified Create page style picker — maps to engine names used by build_command.
   if (field.options === "styleOptions") return [
-    {value:"childrens-coloring-book", label:"Children's coloring book — B&W line-art for kids"},
-    {value:"mandala-art",             label:"Mandala art — ornamental B&W line-art"},
-    {value:"indian-classical",        label:"Indian folk art — Madhubani / Warli / Tanjore / Pahari (colored)"},
-    {value:"stylized-cinematic",      label:"Stylized cinematic — Tartakovsky / Mignola / McQuarrie / Ghibli"},
-    {value:"minimalist-tshirt",        label:"Minimalist T-shirt — screen-print apparel marks"},
+    {value:"indian-classical",        label:"📜 Poster / wall art (Madhubani, Tanjore, Pahari, Ravi-Varma) — dense traditional panels"},
+    {value:"stylized-cinematic",      label:"🎬 Cinematic illustration (Tartakovsky, Mignola, Ghibli) — hero scenes, posters"},
+    {value:"mandala-art",             label:"🌀 Mandala / sacred geometry — ornamental B&W or colored"},
+    {value:"childrens-coloring-book", label:"📖 Children's coloring book — B&W line-art for kids"},
+    {value:"minimalist-tshirt",       label:"👕 T-shirt graphic (apparel only) — simplified mark, transparent BG, NOT for dense panels"},
   ];
   // Recipes filtered to currently-selected Style on the unified Create page.
   if (field.options === "recipesAll") {
@@ -3501,11 +3520,21 @@ function renderActions() {
     root.appendChild(h);
     const list = document.createElement("div");
     list.className = "action-list";
-    for (const [id, label] of rows) {
+    for (const row of rows) {
+      const [id, label, hint] = row;
       const btn = document.createElement("button");
       btn.type = "button";
       btn.className = "action" + (id === state.action ? " active" : "");
-      btn.textContent = label;
+      const top = document.createElement("div");
+      top.className = "action-label";
+      top.textContent = label;
+      btn.appendChild(top);
+      if (hint) {
+        const sub = document.createElement("div");
+        sub.className = "action-hint";
+        sub.textContent = hint;
+        btn.appendChild(sub);
+      }
       btn.onclick = () => { state.action = id; renderActions(); renderForm(); };
       list.appendChild(btn);
     }
@@ -3576,6 +3605,12 @@ function fieldElement(field) {
     labelRow.appendChild(info);
   }
   wrap.appendChild(labelRow);
+  if (field.hint) {
+    const hint = document.createElement("div");
+    hint.className = "field-hint";
+    hint.textContent = field.hint;
+    wrap.appendChild(hint);
+  }
   if (field.type === "textarea") {
     const el = document.createElement("textarea");
     el.id = `field-${field.name}`;

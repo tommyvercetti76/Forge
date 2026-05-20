@@ -333,7 +333,7 @@ class NoirCinematographyEngine(Engine):
     }
     # Noir cinema is widescreen film stills — 16:9 landscape is the genre's
     # native canvas (Roger Deakins, Gordon Willis, Conrad Hall framings).
-    default_runtime = {"model": "dev", "steps": 28, "guidance": 4.5,
+    default_runtime = {"model": "dev", "steps": 20, "guidance": 4.5,
                        "width": 1280, "height": 720}
     engine_negatives: ClassVar[tuple[str, ...]] = (
         # Wrong register
@@ -664,7 +664,7 @@ class WildlifePhotorealismEngine(Engine):
     }
     # Wildlife photography: 16:9 landscape matches Nat Geo / BBC Earth /
     # editorial-wildlife framing. Environment + subject share the frame.
-    default_runtime = {"model": "dev", "steps": 30, "guidance": 3.5,
+    default_runtime = {"model": "dev", "steps": 22, "guidance": 3.5,
                        "width": 1280, "height": 720}
     engine_negatives: ClassVar[tuple[str, ...]] = (
         # Wrong register
@@ -949,7 +949,7 @@ class ImpressionistPaintingEngine(Engine):
     # Impressionist works are typically 4:3 (Monet's Water Lilies, Renoir
     # gatherings) — gives the brushwork room without forcing widescreen
     # cropping of vertical compositions.
-    default_runtime = {"model": "dev", "steps": 30, "guidance": 4.0,
+    default_runtime = {"model": "dev", "steps": 22, "guidance": 4.0,
                        "width": 1280, "height": 960}
     engine_negatives: ClassVar[tuple[str, ...]] = (
         # Wrong medium
@@ -1241,7 +1241,7 @@ class IndianClassicalEngine(Engine):
     # Indian classical art is typically PORTRAIT — Madhubani panels, Tanjore
     # rectangular gilt vertical, Pahari miniatures all use 4:5-ish portrait.
     # Ravi Varma oleographs are 3:4. 1024×1280 = 4:5, the average.
-    default_runtime = {"model": "dev", "steps": 32, "guidance": 5.0,
+    default_runtime = {"model": "dev", "steps": 22, "guidance": 5.0,
                        "width": 1024, "height": 1280}
     engine_negatives: ClassVar[tuple[str, ...]] = (
         # Wrong aesthetic / register
@@ -1897,7 +1897,7 @@ class ChildrensColoringBookEngine(Engine):
     # Coloring book pages are PORTRAIT (8.5×11). 1024×1280 lets FLUX
     # frame the subject as a coloring page rather than putting a small
     # subject in the center of a landscape canvas with huge whitespace.
-    default_runtime = {"model": "dev", "steps": 32, "guidance": 5.5,
+    default_runtime = {"model": "dev", "steps": 22, "guidance": 5.5,
                        "width": 1024, "height": 1280}
     # Two strong Coloring-Book LoRAs in our curation — picking prithivMLmods
     # (the more-downloaded, conservative one). The engine's prompt already
@@ -2355,7 +2355,7 @@ class MandalaArtEngine(Engine):
     # Mandalas are radial — SQUARE aspect is the natural canvas. 1280×1280
     # keeps the mandala centered without elongation. Same total pixel count
     # as default landscape (~0.92 MP) so memory + time stay equal.
-    default_runtime = {"model": "dev", "steps": 32, "guidance": 8.5,
+    default_runtime = {"model": "dev", "steps": 22, "guidance": 8.5,
                        "width": 1280, "height": 1280}
     engine_negatives: ClassVar[tuple[str, ...]] = (
         # Color / shading killers
@@ -2996,7 +2996,7 @@ class StylizedCinematicEngine(Engine):
     # Stylized cinematic = animation cel / concept-art / painterly stills.
     # 16:9 widescreen matches Tartakovsky / Mignola / McQuarrie / Ghibli
     # framing conventions.
-    default_runtime = {"model": "dev", "steps": 28, "guidance": 4.5,
+    default_runtime = {"model": "dev", "steps": 20, "guidance": 4.5,
                        "width": 1280, "height": 720}
     engine_negatives: ClassVar[tuple[str, ...]] = (
         # Wrong register
