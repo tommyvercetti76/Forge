@@ -20,7 +20,9 @@ sys.path.insert(0, str(ROOT / "bin"))
 
 from madhubani_qc import (
     AUTO_CHECK_COUNT,
+    _extract_zone_label,
     _score_anatomy,
+    _score_decoration_zone_presence,
     _score_eye_character,
     _score_text_leak,
 )
@@ -132,13 +134,112 @@ class EyeCharacterCheckTests(unittest.TestCase):
         self.assertLessEqual(result["luminance_max"] - result["luminance_min"], 80)
 
 
+class ZoneLabelExtractionTests(unittest.TestCase):
+    def test_simple_label(self) -> None:
+        self.assertEqual(_extract_zone_label("FOREHEAD: tikka medallion"), "FOREHEAD")
+
+    def test_compound_label_uses_anchor(self) -> None:
+        # "FOUR LEG ANKLETS" → ANKLETS (the semantic anchor, last uppercase
+        # token that maps to a bbox region).
+        self.assertEqual(_extract_zone_label("FOUR LEG ANKLETS: vermillion bands"), "ANKLETS")
+
+    def test_parenthetical_qualifier_stripped(self) -> None:
+        self.assertEqual(
+            _extract_zone_label("BODY INTERIOR (most important): stripe panels"),
+            "BODY",
+        )
+
+    def test_missing_colon_returns_none(self) -> None:
+        self.assertIsNone(_extract_zone_label("just a free-text description"))
+
+    def test_lowercase_only_returns_none(self) -> None:
+        self.assertIsNone(_extract_zone_label("body: only lowercase head"))
+
+
+class DecorationZonePresenceTests(unittest.TestCase):
+    def _setup_subject(self):
+        from madhubani_qc import _srgb_to_lab
+        height = width = 256
+        # Walnut-brown body rectangle filling most of the canvas.
+        rgb = np.full((height, width, 3), [245, 239, 227], dtype=np.uint8)  # cream bg
+        rgb[40:220, 50:206] = [90, 58, 31]  # walnut body
+        # Subject mask: everywhere not the cream bg.
+        subject_mask = np.zeros((height, width), dtype=bool)
+        subject_mask[40:220, 50:206] = True
+        lab = _srgb_to_lab(rgb)
+        bbox = (50, 40, 205, 219)  # (x0, y0, x1, y1)
+        return rgb, lab, subject_mask, bbox
+
+    def test_pass_when_all_zones_decorated(self) -> None:
+        rgb, lab, subject_mask, bbox = self._setup_subject()
+        from madhubani_qc import _srgb_to_lab
+        # Drop bright decoration into each zone (forehead/body/anklets).
+        rgb[45:60, 130:180] = [232, 119, 34]   # FOREHEAD (top of bbox, right-ish)
+        rgb[100:160, 80:170] = [200, 80, 50]   # BODY (middle)
+        rgb[200:218, 70:190] = [61, 125, 61]   # ANKLETS (bottom)
+        lab = _srgb_to_lab(rgb)
+        result = _score_decoration_zone_presence(
+            lab, subject_mask, bbox,
+            expected_body_fill="#5a3a1f",
+            required_decoration_zones=[
+                "FOREHEAD: tikka medallion in vermillion",
+                "BODY: stripe panels with lotus medallions",
+                "FOUR LEG ANKLETS: vermillion + leaf-green bands",
+            ],
+        )
+        self.assertTrue(result["pass"])
+        self.assertEqual(result["zones_pass"], 3)
+        self.assertEqual(result["zones_fail"], 0)
+
+    def test_fail_when_body_zone_bare(self) -> None:
+        rgb, lab, subject_mask, bbox = self._setup_subject()
+        from madhubani_qc import _srgb_to_lab
+        # Only decorate the forehead — body and anklets stay walnut-brown.
+        rgb[45:60, 130:180] = [232, 119, 34]
+        lab = _srgb_to_lab(rgb)
+        result = _score_decoration_zone_presence(
+            lab, subject_mask, bbox,
+            expected_body_fill="#5a3a1f",
+            required_decoration_zones=[
+                "FOREHEAD: tikka medallion",
+                "BODY: stripe panels with lotus medallions",
+                "FOUR LEG ANKLETS: vermillion bands",
+            ],
+        )
+        self.assertFalse(result["pass"])
+        self.assertEqual(result["zones_pass"], 1)
+        self.assertEqual(result["zones_fail"], 2)
+
+    def test_skips_unknown_labels_gracefully(self) -> None:
+        rgb, lab, subject_mask, bbox = self._setup_subject()
+        result = _score_decoration_zone_presence(
+            lab, subject_mask, bbox,
+            expected_body_fill="#5a3a1f",
+            required_decoration_zones=["GLORP: nonsense label not in the bbox map"],
+        )
+        # Zero known-label zones → overall passes informationally.
+        self.assertTrue(result["pass"])
+        self.assertEqual(result["zones_skipped"], 1)
+
+    def test_passes_informationally_when_no_zones_declared(self) -> None:
+        rgb, lab, subject_mask, bbox = self._setup_subject()
+        result = _score_decoration_zone_presence(
+            lab, subject_mask, bbox,
+            expected_body_fill="#5a3a1f",
+            required_decoration_zones=None,
+        )
+        self.assertTrue(result["pass"])
+        self.assertTrue(result.get("informational_only"))
+
+
 class AutoCheckCountTests(unittest.TestCase):
     def test_constant_matches_active_checks(self) -> None:
         # Bumped 7 → 8 in Phase-B B.1 (2026-05-20) when pattern_density landed.
-        # The auto-check rubric now scores: color_floor, corners_clean,
-        # subject_centered, body_fill, anatomy, text_leak, eye_character,
-        # pattern_density. Anatomy is informational (disabled_by_default).
-        self.assertEqual(AUTO_CHECK_COUNT, 8)
+        # Bumped 8 → 9 in Phase-B B.2 (2026-05-20) when decoration_zone_presence
+        # landed. Rubric: color_floor, corners_clean, subject_centered,
+        # body_fill, anatomy, text_leak, eye_character, pattern_density,
+        # decoration_zone_presence. Anatomy is informational.
+        self.assertEqual(AUTO_CHECK_COUNT, 9)
 
 
 if __name__ == "__main__":

@@ -113,13 +113,14 @@ def _write_auto_qc(png_path: Path, animal: dict, pose_slug: str) -> dict[str, An
         expected_body_fill=animal.get("body_fill_color"),
         body_type=animal.get("body_type"),
         decoration_density=animal.get("decoration_density"),
+        required_decoration_zones=animal.get("required_decoration_zones"),
     )
     qc.update({
         "animal_slug": animal["slug"],
         "pose": pose_slug,
         "body_type": animal.get("body_type"),
         "decoration_density_target": animal.get("decoration_density"),
-        "quality_lift_contract": "8 of 8 Madhubani rubric checks (incl. pattern_density Phase-B) are machine-gated before promotion",
+        "quality_lift_contract": "9 of 9 Madhubani rubric checks (incl. pattern_density + decoration_zone_presence Phase-B) are machine-gated before promotion",
     })
     qc_path = _qc_path_for_png(png_path)
     _atomic_write_json(qc_path, qc)

@@ -17,7 +17,7 @@ import numpy as np
 from PIL import Image
 
 
-AUTO_CHECK_COUNT = 8
+AUTO_CHECK_COUNT = 9
 
 # Phase-B (2026-05-20, B.1) — pattern_density target bands per decoration_density.
 # Measured: fraction of subject-mask pixels NOT close to the body_fill_color
@@ -32,6 +32,45 @@ PATTERN_DENSITY_BANDS: dict[str, tuple[float, float]] = {
     "ornate":   (0.40, 0.60),
     "maximal":  (0.55, 0.75),
 }
+
+# Phase-B (2026-05-20, B.2) — decoration_zone_presence.
+# Maps the leading uppercase token of a `required_decoration_zone` entry
+# (e.g. "FOREHEAD: tikka medallion") to a fractional bbox slice
+# (y_top_frac, y_bot_frac, x_left_frac, x_right_frac) within the subject's
+# bounding box. v1 heuristic: vertical band by body region. Refine per
+# body-type / pose orientation later.
+ZONE_BBOX_FRACTIONS: dict[str, tuple[float, float, float, float]] = {
+    "FOREHEAD":     (0.00, 0.18, 0.55, 1.00),
+    "FACE":         (0.05, 0.30, 0.50, 1.00),
+    "HEAD":         (0.00, 0.30, 0.50, 1.00),
+    "EAR":          (0.00, 0.18, 0.60, 0.95),
+    "EYE":          (0.05, 0.25, 0.55, 0.95),
+    "CREST":        (0.00, 0.15, 0.40, 0.90),
+    "MANE":         (0.00, 0.35, 0.40, 1.00),
+    "NECK":         (0.15, 0.40, 0.45, 0.90),
+    "SHOULDER":     (0.25, 0.50, 0.30, 0.75),
+    "TUSKS":        (0.15, 0.35, 0.65, 1.00),
+    "NOSE":         (0.10, 0.30, 0.70, 1.00),
+    "ARMOR":        (0.30, 0.70, 0.15, 0.80),
+    "BACK":         (0.20, 0.50, 0.20, 0.80),
+    "BODY":         (0.30, 0.70, 0.15, 0.85),
+    "WING":         (0.20, 0.70, 0.10, 0.75),
+    "TAIL":         (0.30, 0.85, 0.00, 0.30),
+    "HAUNCH":       (0.35, 0.65, 0.10, 0.45),
+    "HIP":          (0.35, 0.60, 0.10, 0.50),
+    "LEG":          (0.60, 1.00, 0.10, 0.90),
+    "ANKLETS":      (0.75, 1.00, 0.10, 0.90),
+    "FEET":         (0.85, 1.00, 0.20, 0.90),
+    "GROUND":       (0.92, 1.00, 0.00, 1.00),
+    "SADDLE":       (0.25, 0.55, 0.20, 0.75),
+}
+# Per-zone decoration fraction floor (≥ this fraction of the zone's
+# subject-mask pixels must carry decoration). v1: a single threshold;
+# refine per-zone (e.g. tail must be very dense for peacock) later.
+ZONE_DECORATION_FLOOR = 0.10
+# A render passes decoration_zone_presence if ≥ this fraction of the
+# declared zones (with a known label) show decoration above the floor.
+ZONE_PASS_FRACTION = 0.66
 
 # Body-type → expected leg-pillar count under _score_anatomy. Body types
 # absent from the map skip the leg-count check entirely (pass by definition).
@@ -375,6 +414,141 @@ def _score_pattern_density(
     }
 
 
+def _extract_zone_label(zone_string: str) -> str | None:
+    """Pull the leading uppercase token before the colon from a
+    required_decoration_zone entry. "FOREHEAD: tikka medallion" → "FOREHEAD".
+    "FOUR LEG ANKLETS: vermillion bands" → "ANKLETS" (last word, the
+    semantic anchor). Returns None if no usable label can be derived.
+    """
+    if ":" not in zone_string:
+        return None
+    head = zone_string.split(":", 1)[0].strip()
+    if not head:
+        return None
+    # Strip parenthetical qualifiers like "(most important)" and "(signature)".
+    if "(" in head:
+        head = head.split("(", 1)[0].strip()
+    tokens = [t for t in head.split() if t.isupper() and len(t) >= 2]
+    if not tokens:
+        return None
+    # The last uppercase token usually carries the semantic anchor:
+    # "FOUR LEG ANKLETS" → ANKLETS; "BODY INTERIOR" → INTERIOR (no match,
+    # falls back to first); "SHOULDER + HIP" → HIP. We try the last,
+    # then walk back to find the first token present in ZONE_BBOX_FRACTIONS.
+    for token in reversed(tokens):
+        normalized = token.rstrip(",+/").upper()
+        if normalized in ZONE_BBOX_FRACTIONS:
+            return normalized
+    # Fall back to first token even if not in the map — caller treats
+    # unknown labels as "skipped" rather than failing.
+    return tokens[0].rstrip(",+/").upper()
+
+
+def _score_decoration_zone_presence(
+    lab: np.ndarray,
+    subject_mask: np.ndarray,
+    bbox: tuple[int, int, int, int],
+    expected_body_fill: str | None,
+    required_decoration_zones: list[str] | None,
+) -> dict[str, Any]:
+    """Phase-B B.2 (2026-05-20) — decoration_zone_presence verification.
+
+    For each required_decoration_zone declared on the animal entry,
+    extract the zone label, look up its bbox sub-region, and measure
+    whether that sub-region carries decoration (Δ-E LAB > 14 from
+    body_fill_color). A zone passes if ≥ ZONE_DECORATION_FLOOR of the
+    sub-region's subject pixels are decorated. The check overall passes
+    if ≥ ZONE_PASS_FRACTION of known-label zones pass.
+
+    Zones with labels not in ZONE_BBOX_FRACTIONS are reported as skipped
+    and do not affect the pass count — better to under-report than to
+    falsely fail when our label map is incomplete.
+
+    Returns:
+      {pass, zones_pass, zones_fail, zones_skipped, zones, ...}
+    """
+    if not required_decoration_zones:
+        return {
+            "pass": True,
+            "reason": "no required_decoration_zones declared on animal",
+            "informational_only": True,
+        }
+    if subject_mask is None or not subject_mask.any():
+        return {
+            "pass": False,
+            "reason": "no subject mask detected",
+            "zones": [],
+        }
+    if not expected_body_fill:
+        return {
+            "pass": True,
+            "reason": "expected_body_fill not provided; zone-presence skipped",
+            "informational_only": True,
+        }
+    x0, y0, x1, y1 = bbox
+    bbox_height = max(1, y1 - y0 + 1)
+    bbox_width = max(1, x1 - x0 + 1)
+    body_rgb = _hex_to_rgb(expected_body_fill)
+    body_distance = _delta_e(lab, body_rgb)
+    decorated = subject_mask & (body_distance > 14)
+
+    zone_results: list[dict[str, Any]] = []
+    pass_count = 0
+    fail_count = 0
+    skipped_count = 0
+    for zone_string in required_decoration_zones:
+        label = _extract_zone_label(zone_string)
+        bbox_frac = ZONE_BBOX_FRACTIONS.get(label) if label else None
+        if bbox_frac is None:
+            zone_results.append({
+                "zone": zone_string[:60],
+                "label": label,
+                "skipped": True,
+                "reason": "no bbox mapping for label",
+            })
+            skipped_count += 1
+            continue
+        yt, yb, xl, xr = bbox_frac
+        ry0 = y0 + int(yt * bbox_height)
+        ry1 = y0 + int(yb * bbox_height)
+        rx0 = x0 + int(xl * bbox_width)
+        rx1 = x0 + int(xr * bbox_width)
+        zone_subject = subject_mask[ry0:ry1, rx0:rx1]
+        zone_decorated = decorated[ry0:ry1, rx0:rx1]
+        denom = max(1, int(zone_subject.sum()))
+        fraction = float(zone_decorated.sum() / denom)
+        zone_pass = fraction >= ZONE_DECORATION_FLOOR
+        zone_results.append({
+            "zone": zone_string[:60],
+            "label": label,
+            "pass": zone_pass,
+            "decoration_fraction": round(fraction, 4),
+            "floor": ZONE_DECORATION_FLOOR,
+        })
+        if zone_pass:
+            pass_count += 1
+        else:
+            fail_count += 1
+
+    scored = pass_count + fail_count
+    pass_fraction = (pass_count / scored) if scored else 0.0
+    overall_pass = scored == 0 or pass_fraction >= ZONE_PASS_FRACTION
+    return {
+        "pass": overall_pass,
+        "zones_pass": pass_count,
+        "zones_fail": fail_count,
+        "zones_skipped": skipped_count,
+        "pass_fraction": round(pass_fraction, 4),
+        "required_pass_fraction": ZONE_PASS_FRACTION,
+        "zones": zone_results,
+        "reason": (
+            f"{pass_count}/{scored} known zones decorated (need {ZONE_PASS_FRACTION:.0%})"
+            if scored
+            else "all zones unmapped; informational"
+        ),
+    }
+
+
 def score_madhubani_png(
     png_path: Path,
     *,
@@ -382,6 +556,7 @@ def score_madhubani_png(
     expected_body_fill: str | None = None,
     body_type: str | None = None,
     decoration_density: str | None = None,
+    required_decoration_zones: list[str] | None = None,
 ) -> dict[str, Any]:
     palette = _load_palette(palette_path)
     rules = palette.get("rules", {})
@@ -469,6 +644,10 @@ def score_madhubani_png(
     pattern_density_check = _score_pattern_density(
         rgb, lab, subject_mask, expected_body_fill, decoration_density,
     )
+    zone_presence_check = _score_decoration_zone_presence(
+        lab, subject_mask, (x0, y0, x1, y1), expected_body_fill,
+        required_decoration_zones,
+    )
 
     checks = {
         "color_floor": {
@@ -503,6 +682,7 @@ def score_madhubani_png(
         "text_leak": text_leak_check,
         "eye_character": eye_character_check,
         "pattern_density": pattern_density_check,
+        "decoration_zone_presence": zone_presence_check,
     }
     # Active checks are everything except those marked disabled_by_default —
     # disabled checks still run and report (informational), but they do not
