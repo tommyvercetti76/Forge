@@ -58,6 +58,22 @@
 
 </div>
 
+<br>
+
+<div align="center">
+
+**v5 signature-features uplift** — six species moved from 0→1 user-PASS in v5 vs v4 after the emphatic species-identity prompt clauses were added. These are the v5 winners.
+
+<img src="docs/gallery/v5_sloth-bear.jpg"       width="170" alt="v5 sloth bear">
+<img src="docs/gallery/v5_indian-wild-boar.jpg" width="170" alt="v5 wild boar">
+<img src="docs/gallery/v5_peacock.jpg"          width="170" alt="v5 peacock">
+<img src="docs/gallery/v5_gaur.jpg"             width="170" alt="v5 gaur">
+<img src="docs/gallery/v5_nilgai.jpg"           width="170" alt="v5 nilgai">
+<img src="docs/gallery/v5_indian-leopard.jpg"   width="170" alt="v5 Indian leopard">
+<br><sub><i>v5 batch with <code>species_features.json</code> emphatic NON-NEGOTIABLE clauses. Quality is honest-mid — see <a href="docs/FORGE_RESET_2026-05-22.md">FORGE_RESET</a> for the unflinching diagnosis of why prompt+LoRA-only methodology plateaued, and what's next (photo-init Kontext img2img).</i></sub>
+
+</div>
+
 ---
 
 **Forge is an eval-driven local ML workstation for image generation, with domain schemas, automated
