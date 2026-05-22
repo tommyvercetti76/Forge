@@ -5,87 +5,242 @@
   "version": "3.0.0",
   "_parks_canonical_source": "../parks/_index.json",
   "established": "2026-05-20",
-
   "body_types": {
     "heavy-quadruped": {
-      "anatomy_rules": ["pillar-broad legs proportional to body mass", "broad shoulders and hips", "sturdy hocks and fetlocks", "all four legs clearly visible in side profile"],
-      "applies_to": ["elephant", "rhino", "hippo", "gaur", "buffalo", "wild-water-buffalo"]
+      "anatomy_rules": [
+        "pillar-broad legs proportional to body mass",
+        "broad shoulders and hips",
+        "sturdy hocks and fetlocks",
+        "all four legs clearly visible in side profile"
+      ],
+      "applies_to": [
+        "elephant",
+        "rhino",
+        "hippo",
+        "gaur",
+        "buffalo",
+        "wild-water-buffalo"
+      ]
     },
     "lean-predator": {
-      "anatomy_rules": ["body fill is saturated color not silhouette", "all four legs visible as distinct outlines", "proportional muscular limbs", "long tail in natural position"],
-      "applies_to": ["tiger", "leopard", "snow-leopard", "lion", "cheetah", "wolf", "hyena", "dhole", "indian-fox"]
+      "anatomy_rules": [
+        "body fill is saturated color not silhouette",
+        "all four legs visible as distinct outlines",
+        "proportional muscular limbs",
+        "long tail in natural position"
+      ],
+      "applies_to": [
+        "tiger",
+        "leopard",
+        "snow-leopard",
+        "lion",
+        "cheetah",
+        "wolf",
+        "hyena",
+        "dhole",
+        "indian-fox"
+      ]
     },
     "lean-quadruped": {
-      "anatomy_rules": ["slender legs proportional to body", "tail visible", "alert head carriage", "all four legs clearly visible"],
-      "applies_to": ["deer", "blackbuck", "gazelle", "nilgai", "sambar", "chital", "barasingha", "chinkara", "nilgiri-tahr", "bharal", "wildebeest", "springbok", "okapi"]
+      "anatomy_rules": [
+        "slender legs proportional to body",
+        "tail visible",
+        "alert head carriage",
+        "all four legs clearly visible"
+      ],
+      "applies_to": [
+        "deer",
+        "blackbuck",
+        "gazelle",
+        "nilgai",
+        "sambar",
+        "chital",
+        "barasingha",
+        "chinkara",
+        "nilgiri-tahr",
+        "bharal",
+        "wildebeest",
+        "springbok",
+        "okapi"
+      ]
     },
     "serpent": {
-      "anatomy_rules": ["continuous coil, no broken segments", "hood proportional to body where applicable", "calm closed mouth as default", "no extended tongue unless action pose"],
-      "applies_to": ["cobra", "naga"]
+      "anatomy_rules": [
+        "continuous coil, no broken segments",
+        "hood proportional to body where applicable",
+        "calm closed mouth as default",
+        "no extended tongue unless action pose"
+      ],
+      "applies_to": [
+        "cobra",
+        "naga"
+      ]
     },
     "bird": {
-      "anatomy_rules": ["two sturdy legs on visible perch or ground line", "head and tail proportional", "wing visible against body in resting pose", "characteristic feather pattern simplified into folk panels"],
-      "applies_to": ["peacock", "hornbill", "great-indian-hornbill", "kingfisher", "owl", "parrot", "eagle", "hummingbird", "crane", "sarus-crane", "flamingo", "greater-flamingo", "stork", "painted-stork", "duck", "macaw", "roller", "kite", "hoopoe", "indian-skimmer"]
+      "anatomy_rules": [
+        "two sturdy legs on visible perch or ground line",
+        "head and tail proportional",
+        "wing visible against body in resting pose",
+        "characteristic feather pattern simplified into folk panels"
+      ],
+      "applies_to": [
+        "peacock",
+        "hornbill",
+        "great-indian-hornbill",
+        "kingfisher",
+        "owl",
+        "parrot",
+        "eagle",
+        "hummingbird",
+        "crane",
+        "sarus-crane",
+        "flamingo",
+        "greater-flamingo",
+        "stork",
+        "painted-stork",
+        "duck",
+        "macaw",
+        "roller",
+        "kite",
+        "hoopoe",
+        "indian-skimmer"
+      ]
     },
     "primate": {
-      "anatomy_rules": ["almond eyes NOT round cartoon eyes", "proportional hands and feet", "tail length appropriate to species", "expressive face with intentional gravity"],
-      "applies_to": ["macaque", "langur", "golden-langur", "nilgiri-langur", "gorilla"]
+      "anatomy_rules": [
+        "almond eyes NOT round cartoon eyes",
+        "proportional hands and feet",
+        "tail length appropriate to species",
+        "expressive face with intentional gravity"
+      ],
+      "applies_to": [
+        "macaque",
+        "langur",
+        "golden-langur",
+        "nilgiri-langur",
+        "gorilla"
+      ]
     },
     "armored-quadruped": {
-      "anatomy_rules": ["body plates simplified into folk panels", "all four legs visible", "characteristic tail visible"],
-      "applies_to": ["pangolin", "indian-pangolin", "aardvark"]
+      "anatomy_rules": [
+        "body plates simplified into folk panels",
+        "all four legs visible",
+        "characteristic tail visible"
+      ],
+      "applies_to": [
+        "pangolin",
+        "indian-pangolin",
+        "aardvark"
+      ]
     },
     "cetacean": {
-      "anatomy_rules": ["streamlined body silhouette", "fluke and dorsal fin visible", "water ground-mark of folk dots instead of land"],
-      "applies_to": ["dolphin", "irrawaddy-dolphin", "whale-shark"]
+      "anatomy_rules": [
+        "streamlined body silhouette",
+        "fluke and dorsal fin visible",
+        "water ground-mark of folk dots instead of land"
+      ],
+      "applies_to": [
+        "dolphin",
+        "irrawaddy-dolphin",
+        "whale-shark"
+      ]
     },
     "stocky-omnivore": {
-      "anatomy_rules": ["heavy bulky body with low ground clearance", "shorter sturdy legs proportional to thick torso", "shaggy or coarse fur translated into folk linework where applicable", "all four legs visible in side profile", "blunt snout proportional to head mass"],
-      "applies_to": ["sloth-bear", "indian-wild-boar", "pygmy-hog"]
+      "anatomy_rules": [
+        "heavy bulky body with low ground clearance",
+        "shorter sturdy legs proportional to thick torso",
+        "shaggy or coarse fur translated into folk linework where applicable",
+        "all four legs visible in side profile",
+        "blunt snout proportional to head mass"
+      ],
+      "applies_to": [
+        "sloth-bear",
+        "indian-wild-boar",
+        "pygmy-hog"
+      ]
     },
     "small-mammal": {
-      "anatomy_rules": ["compact body with proportional short-to-medium legs", "all four legs clearly visible in side profile", "tail visible and held in natural species-appropriate position", "head and ears proportional to body size, never enlarged into chibi/cute caricature", "almond eye not round cartoon eye"],
-      "applies_to": ["indian-fox", "indian-pangolin", "indian-grey-mongoose", "indian-giant-squirrel", "red-panda"]
+      "anatomy_rules": [
+        "compact body with proportional short-to-medium legs",
+        "all four legs clearly visible in side profile",
+        "tail visible and held in natural species-appropriate position",
+        "head and ears proportional to body size, never enlarged into chibi/cute caricature",
+        "almond eye not round cartoon eye"
+      ],
+      "applies_to": [
+        "indian-fox",
+        "indian-pangolin",
+        "indian-grey-mongoose",
+        "indian-giant-squirrel",
+        "red-panda"
+      ]
     },
     "arboreal-primate": {
-      "anatomy_rules": ["disproportionately long arms longer than legs", "suspensory or upright bipedal posture characteristic of gibbons", "no tail (true ape) OR long balancing tail per species", "almond eye not round cartoon eye", "hands and feet rendered with clear digit count translated into folk linework"],
-      "applies_to": ["hoolock-gibbon"]
+      "anatomy_rules": [
+        "disproportionately long arms longer than legs",
+        "suspensory or upright bipedal posture characteristic of gibbons",
+        "no tail (true ape) OR long balancing tail per species",
+        "almond eye not round cartoon eye",
+        "hands and feet rendered with clear digit count translated into folk linework"
+      ],
+      "applies_to": [
+        "hoolock-gibbon"
+      ]
     },
     "crocodilian": {
-      "anatomy_rules": ["long horizontal body with low ground clearance", "four short laterally-splayed legs all visible", "long muscular tail equal to or longer than body", "scaled back ridge translated into rhythmic folk dorsal panels", "elongated snout with closed-mouth default, teeth NOT shown unless action pose"],
-      "applies_to": ["saltwater-crocodile"]
+      "anatomy_rules": [
+        "long horizontal body with low ground clearance",
+        "four short laterally-splayed legs all visible",
+        "long muscular tail equal to or longer than body",
+        "scaled back ridge translated into rhythmic folk dorsal panels",
+        "elongated snout with closed-mouth default, teeth NOT shown unless action pose"
+      ],
+      "applies_to": [
+        "saltwater-crocodile"
+      ]
     }
   },
-
   "series": {
     "indian": {
       "display_name": "Indian Wildlife (National Parks)",
       "color_anchor_preference": "indigo-or-walnut",
-      "seed_block": [8200, 18400],
-      "_seed_block_v2_range": [8200, 12300],
-      "_seed_block_v3_range": [12500, 18400],
+      "seed_block": [
+        8200,
+        18400
+      ],
+      "_seed_block_v2_range": [
+        8200,
+        12300
+      ],
+      "_seed_block_v3_range": [
+        12500,
+        18400
+      ],
       "parks_covered": 25,
       "species_per_park": 4,
       "species_per_park_split": "2 mammals + 2 birds (with 3 documented exceptions: chilika lagoon, marine-kutch coastal, keoladeo bird-sanctuary — see brand/parks/_index.json _2_2_rule_breakers)"
     }
   },
-
   "_deprecated_series": {
     "_note": "The v1.0.0 catalog split entries across three series — Indian / African / Bird — at seed ranges 8200-8999, 9000-9799, 9800-10599. v2.0.0 collapses everything into a single 'indian' series focused on the 20-national-park catalog. The african and bird series are preserved here only as historical record; new entries should NOT use these series tags.",
     "african": {
       "display_name": "African Wildlife (DEPRECATED in v2.0.0)",
       "color_anchor_preference": "walnut-or-forest-teal",
-      "seed_block": [9000, 9799]
+      "seed_block": [
+        9000,
+        9799
+      ]
     },
     "bird": {
       "display_name": "Birds (DEPRECATED as standalone series in v2.0.0 — birds are now embedded inside the indian series, e.g. sarus-crane, painted-stork, indian-skimmer)",
       "color_anchor_preference": "varies-by-species",
-      "seed_block": [9800, 10599]
+      "seed_block": [
+        9800,
+        10599
+      ]
     }
   },
-
   "_parks_block_removed_in_v3": "Park metadata previously embedded here has been moved to brand/parks/_index.json (canonical source). Per-animal `park` field below is the join key. Audit (2026-05-22) confirmed no code reads the old parks block — only individual animals' `park` slug field. See `_parks_canonical_source` above.",
-
   "animals": [
     {
       "slug": "tiger",
@@ -997,8 +1152,588 @@
       "decoration_density": "ornate",
       "iucn_status": "Least Concern",
       "seed_block_start": 12300
+    },
+    {
+      "slug": "asian-elephant-nagarhole",
+      "display_name": "Asian Elephant (Nagarhole)",
+      "binomial": "Elephas maximus indicus",
+      "series": "indian",
+      "park": "nagarhole",
+      "park_state": "Karnataka",
+      "ordinal_in_series": 42,
+      "body_type": "heavy-quadruped",
+      "body_fill_color": "#1a2952",
+      "body_fill_color_name": "deep-indigo",
+      "signature_features": "curved trunk with visible ring lines, large rounded ear (smaller than African elephant), small males-only tusks proportional and not exaggerated, almond eye, broad triangular shoulder, sturdy pillar legs. Nagarhole is known for the largest tuskers in southern India crossing the Kabini river — the bull elephant silhouette should read as ROBUST and MATURE, not juvenile.",
+      "signature_action": "trumpeting trunk raised high with mouth open in call, body striding forward, water droplets scattering",
+      "rest_pose_for_species": "standing relaxed in shade with trunk curled, one rear leg lifted in characteristic at-rest pose",
+      "anatomy_must_include": "1 trunk (curved), 4 pillar legs all visible, large fan-like ear in side profile, small proportional tusks (not exaggerated giant tusks, not absent), almond eye not round cartoon eye. Elephant must be unambiguously ASIAN not African (smaller rounded ears, twin-domed forehead).",
+      "required_decoration_zones": [
+        "FOREHEAD: vermillion + saffron tikka medallion between the eyes",
+        "EAR: large folk-pattern panel filling the visible ear with leaf-vein motifs and dot bands in vermillion + leaf-green",
+        "NECK: multi-color folk collar (indigo / saffron / vermillion / leaf-green)",
+        "BODY: ornate decorated saddle blanket with central lotus medallion + leaf-vein border, vermillion + saffron palette",
+        "FOUR LEG ANKLETS: vermillion + saffron + cream folk bands at each ankle",
+        "TUSKS: 2 small visible tusks (proportional), tip-decorated with simple gold-leaf accent",
+        "TAIL: short with folk-tufted tip"
+      ],
+      "anatomical_count_constraints": {
+        "legs_visible": "4 (all four legs as distinct outlines)",
+        "eyes_visible": "1 in side profile",
+        "ears": "1 large visible (side profile shows near ear)",
+        "tusks": "2 small visible (don't omit; don't exaggerate)",
+        "trunk": "1 curved",
+        "tail": "1 short tufted"
+      },
+      "decoration_density": "ornate",
+      "iucn_status": "Endangered",
+      "conservation_note": "Nagarhole holds one of the highest Asian elephant densities in India (~1300 individuals) and is contiguous with Bandipur, Mudumalai, and Wayanad as the Nilgiri Biosphere — the largest elephant landscape in South Asia.",
+      "seed_block_start": 12500
+    },
+    {
+      "slug": "dhole-nagarhole",
+      "display_name": "Dhole (Nagarhole)",
+      "binomial": "Cuon alpinus",
+      "series": "indian",
+      "park": "nagarhole",
+      "park_state": "Karnataka",
+      "ordinal_in_series": 43,
+      "body_type": "lean-predator",
+      "body_fill_color": "#5a3a1f",
+      "body_fill_color_name": "walnut-brown",
+      "signature_features": "russet-red coat (NOT brown wolf, NOT yellow jackal), white chest blaze, bushy BLACK-TIPPED tail (the defining diagnostic), rounded fox-like ears, slim athletic body. The black tail tip is the single most identifying feature — without it the rendering reads as a generic canine.",
+      "signature_action": "running at full gait with body extended low, tail streaming horizontal, ears pinned back, head forward",
+      "rest_pose_for_species": "alert seated upright with forelimbs straight, ears erect and forward, tail wrapped around feet",
+      "anatomy_must_include": "russet-red walnut-brown body fill NOT generic gray/brown wolf coloring; BUSHY tail with DISTINCT BLACK TIP (mandatory diagnostic); white chest blaze; rounded ears (not pointed wolf ears); almond eye not round cartoon eye. The result must be unambiguously a DHOLE (Asian wild dog) and not a generic wolf, fox, or jackal.",
+      "required_decoration_zones": [
+        "FOREHEAD: small vermillion tikka medallion between the eyes",
+        "NECK: folk collar band with chest blaze rendered as a folk-cream panel",
+        "BODY: ornate flank rosettes and shoulder medallions in saffron + vermillion + leaf-green",
+        "FOUR LEG ANKLETS: vermillion + leaf-green folk bands at each leg joint",
+        "TAIL: black-tipped tail with the body portion patterned in folk rings, the tip remaining solid black as the diagnostic anchor",
+        "EAR INTERIOR: folk-dot pattern in vermillion + saffron"
+      ],
+      "anatomical_count_constraints": {
+        "legs_visible": "4 (all four legs as distinct outlines)",
+        "eyes_visible": "1 in side profile (almond eye)",
+        "ears": "2 rounded erect",
+        "tail": "1 bushy with BLACK TIP (mandatory)",
+        "mouth": "closed (no tongue, no fangs in default poses)"
+      },
+      "decoration_density": "ornate",
+      "iucn_status": "Endangered",
+      "conservation_note": "Nagarhole + Bandipur landscape is one of the world's most important dhole strongholds — fewer than 2500 mature individuals globally; pack-hunting apex predator that shares the niche of African painted dogs but is endemic to Asia.",
+      "seed_block_start": 12600
+    },
+    {
+      "slug": "asian-fairy-bluebird",
+      "display_name": "Asian Fairy-bluebird",
+      "binomial": "Irena puella",
+      "series": "indian",
+      "park": "nagarhole",
+      "park_state": "Karnataka",
+      "ordinal_in_series": 44,
+      "body_type": "bird",
+      "body_fill_color": "#1a2952",
+      "body_fill_color_name": "deep-indigo",
+      "bird_subtype": "songbird",
+      "signature_features": "male is brilliant ULTRAMARINE BLUE on back, crown, and tail-coverts CONTRASTING with VELVET-BLACK underparts (face, throat, breast, belly, wings) — this two-tone blue-and-black is the unmistakable diagnostic; thick black bill; red iris ring; stocky perching posture. Female is duller blue-green throughout (less commonly rendered).",
+      "signature_action": "perched on a fruiting fig branch with crest slightly raised and head turned to display the brilliant blue contrast against black",
+      "rest_pose_for_species": "perched compact on a horizontal branch with feet folded, tail slightly fanned, body settled",
+      "anatomy_must_include": "brilliant BLUE upper parts ABRUPTLY meeting BLACK lower parts (sharp two-tone boundary along the flank-line — not a gradient); proportional stout black bill; red eye ring; both legs visible on the perch; the bird MUST read as a perched canopy frugivore, not a flycatcher or songbird with washed coloring.",
+      "required_decoration_zones": [
+        "CROWN: ultramarine-blue folk crest with small saffron + vermillion dot accents",
+        "BACK: folk-pattern blue panel with leaf-vein motifs in indigo",
+        "BREAST + BELLY (the black zone): the black is preserved as the body anchor with vermillion + saffron rosette accents at the chest center only — do NOT overdecorate the velvet black",
+        "WINGS: folk feather bars in indigo + leaf-green",
+        "TAIL: short folk bars with ultramarine + saffron tips",
+        "FEET: both perched, with vermillion ankle bands"
+      ],
+      "anatomical_count_constraints": {
+        "legs_visible": "2 (both on visible perch)",
+        "eyes_visible": "1 in side profile (with red iris ring)",
+        "wings": "1 visible in resting profile",
+        "tail": "1 short fanned"
+      },
+      "decoration_density": "ornate",
+      "iucn_status": "Least Concern",
+      "conservation_note": "Western Ghats endemic canopy fruit-eater; Nagarhole's mixed deciduous forest with fig trees is prime habitat. Considered a sentinel species for healthy primary-forest canopies.",
+      "seed_block_start": 12700
+    },
+    {
+      "slug": "white-bellied-woodpecker",
+      "display_name": "White-bellied Woodpecker",
+      "binomial": "Dryocopus javensis",
+      "series": "indian",
+      "park": "nagarhole",
+      "park_state": "Karnataka",
+      "ordinal_in_series": 45,
+      "body_type": "bird",
+      "body_fill_color": "#1a2952",
+      "body_fill_color_name": "deep-indigo",
+      "bird_subtype": "woodpecker",
+      "signature_features": "crow-sized black body with brilliant CRIMSON CREST (full erect in males; smaller in females), pure WHITE BELLY contrasting with the all-black back/wings, strong chisel-shaped pale bill, stiff pointed tail used as a brace against tree trunks. The CRIMSON CREST + WHITE BELLY + BLACK BODY combination is unmistakable.",
+      "signature_action": "clinging vertically to a tree trunk in characteristic woodpecker brace — feet gripping bark, stiff tail pressed down for support, head drawn back ready to strike",
+      "rest_pose_for_species": "clinging upright on a vertical trunk with body parallel to the bark, head turned to one side",
+      "anatomy_must_include": "BRILLIANT CRIMSON CREST on top of head (not just red — saturated vermillion-crimson); WHITE BELLY clearly visible against the body's black-indigo (mandatory contrast); chisel pale bill (NOT a curved or hooked bill); 2 feet gripping vertical bark in zygodactyl arrangement (2 toes forward, 2 back); stiff pointed tail tip used as brace.",
+      "required_decoration_zones": [
+        "CREST: full erect crimson crest with small saffron + vermillion tip accents",
+        "FACE: black with a small vermillion folk-dot at the eye and around the bill base",
+        "BACK + WINGS: black-indigo with folk feather bars in indigo + leaf-green",
+        "WHITE BELLY: the white is preserved as a cream-paper panel with minimal vermillion folk-dot border (do NOT overdecorate the white)",
+        "TAIL: stiff folk-bar pattern with leaf-vein motifs",
+        "FEET: zygodactyl grip rendered as folk pattern at the trunk attachment"
+      ],
+      "anatomical_count_constraints": {
+        "legs_visible": "2 (both gripping trunk)",
+        "eyes_visible": "1 in side profile",
+        "wings": "1 visible in profile",
+        "tail": "1 stiff pointed used as brace",
+        "crest": "1 erect crimson (mandatory)"
+      },
+      "decoration_density": "ornate",
+      "iucn_status": "Vulnerable",
+      "conservation_note": "Largest woodpecker in the Indian subcontinent; declining due to old-growth forest loss. Nagarhole's mature dipterocarp forests host one of the densest populations in southern India.",
+      "seed_block_start": 12800
+    },
+    {
+      "slug": "himalayan-blue-sheep",
+      "display_name": "Himalayan Blue Sheep (Bharal)",
+      "binomial": "Pseudois nayaur",
+      "series": "indian",
+      "park": "great-himalayan",
+      "park_state": "Himachal Pradesh",
+      "ordinal_in_series": 46,
+      "body_type": "lean-quadruped",
+      "body_fill_color": "#1a2952",
+      "body_fill_color_name": "deep-indigo",
+      "signature_features": "slate-blue-gray coat (the 'blue' in the name) with characteristic WHITE BELLY and white flanks; males have HEAVY BACKWARD-CURVING SMOOTH HORNS that sweep outward and then back; females have small upright spike horns. Black stripe down each flank separating the gray back from the white belly. Compact muscular body adapted to high-altitude cliffs.",
+      "signature_action": "leaping across a rocky cliff with all four feet airborne, head and horns leading, body extended in mid-bound",
+      "rest_pose_for_species": "standing alert on a rocky outcrop with all four feet planted, head turned to scan, horns visible in profile",
+      "anatomy_must_include": "HEAVY backward-curving horns (males only — sweep outward then back, like ibex but smaller and smoother); SLATE-BLUE-GRAY coat NOT plain brown or tan; WHITE BELLY clearly demarcated; BLACK FLANK STRIPE separating gray back from white belly (mandatory); 4 legs all visible; the result must read as BHARAL (bluish-gray cliff-dweller) not generic sheep or generic ibex.",
+      "required_decoration_zones": [
+        "FOREHEAD: vermillion tikka between the horns",
+        "HORNS: gold-leaf accent along the ridge with folk-band rings at base",
+        "NECK: folk collar with leaf-vein motifs in indigo + leaf-green",
+        "BODY: ornate flank rosettes in vermillion + saffron, the black flank stripe rendered as a folk-pattern band, the white belly preserved as a cream panel with vermillion border",
+        "FOUR LEG ANKLETS: vermillion + saffron folk bands",
+        "TAIL: short with folk-tufted tip"
+      ],
+      "anatomical_count_constraints": {
+        "legs_visible": "4 (all four legs as distinct outlines)",
+        "eyes_visible": "1 in side profile",
+        "horns": "2 backward-curving (males) or 2 small upright (females) — default males",
+        "ears": "2 small alert",
+        "tail": "1 short tufted"
+      },
+      "decoration_density": "ornate",
+      "iucn_status": "Least Concern",
+      "conservation_note": "Primary prey of the snow leopard across the Himalayan range; the Great Himalayan National Park hosts one of the densest bharal populations in Himachal Pradesh, supporting the park's resident snow leopards.",
+      "seed_block_start": 12900
+    },
+    {
+      "slug": "himalayan-brown-bear",
+      "display_name": "Himalayan Brown Bear",
+      "binomial": "Ursus arctos isabellinus",
+      "series": "indian",
+      "park": "great-himalayan",
+      "park_state": "Himachal Pradesh",
+      "ordinal_in_series": 47,
+      "body_type": "stocky-omnivore",
+      "body_fill_color": "#5a3a1f",
+      "body_fill_color_name": "walnut-brown",
+      "signature_features": "PALE CREAM-BUFF colored shaggy coat (lighter than other brown bear subspecies — sometimes called 'isabelline brown bear'), prominent shoulder hump, broad heavy head, small rounded ears, long claws visible on forepaws. The unusually PALE color is the key diagnostic — much lighter than Himalayan black bear (which is solid black with white chest crescent).",
+      "signature_action": "rearing up on hind legs with forepaws raised forward, head tilted up, the full pale shaggy coat visible",
+      "rest_pose_for_species": "reclining on the ground with body curled, head resting on forepaws, hump prominent",
+      "anatomy_must_include": "PALE CREAM-BUFF walnut-brown body fill (NOT dark chocolate brown, NOT black — this is the LIGHTEST brown bear subspecies); shaggy coat texture rendered as folk-line pattern; PROMINENT SHOULDER HUMP; long forepaw claws visible; small rounded ears; the result must read as HIMALAYAN BROWN BEAR not Himalayan black bear, not grizzly, not American black bear.",
+      "required_decoration_zones": [
+        "FOREHEAD: vermillion tikka medallion between the small ears",
+        "SHOULDER HUMP: ornate folk medallion in vermillion + saffron at the hump peak",
+        "NECK: folk collar in indigo + leaf-green",
+        "BODY: shaggy coat rendered as parallel folk-line texture across back and flanks, with ornament zones at hip and shoulder",
+        "FOUR LEG ANKLETS: vermillion + saffron folk bands",
+        "CLAWS: gold-leaf accent on forepaw claws",
+        "TAIL: short stubby with folk-cream tip"
+      ],
+      "anatomical_count_constraints": {
+        "legs_visible": "4 (all four legs as distinct outlines)",
+        "eyes_visible": "1 in side profile",
+        "ears": "2 small rounded",
+        "claws_visible_on_forepaw": "5 long",
+        "tail": "1 short stubby"
+      },
+      "decoration_density": "ornate",
+      "iucn_status": "Endangered",
+      "conservation_note": "One of India's most endangered large mammals — fewer than 200 individuals remain in the western Himalaya. The Great Himalayan National Park is one of only 5-6 viable populations remaining, alongside Hemis and Nanda Devi.",
+      "seed_block_start": 13000
+    },
+    {
+      "slug": "western-tragopan",
+      "display_name": "Western Tragopan",
+      "binomial": "Tragopan melanocephalus",
+      "series": "indian",
+      "park": "great-himalayan",
+      "park_state": "Himachal Pradesh",
+      "ordinal_in_series": 48,
+      "body_type": "bird",
+      "body_fill_color": "#1a2952",
+      "body_fill_color_name": "deep-indigo",
+      "bird_subtype": "pheasant-grouse",
+      "signature_features": "male is spectacular CRIMSON BODY covered in WHITE SPOTS each ringed with BLACK (the defining pattern), bright BLUE FACIAL SKIN around the eye and throat, BLUE GULAR WATTLE (throat-skin lappet that inflates during courtship), short black tail. Female is dull mottled brown for camouflage. The male's crimson-with-white-spots is unmistakable and the rarest 'jewel pheasant' of the western Himalaya.",
+      "signature_action": "male in courtship display with gular wattle fully inflated and exposed, head tilted forward, white-spotted breast puffed",
+      "rest_pose_for_species": "standing on the forest floor with body horizontal, head turned to display blue facial skin in profile",
+      "anatomy_must_include": "CRIMSON body fill with WHITE SPOTS each ringed with BLACK (the ringed-spot pattern is THE diagnostic — never plain spots, never plain crimson); BLUE FACIAL SKIN around eye; BLUE GULAR WATTLE at throat; both feet visible on ground; short tail not long; the result must read as WESTERN TRAGOPAN not satyr tragopan (which has different head pattern) and not any common pheasant.",
+      "required_decoration_zones": [
+        "CROWN: black with small crimson + saffron folk-dot accents",
+        "FACE: blue facial skin preserved as a clean blue panel with vermillion eye ring",
+        "GULAR WATTLE: blue lappet rendered as a folk-blue panel with leaf-vein motifs",
+        "BREAST + BODY: the crimson body covered in WHITE-ON-BLACK-RING dots translated to folk-art language as ornament dots — each a small white circle with a folk-black border ring, scattered rhythmically across the entire body",
+        "WINGS: folk feather bars in indigo + crimson + black",
+        "TAIL: short black with folk-bar tip",
+        "FEET: both visible with vermillion ankle bands"
+      ],
+      "anatomical_count_constraints": {
+        "legs_visible": "2 (both on ground)",
+        "eyes_visible": "1 in side profile",
+        "wings": "1 visible in profile",
+        "tail": "1 short",
+        "gular_wattle": "1 (the inflatable throat skin — must be visible in display pose)"
+      },
+      "decoration_density": "ornate",
+      "iucn_status": "Vulnerable",
+      "conservation_note": "Endemic to the western Himalaya; fewer than 5000 mature individuals. The Great Himalayan National Park's UNESCO inscription (2014) specifically cites the western tragopan as a flagship species — it survives almost nowhere else in India.",
+      "seed_block_start": 13100
+    },
+    {
+      "slug": "cheer-pheasant",
+      "display_name": "Cheer Pheasant",
+      "binomial": "Catreus wallichii",
+      "series": "indian",
+      "park": "great-himalayan",
+      "park_state": "Himachal Pradesh",
+      "ordinal_in_series": 49,
+      "body_type": "bird",
+      "body_fill_color": "#1a2952",
+      "body_fill_color_name": "deep-indigo",
+      "bird_subtype": "pheasant-grouse",
+      "signature_features": "long-tailed pheasant with pale BUFF-AND-DARK-BROWN BARRED plumage, distinctive forward-bending CREST of dark feathers, slim athletic build, very LONG TAIL streaming behind (in males up to 18 inches), pink-red facial skin around the eye. Quieter coloring than other Himalayan pheasants — its character is in the LONG TAIL and CREST, not bright color.",
+      "signature_action": "running uphill through grass with body lowered, long tail streaming behind, crest swept back in motion",
+      "rest_pose_for_species": "standing alert on a grassy slope with long tail draped behind, crest erect, head turned",
+      "anatomy_must_include": "VERY LONG TAIL (about as long as the body itself — must be prominent and streaming, not stubby); FORWARD-BENDING CREST of dark feathers; PALE-BUFF-AND-BROWN BARRED body pattern (NOT solid brown, NOT crimson); pink-red facial skin around eye; both feet visible; the result must read as CHEER PHEASANT (long-tailed runner) not a common partridge or generic pheasant.",
+      "required_decoration_zones": [
+        "CREST: dark folk-feather crest with leaf-vein motifs",
+        "FACE: pink-red facial skin rendered as a clean folk panel with vermillion eye ring",
+        "BREAST: folk-bar pattern in buff + indigo with rhythmic dot accents",
+        "BODY: barred pattern translated as folk-stripes in indigo + saffron alternating across back and flanks",
+        "WINGS: folk feather bars in indigo + leaf-green",
+        "LONG TAIL: the very long tail rendered as a sequence of folk-pattern bands running from base to tip — the tail length is the defining visual element",
+        "FEET: both visible with vermillion ankle bands"
+      ],
+      "anatomical_count_constraints": {
+        "legs_visible": "2",
+        "eyes_visible": "1 in side profile",
+        "wings": "1 visible in profile",
+        "tail": "1 VERY LONG (mandatory — ~body length or longer)",
+        "crest": "1 forward-bending dark feather tuft"
+      },
+      "decoration_density": "ornate",
+      "iucn_status": "Vulnerable",
+      "conservation_note": "Highly threatened Himalayan endemic; declined sharply due to grass-slope habitat loss and hunting. The Great Himalayan National Park is one of the strongest remaining populations in Himachal Pradesh.",
+      "seed_block_start": 13200
+    },
+    {
+      "slug": "red-panda-khangchendzonga",
+      "display_name": "Red Panda (Khangchendzonga)",
+      "binomial": "Ailurus fulgens",
+      "series": "indian",
+      "park": "khangchendzonga",
+      "park_state": "Sikkim",
+      "ordinal_in_series": 50,
+      "body_type": "small-mammal",
+      "body_fill_color": "#5a3a1f",
+      "body_fill_color_name": "walnut-brown",
+      "signature_features": "RUSSET-RED coat (warm coppery-red, not orange, not brown), distinctive RINGED BUSHY TAIL (alternating russet and pale cream bands), WHITE FACE MASK with russet eye-streaks (tear-line markings from eyes down the cheeks), BLACK LEGS contrasting against the russet body, large rounded ears with white fur insides. Cat-sized but moves with arboreal agility.",
+      "signature_action": "perched on a bamboo branch with body curled, ringed tail wrapped around the branch for balance, face turned to show the white mask",
+      "rest_pose_for_species": "curled on a bamboo branch with ringed tail tucked around body, head resting on forepaws",
+      "anatomy_must_include": "RUSSET-RED walnut-brown body fill; RINGED BUSHY TAIL with ALTERNATING russet-and-cream bands (mandatory — the rings are THE diagnostic, never a plain tail); WHITE FACE MASK with russet TEAR-LINE markings from eye down cheek; BLACK LEGS (mandatory contrast); rounded ears with white interior; the result must read as RED PANDA, never confused with a cat, fox, or raccoon.",
+      "required_decoration_zones": [
+        "FOREHEAD: small vermillion tikka between the white-masked eyes",
+        "EAR INTERIOR: folk-cream panel with small leaf-vein motifs",
+        "FACE MASK: the white face mask preserved as a cream folk panel with russet tear-line accents",
+        "BODY: russet flank rosettes in vermillion + saffron with leaf-vein border motifs",
+        "RINGED TAIL: the alternating russet-and-cream bands rendered as folk-color rings — each band decorated with simple dot accents, the rings themselves being the primary ornament",
+        "BLACK LEGS: the four black legs rendered with vermillion + saffron anklets at each ankle"
+      ],
+      "anatomical_count_constraints": {
+        "legs_visible": "4 (all black)",
+        "eyes_visible": "1 in side profile (in white face mask)",
+        "ears": "2 rounded with white interior",
+        "tail": "1 LONG BUSHY with ALTERNATING RUSSET-AND-CREAM RINGS (mandatory)",
+        "tear_lines": "russet markings from eyes down cheeks (mandatory)"
+      },
+      "decoration_density": "ornate",
+      "iucn_status": "Endangered",
+      "conservation_note": "Sikkim's state animal. Khangchendzonga National Park hosts one of the densest red panda populations in India, sharing habitat with the Himalayan black bear and clouded leopard. Population fewer than 10,000 globally.",
+      "seed_block_start": 13300
+    },
+    {
+      "slug": "himalayan-tahr",
+      "display_name": "Himalayan Tahr",
+      "binomial": "Hemitragus jemlahicus",
+      "series": "indian",
+      "park": "khangchendzonga",
+      "park_state": "Sikkim",
+      "ordinal_in_series": 51,
+      "body_type": "lean-quadruped",
+      "body_fill_color": "#5a3a1f",
+      "body_fill_color_name": "walnut-brown",
+      "signature_features": "stocky goat-relative with HEAVY SHAGGY MANE around shoulders and chest (males have full mane down to forelegs), short backward-curving horns (both sexes, smaller in females), reddish-brown coat in summer becoming darker shaggy chestnut in winter, robust short legs adapted to cliff-faces. The DENSE SHOULDER MANE is the visual signature — the silhouette should read as MANED and SHAGGY, not smooth like a deer.",
+      "signature_action": "climbing a steep cliff face with all four hooves planted on small ledges, head turned uphill, mane fluffed by wind",
+      "rest_pose_for_species": "standing on a precipitous ledge with all four legs planted, head lowered slightly to graze, mane settled around shoulders",
+      "anatomy_must_include": "HEAVY SHAGGY MANE around shoulders and chest in males (mandatory — without it the silhouette reads as a generic goat); short backward-curving horns; walnut-brown / russet body fill (NOT plain brown like a deer); short stocky legs (NOT long like a deer); cloven hooves; the result must read as HIMALAYAN TAHR (cliff-dwelling maned wild goat-relative), not bharal, not goral, not domestic goat.",
+      "required_decoration_zones": [
+        "FOREHEAD: vermillion tikka between the horns",
+        "HORNS: gold-leaf accent along the ridge with folk-band rings at base",
+        "MANE (most important): the shaggy shoulder mane rendered as a dense folk-line pattern flowing from the neck down to the forelegs, in vermillion + saffron + leaf-green parallel lines",
+        "BODY: ornate flank rosettes in vermillion + saffron, the shaggy texture continued as folk-line pattern down the body",
+        "FOUR LEG ANKLETS: vermillion + saffron folk bands",
+        "TAIL: short with folk-cream tip"
+      ],
+      "anatomical_count_constraints": {
+        "legs_visible": "4 (all four legs, stocky short)",
+        "eyes_visible": "1 in side profile",
+        "horns": "2 short backward-curving",
+        "ears": "2 small alert",
+        "mane": "1 dense shoulder mane (mandatory in males)",
+        "tail": "1 short"
+      },
+      "decoration_density": "ornate",
+      "iucn_status": "Near Threatened",
+      "conservation_note": "Native to the southern Himalayan slopes from Khangchendzonga westward; declined due to habitat fragmentation and hunting. Khangchendzonga National Park's mid-elevation forests harbor a strong population.",
+      "seed_block_start": 13400
+    },
+    {
+      "slug": "satyr-tragopan",
+      "display_name": "Satyr Tragopan",
+      "binomial": "Tragopan satyra",
+      "series": "indian",
+      "park": "khangchendzonga",
+      "park_state": "Sikkim",
+      "ordinal_in_series": 52,
+      "body_type": "bird",
+      "body_fill_color": "#1a2952",
+      "body_fill_color_name": "deep-indigo",
+      "bird_subtype": "pheasant-grouse",
+      "signature_features": "male is RICH CRIMSON BODY covered with WHITE SPOTS each finely ringed with BLACK and a soft GRAY HALO (denser and more 'jewel-like' than the western tragopan); BLUE FACIAL SKIN around the eye and on cheeks; BLUE GULAR WATTLE at throat with TURQUOISE-AND-RED PATTERN visible when inflated; two SMALL BLUE HORN-LIKE FLESHY PROTRUSIONS on the crown during display (giving the genus its Greek 'horned-faun' name). Eastern Himalayan endemic, distinct from the western tragopan.",
+      "signature_action": "full courtship display: gular wattle inflated showing turquoise-and-red pattern, fleshy 'horns' erect on crown, body posture forward with white-spotted breast prominent",
+      "rest_pose_for_species": "perched on a low branch with body horizontal, head turned to display the blue face and gular markings",
+      "anatomy_must_include": "CRIMSON body with WHITE-RINGED-IN-BLACK SPOTS (mandatory ringed-spot pattern); BLUE FACIAL SKIN; INFLATED BLUE GULAR WATTLE with turquoise-and-red interior pattern during display; FLESHY CROWN 'HORNS' visible in display poses; both feet visible; the result must read as SATYR TRAGOPAN specifically (the eastern Himalayan species with denser spotting and the wattle pattern), distinct from western tragopan.",
+      "required_decoration_zones": [
+        "CROWN: black with two small fleshy 'horns' visible in display, accented with vermillion + saffron",
+        "FACE: blue facial skin preserved as a clean folk panel with vermillion eye ring",
+        "GULAR WATTLE: blue lappet with TURQUOISE-AND-RED FOLK PATTERN — the wattle pattern is itself a Madhubani-vocabulary ornament with concentric folk forms",
+        "BREAST + BODY: crimson body with WHITE-IN-BLACK-RING dots scattered rhythmically — the ringed-spot pattern is itself folk-ornament-friendly",
+        "WINGS: folk feather bars in indigo + crimson",
+        "TAIL: short black with folk-bar tip",
+        "FEET: both visible with vermillion ankle bands"
+      ],
+      "anatomical_count_constraints": {
+        "legs_visible": "2",
+        "eyes_visible": "1 in side profile",
+        "wings": "1 visible in profile",
+        "tail": "1 short",
+        "gular_wattle": "1 (inflated in display pose)",
+        "fleshy_horns": "2 small fleshy crown protrusions (in display pose)"
+      },
+      "decoration_density": "ornate",
+      "iucn_status": "Near Threatened",
+      "conservation_note": "Eastern Himalayan endemic — Sikkim's most beautiful pheasant. Khangchendzonga's mid-altitude rhododendron forests are critical habitat; population threatened by habitat loss and trapping for the cage-bird trade.",
+      "seed_block_start": 13500
+    },
+    {
+      "slug": "snow-partridge",
+      "display_name": "Snow Partridge",
+      "binomial": "Lerwa lerwa",
+      "series": "indian",
+      "park": "khangchendzonga",
+      "park_state": "Sikkim",
+      "ordinal_in_series": 53,
+      "body_type": "bird",
+      "body_fill_color": "#1a2952",
+      "body_fill_color_name": "deep-indigo",
+      "bird_subtype": "pheasant-grouse",
+      "signature_features": "stocky high-altitude partridge with BLACK-AND-WHITE FINELY BARRED plumage across most of the body (a delicate barring pattern, NOT large blotches), a distinctive CHESTNUT BREAST BAND below the throat, red-pink legs and bill, compact rounded silhouette adapted to high-altitude wind. The fine-barred BLACK-AND-WHITE pattern + chestnut breast band is the unmistakable combination.",
+      "signature_action": "running across rocky alpine ground with body lowered and head forward, wings tucked tight",
+      "rest_pose_for_species": "standing alert on a snowy rock with both feet planted, head turned, body compact",
+      "anatomy_must_include": "FINELY BLACK-AND-WHITE BARRED body plumage (NOT large blotches, NOT solid color — the FINE BARRING is the diagnostic); distinctive CHESTNUT BREAST BAND below the throat (mandatory diagnostic); RED-PINK legs and bill (specific to this species); compact rounded body; the result must read as SNOW PARTRIDGE specifically, not a chukar or generic partridge.",
+      "required_decoration_zones": [
+        "CROWN + HEAD: black-and-white barred pattern translated as folk-stripe ornament",
+        "THROAT: cream folk panel with chestnut breast-band rendered as a vermillion + saffron folk-band",
+        "BREAST + BODY: the finely barred plumage rendered as a sequence of parallel folk-stripes in indigo + cream, with rhythmic dot accents",
+        "WINGS: folk feather bars in indigo + leaf-green",
+        "TAIL: short barred with folk-pattern tip",
+        "FEET: red-pink folk-color rendered as vermillion ankle bands"
+      ],
+      "anatomical_count_constraints": {
+        "legs_visible": "2",
+        "eyes_visible": "1 in side profile",
+        "wings": "1 visible in profile",
+        "tail": "1 short barred",
+        "breast_band": "1 chestnut band (mandatory diagnostic)"
+      },
+      "decoration_density": "ornate",
+      "iucn_status": "Least Concern",
+      "conservation_note": "Specialist of the highest alpine zone (3500-5500 m) of the Himalaya; Khangchendzonga's alpine meadows above the treeline are core habitat. Range-restricted to the Himalayan and trans-Himalayan zone.",
+      "seed_block_start": 13600
+    },
+    {
+      "slug": "saltwater-crocodile-bhitarkanika",
+      "display_name": "Saltwater Crocodile (Bhitarkanika)",
+      "binomial": "Crocodylus porosus",
+      "series": "indian",
+      "park": "bhitarkanika",
+      "park_state": "Odisha",
+      "ordinal_in_series": 54,
+      "body_type": "crocodilian",
+      "body_fill_color": "#1f4a3f",
+      "body_fill_color_name": "forest-teal",
+      "signature_features": "world's largest living reptile — MASSIVE ARMORED BODY with heavy dorsal scutes in distinct rows (the armored plates are themselves folk-pattern-ready), PALE YELLOWISH-TAN UNDERBELLY contrasting with the dark green-teal back, broad muscular tail nearly as long as the body, long crocodilian snout with visible interlocking teeth, prominent ridged brow over the yellow vertical-slit eye. Bulkier and longer-snouted than mugger crocodile.",
+      "signature_action": "lunging from water with body half-emerged, tail whipping the surface into scattering folk-dots, jaw open to display teeth",
+      "rest_pose_for_species": "basking on a mud bank with body fully extended, head turned slightly, tail laid flat behind, mouth slightly open in thermoregulation",
+      "anatomy_must_include": "ARMORED DORSAL SCUTES in distinct rows along back and tail (mandatory diagnostic — never a smooth-skinned crocodilian); PALE YELLOWISH-TAN BELLY contrasting with dark forest-teal back; LONG broad-based snout (NOT the shorter mugger snout, NOT the narrow gharial snout); 4 legs all visible; long broad tail nearly body-length; yellow vertical-slit eye visible under ridged brow; the result must read as SALTWATER CROCODILE (largest, longest-snouted, most-armored) not mugger and not gharial.",
+      "required_decoration_zones": [
+        "FOREHEAD + BROW: ridged brow rendered as folk-line pattern with vermillion eye ring around the yellow vertical-slit eye",
+        "DORSAL SCUTES (most important): each armor plate along the back rendered as an individual folk-pattern panel — alternating leaf-vein motifs, rosettes, dot-clusters in vermillion + saffron + leaf-green",
+        "NECK FOLDS: armored neck collar in indigo + leaf-green",
+        "FOUR LEGS: leg armor rendered as folk scale-pattern, with vermillion ankle bands at each foot",
+        "TAIL SCUTES: continuation of dorsal scute pattern as folk-rings along the tail",
+        "BELLY: pale yellowish-tan underbelly preserved as a folk-cream panel with vermillion border at the body-belly seam",
+        "JAW: long jaw with folk-pattern teeth visible as small ornament-rhythm marks"
+      ],
+      "anatomical_count_constraints": {
+        "legs_visible": "4",
+        "eyes_visible": "1 in side profile (yellow vertical-slit)",
+        "tail": "1 long broad (~body length)",
+        "dorsal_scute_rows": "multiple rows from neck to tail tip (mandatory armor pattern)",
+        "snout": "1 long broad-based (NOT short, NOT narrow)"
+      },
+      "decoration_density": "ornate",
+      "iucn_status": "Least Concern",
+      "conservation_note": "Bhitarkanika hosts India's largest saltwater crocodile population (~1700 individuals, including individuals over 6m long). The world's largest verified saltwater crocodile in captivity (over 7m) came from this delta. Project Crocodile (1975) launched its conservation here.",
+      "seed_block_start": 13700
+    },
+    {
+      "slug": "spotted-deer-bhitarkanika",
+      "display_name": "Spotted Deer (Bhitarkanika)",
+      "binomial": "Axis axis",
+      "series": "indian",
+      "park": "bhitarkanika",
+      "park_state": "Odisha",
+      "ordinal_in_series": 55,
+      "body_type": "lean-quadruped",
+      "body_fill_color": "#1a2952",
+      "body_fill_color_name": "deep-indigo",
+      "signature_features": "reddish-brown coat (which the Madhubani body fill anchors to deep-indigo) covered with PROMINENT WHITE SPOTS arranged in rows along the body (the spots are the unmistakable diagnostic — Axis axis = the spotted axis), white belly, branched antlers in males (three tines: brow + main + back), slender athletic build with white throat patch. Smaller and more delicate than sambar.",
+      "signature_action": "leaping mid-stride with all four feet airborne, antlers held forward, body extended in classic bounding leap",
+      "rest_pose_for_species": "standing alert with head turned and ears forward, all four feet planted, antlers visible in profile",
+      "anatomy_must_include": "WHITE SPOTS arranged in HORIZONTAL ROWS along the body (mandatory — never random scatter, never absent — these are THE defining feature); WHITE BELLY clearly demarcated; branched antlers in males (3 tines); white throat patch; slender body NOT bulky like sambar; the result must read as CHITAL (the spotted deer of India) and never confused with hog deer, barasingha, or sambar.",
+      "required_decoration_zones": [
+        "FOREHEAD: vermillion tikka between the antlers",
+        "ANTLERS: gold-leaf accent along the tines with folk-band rings at base",
+        "NECK: folk collar in indigo + leaf-green with white throat patch rendered as a folk-cream panel",
+        "BODY: the WHITE SPOTS preserved as a rhythmic ornament — each spot a small white circle with vermillion or saffron folk-dot center, arranged in horizontal rows along the back and flanks; the spots are themselves the primary ornament",
+        "WHITE BELLY: preserved as a cream folk panel with vermillion border at the body-belly seam",
+        "FOUR LEG ANKLETS: vermillion + saffron folk bands",
+        "TAIL: short with white folk-cream underside visible in motion"
+      ],
+      "anatomical_count_constraints": {
+        "legs_visible": "4 (slender)",
+        "eyes_visible": "1 in side profile (large dark)",
+        "antlers": "2 branched with 3 tines each (males) or no antlers (females)",
+        "ears": "2 large upright",
+        "white_spots": "many in horizontal rows (mandatory pattern)",
+        "tail": "1 short"
+      },
+      "decoration_density": "ornate",
+      "iucn_status": "Least Concern",
+      "conservation_note": "Bhitarkanika's mangrove edges and grassland margins host a healthy chital population, which is the primary prey base for the park's tigers (occasionally visiting from Similipal) and the resident saltwater crocodiles at the waterline.",
+      "seed_block_start": 13800
+    },
+    {
+      "slug": "lesser-adjutant",
+      "display_name": "Lesser Adjutant",
+      "binomial": "Leptoptilos javanicus",
+      "series": "indian",
+      "park": "bhitarkanika",
+      "park_state": "Odisha",
+      "ordinal_in_series": 56,
+      "body_type": "bird",
+      "body_fill_color": "#1a2952",
+      "body_fill_color_name": "deep-indigo",
+      "bird_subtype": "stork",
+      "signature_features": "large stork (1.1m tall) with NEARLY BALD YELLOWISH-PINK HEAD AND NECK (sparse downy feathers, almost vulture-like), MASSIVE YELLOW DAGGER BILL, dark slate-gray-to-black back and wings, WHITE BELLY and white underwing, long pink-orange legs. The bald yellowish head + huge dagger bill + dark-and-white body is the unmistakable adjutant silhouette.",
+      "signature_action": "standing tall with neck stretched up and bill pointed skyward, wings half-spread, drying in the sun after a swamp feeding",
+      "rest_pose_for_species": "hunched on a tree branch with neck retracted into shoulders, bill tucked downward, long legs visible below",
+      "anatomy_must_include": "NEARLY BALD YELLOWISH-PINK HEAD AND NECK (mandatory diagnostic — NOT feathered like a heron, NOT crested like a sarus crane); MASSIVE YELLOW DAGGER BILL (proportional to head, must look heavy); DARK back and wings WITH WHITE BELLY (the contrast is diagnostic); LONG PINK-ORANGE LEGS; both feet visible; the result must read as LESSER ADJUTANT (a stork, not a vulture, not a crane).",
+      "required_decoration_zones": [
+        "HEAD + NECK: the bald yellowish-pink skin rendered as a folk-cream panel with sparse small folk-dot 'down' marks; small vermillion accent on the bill base",
+        "BILL: massive yellow dagger rendered with gold-leaf folk accent",
+        "BREAST + BACK (dark zone): the dark back rendered as deep-indigo folk panels with leaf-vein motifs in subtler tones, anchored by the body's primary indigo fill",
+        "WHITE BELLY: preserved as a cream folk panel with vermillion border at the body-belly seam",
+        "WINGS: folk feather bars in indigo + cream",
+        "LEGS: long pink-orange legs rendered as folk-vermillion panels with cream ankle bands",
+        "FEET: both visible with vermillion ankle bands"
+      ],
+      "anatomical_count_constraints": {
+        "legs_visible": "2 (very long)",
+        "eyes_visible": "1 in side profile (set in bald skin)",
+        "bill": "1 massive yellow dagger (mandatory size)",
+        "wings": "1 visible in profile",
+        "tail": "1 short",
+        "head_feathering": "nearly bald (mandatory — NOT a feathered head)"
+      },
+      "decoration_density": "ornate",
+      "iucn_status": "Vulnerable",
+      "conservation_note": "Bhitarkanika's mangrove and adjacent wetland complex is one of the most important breeding sites for the lesser adjutant in eastern India. Population threatened by wetland loss and human disturbance at nesting trees.",
+      "seed_block_start": 13900
+    },
+    {
+      "slug": "white-bellied-sea-eagle",
+      "display_name": "White-bellied Sea Eagle",
+      "binomial": "Haliaeetus leucogaster",
+      "series": "indian",
+      "park": "bhitarkanika",
+      "park_state": "Odisha",
+      "ordinal_in_series": 57,
+      "body_type": "bird",
+      "body_fill_color": "#1a2952",
+      "body_fill_color_name": "deep-indigo",
+      "bird_subtype": "raptor",
+      "signature_features": "large coastal raptor with PURE WHITE HEAD, BREAST, BELLY, AND UNDERWING contrasting with SLATE-GRAY back and upper wings, SHORT WHITE TAIL with a black band at the base (visible only in flight), heavy hooked yellow-and-gray bill, yellow legs with massive black talons. The clear WHITE-AND-GRAY two-tone is the unmistakable adult diagnostic.",
+      "signature_action": "diving toward water with wings half-folded, talons extended forward, body angled steeply, prey targeted below",
+      "rest_pose_for_species": "perched on a high mangrove branch with wings folded, white head turned to scan, body upright and alert",
+      "anatomy_must_include": "PURE WHITE HEAD, BREAST, BELLY (mandatory — not pale gray, not buff); SLATE-GRAY BACK AND UPPER WINGS (mandatory contrast); HEAVY HOOKED YELLOW-AND-GRAY BILL; YELLOW LEGS with MASSIVE BLACK TALONS; the white-and-gray two-tone must be SHARP not gradient; the result must read as ADULT WHITE-BELLIED SEA EAGLE (not a juvenile, not a fish eagle, not a brahminy kite).",
+      "required_decoration_zones": [
+        "HEAD (white zone): the pure white head preserved as a cream folk panel with vermillion eye ring and small folk-dot at the bill base",
+        "BILL: heavy hooked yellow-and-gray bill with gold-leaf folk accent along the cere",
+        "BREAST + BELLY (white zone): preserved as a cream folk panel with minimal vermillion + saffron rosette accents at the chest center — do NOT overdecorate the white",
+        "BACK + UPPER WINGS (gray zone): slate-gray rendered as a deeper indigo folk panel with leaf-vein motifs and folk feather bars",
+        "TAIL: short white with a black band at base, rendered as a folk-bar pattern",
+        "LEGS + TALONS: yellow legs with vermillion + saffron ankle bands; massive black talons rendered with bold folk-black outline",
+        "EYE: vermillion eye ring around the dark yellow iris"
+      ],
+      "anatomical_count_constraints": {
+        "legs_visible": "2 (yellow)",
+        "eyes_visible": "1 in side profile",
+        "wings": "1 visible in profile (slate-gray)",
+        "tail": "1 short white with black base band",
+        "talons": "massive black hooked claws visible on visible foot"
+      },
+      "decoration_density": "ornate",
+      "iucn_status": "Least Concern",
+      "conservation_note": "Apex coastal raptor of Bhitarkanika's mangrove-estuarine ecosystem; pair-bonds for life and returns to the same tall nest tree for decades. Indicator species for healthy mangrove tidal systems.",
+      "seed_block_start": 14000
     }
   ],
-
   "_collaborator_notes": "v2.0.0 catalog: 40 animals across 20 Indian national parks, two flagship species per park, organized as a single 'indian' series. This is the deliberate foundation for a Madhubani T-shirt collection and an eventual LoRA fine-tune. Every entry MUST include: slug, display_name, binomial, series, park, park_state, ordinal_in_series, body_type, body_fill_color, body_fill_color_name, signature_features, signature_action, rest_pose_for_species, iucn_status, conservation_note, seed_block_start. The optional anatomy_must_include field SHOULD be added for any species with strong pretrained signals likely to override our folk-art register (big cats whose natural orange/tawny coloring competes with the walnut anchor; species with diagnostic field marks like the rhino's single horn, the sloth bear's chest blaze, the red panda's ringed tail, the Irrawaddy dolphin's beakless head, the skimmer's elongated lower mandible). seed_block_start values are unique 100-step increments within the indigo seed block (8200-12200); see the per-entry values for actual allocation. Body fill follows the v2 convention: deep-indigo #1a2952 as default; walnut-brown #5a3a1f for big cats and sloth bear AND red panda AND indian fox (warm-fur species); forest-teal #1f4a3f for forest snakes and forest hornbills. Naturally colorful species (peacock, sarus crane, painted stork, greater flamingo, golden langur, nilgiri langur, red panda, indian giant squirrel) keep their species-specific colors on inner folk panels over a fundamental anchor body fill — they do NOT become uniformly indigo. The african and bird series from v1.0.0 are deprecated and preserved only as historical record in _deprecated_series."
 }
