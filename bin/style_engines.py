@@ -1237,28 +1237,31 @@ _IC_TRADITION = EnumBank("tradition", [
         masters=("traditional Warli wall painting (Maharashtra)", "Jivya Soma Mashe (Padma Shri 2011)"),
     ),
     EnumValue(
-        "gond",
-        "Gond / Jangarh Kalam tradition (Pardhan Gond, Patangarh village, Mandla "
-        "district, Madhya Pradesh; contemporary paper-and-canvas form inaugurated "
-        "by Jangarh Singh Shyam in the 1980s): SINGLE BOLD BLACK OUTLINE around "
-        "every form (NOT the double-contour of Madhubani), VIBRANT MULTI-COLOR "
-        "flat-color regions (electric blue, vermillion, emerald, magenta, "
-        "saffron-yellow, orange — saturated and unmodulated), and the defining "
-        "feature: every interior surface filled with a RHYTHMIC PATTERN "
-        "VOCABULARY of repeated small marks — dot-clusters, dashed-line rhythms, "
-        "fishscale arcs, crescent curves, wave-lines, leaf-vein motifs, dotted "
-        "spirals. The interior pattern IS the aesthetic — a Gond figure without "
-        "rhythmic interior fill is not Gond. Single subject typically dominant "
-        "in the frame against a contrasting flat-color ground OR a populated "
-        "story-context background. Animals and trees are the canonical subject "
-        "vocabulary. Borderless framing (no Madhubani-style ornate borders). "
-        "NO shading, NO photographic gradient, NO perspective.",
+        "kalighat",
+        "Kalighat tradition (Kalighat / Kalighata, Kolkata, 19th c. through early "
+        "20th c.; produced by patua scroll-painter communities near the Kalighat "
+        "Temple as cheap devotional and souvenir art for pilgrims): BOLD SINGLE "
+        "BLACK OUTLINE (NOT the double-contour of Madhubani) drawn with confident "
+        "sweeping brushwork that has a 'wet-painted in seconds' character — "
+        "visible brush dynamics, slight wobble, never machine-perfect. Flat "
+        "brilliant watercolor washes in a TIGHT FOUR-COLOR PALETTE: bright "
+        "vermillion-red + chrome-yellow + indigo-blue + emerald-green, on warm "
+        "cream paper ground. Figures STRETCH AND ELONGATE — Babu (dandy "
+        "gentleman) and Bibi (lady) figures have exaggerated curving torsos; "
+        "deity figures (Kali, Durga, Krishna, Lakshmi) have full almond eyes and "
+        "dramatic stylized poses. Composition is single subject centered on paper "
+        "with minimal background detail (often just a horizon line or simple "
+        "ground). Distinct from Madhubani's dense ornament — Kalighat is SPARSE "
+        "and GRAPHIC, more like proto-cartoon than Madhubani's textile-dense "
+        "fill. Subject vocabulary: Hindu deities, satirical 'Babu' figures "
+        "(colonial-era social commentary), Kali Ghat pilgrim scenes, traditional "
+        "Bengali domestic life, occasional animals (fish, snake, peacock). NO "
+        "perspective, NO photographic shading.",
         masters=(
-            "Jangarh Singh Shyam (1962-2001) — founder of the contemporary Jangarh Kalam form",
-            "Bhajju Shyam (Padma Shri 2018) — 'The London Jungle Book' subject-extension precedent",
-            "Nankusia Shyam — bharni-color rhythm and animal motif vocabulary",
-            "Durgabai Vyam & Subhash Vyam — narrative composition in 'Bhimayana'",
-            "Venkat Raman Singh Shyam — pattern density and color discipline",
+            "Anonymous Kalighat patua workshop, 19th century",
+            "V&A Museum Kalighat collection (PD public archive)",
+            "British Museum Kalighat holdings",
+            "Calcutta School of Art (early 20th c. Kalighat documentation)",
         ),
     ),
 ])
