@@ -114,11 +114,14 @@ def make_render_fn(
             "engine", "render", "minimalist-tshirt",
             "--subject", prompt,
             "--profile", profile,
-            "--steps", str(steps),
             "--seed", str(seeds_list[0]),
             "--seeds", str(seeds_n),
             "--out", str(out_path),
         ]
+        # Only pass --steps if explicitly set; otherwise let the profile
+        # drive (z-image-turbo: 9, FLUX.2 madhubani-flux: 25).
+        if steps is not None:
+            cmd.extend(["--steps", str(steps)])
         # Image-conditioning: v6 init-image (species photo) OVERRIDES the
         # animals.json style_reference_path (Mithila painting). They use the
         # same mflux --image-path flag but carry different semantic intent —
@@ -170,7 +173,10 @@ def main() -> int:
     parser.add_argument("--max-attempts", type=int, default=2)
     parser.add_argument("--seeds-per-attempt", type=int, default=2)
     parser.add_argument("--accept-score", type=float, default=0.80)
-    parser.add_argument("--steps", type=int, default=25)
+    # default=None means "defer to the profile's flux_steps" (z-image-turbo
+    # profile uses 9; FLUX.2 madhubani-flux profile uses 25). Explicit
+    # --steps still overrides the profile, but isn't forced any more.
+    parser.add_argument("--steps", type=int, default=None)
     parser.add_argument("--profile", default="madhubani")
     parser.add_argument("--dry-run", action="store_true",
                         help="Don't call mflux; just exercise the prompt + boost logic")

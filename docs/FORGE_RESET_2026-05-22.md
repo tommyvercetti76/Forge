@@ -6,13 +6,35 @@ saying improvement; the eye said otherwise. Honest course-correction:
 
 ## What changed
 
-### 1. Defaults flipped: z-image-turbo + 9 steps
+### 1. ❌ Attempted default flip to z-image-turbo + 9 steps — ROLLED BACK same day
 
-`bin/forge.py` profile `madhubani` was `flux2-klein-4b` at 25 steps; now it's
-`z-image-turbo` at 9 steps. Comparable visual quality at the saturated rubric
-ceiling, ~3× faster, Apache-2.0 license (commercial-compatible).
+Original intent: switch `madhubani` profile to `z-image-turbo` at 9 steps for
+a claimed ~5-7s/render (vs FLUX.2's ~22s at 25 steps) plus Apache-2.0 license.
 
-FLUX.2 path preserved as opt-in profile `madhubani-flux` for comparison runs.
+**Verification render exposed the speed claim was wrong.** Snow-leopard
+test @ 1280×1280 produced ~25-42s/render on z-image-turbo (including
+cold-load), not 5-7s. The original 5-7s estimate had been extrapolated
+from the LoRA eval's 1024px renders without accounting for resolution
+scaling. At the production 1280×1280, z-image-turbo and FLUX.2 are roughly
+comparable in wallclock.
+
+**Rollback:** `bin/forge.py` `madhubani` profile reverted to `flux2-klein-4b`
+at 25 steps. License caveat acknowledged: FLUX.2 = BFL non-commercial,
+fine for research + personal use, requires per-render `--model
+z-image-turbo --steps 9` flip for commercial product use.
+
+**Honest learning:** never publish a speed claim without running the timing
+test FIRST. The verification step was supposed to be the safety net for
+exactly this kind of error — and it worked. Caught within the same day,
+documented openly, rolled back.
+
+### 1b. ✅ Steps-default bug preserved (independent improvement)
+
+Discovered during the verification: `bin/forge_madhubani_reasoning.py`
+forced `--steps 25` regardless of the profile setting, silently overriding
+any profile's `flux_steps`. Fixed: `--steps` now defaults to `None` and
+defers to the profile's `flux_steps` unless the user explicitly sets it.
+This was the underlying bug that made the (failed) experiment confusing.
 
 ### 2. Composite metric demoted
 
@@ -93,8 +115,9 @@ slugs, delete the engine + KB files + tests).
 
 | | Before | After |
 |---|---|---|
-| Madhubani render time (M5 Max, 1024²) | ~15s (FLUX.2 25 steps) | **~5-7s** (z-image-turbo 9 steps) |
-| Madhubani render license | BFL non-commercial | **Apache-2.0** (commercial-compatible) |
+| Madhubani render time (M5 Max, 1280²) | ~22s (FLUX.2 25 steps) | **~22s** (FLUX.2 25 steps — rolled back after z-image-turbo speed claim verified wrong) |
+| Madhubani render license | BFL non-commercial | BFL non-commercial (unchanged — commercial use requires explicit `--model z-image-turbo` opt-in) |
+| `--steps` plumbing | Reasoning.py forced 25 even when profile said otherwise | **Fixed**: defaults to None → profile drives |
 | bin/ Python files | ~50 | ~44 |
 | bin/ total code | ~1.5 MB | ~1.2 MB |
 | Repo root cruft | 4 PLAN/ALIGNMENT docs + 2 random PNGs | clean |

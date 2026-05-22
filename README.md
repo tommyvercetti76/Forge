@@ -13,7 +13,7 @@
 [![Models](https://img.shields.io/badge/models-FLUX_•_Z--Image_•_mflux-orange.svg)](NOTICE)
 [![Code of Conduct](https://img.shields.io/badge/code_of_conduct-respectful-blueviolet.svg)](CODE_OF_CONDUCT.md)
 
-**`-60.8%`** mflux speedup &nbsp;·&nbsp; **`128`** passing tests &nbsp;·&nbsp; **`41`**-species Madhubani catalog &nbsp;·&nbsp; **`F1 0.62`** CLIP probe (LOOCV N=16) &nbsp;·&nbsp; **v1 LoRA = ITERATE** (+0.0357 ΔComp on held-out; below +0.05 ship)
+**`-60.8%`** mflux multi-seed speedup &nbsp;·&nbsp; **`128`** passing tests &nbsp;·&nbsp; **`41`**-species Madhubani catalog &nbsp;·&nbsp; **`F1 0.62`** CLIP probe (LOOCV N=16) &nbsp;·&nbsp; **v1 LoRA = ITERATE** (+0.0357 ΔComp on held-out; below +0.05 ship)
 
 <sub>v1 of the CLIP+sklearn probe collapsed to F1 0.00 on N=16 LOOCV (small-sample artifact, majority-class prediction). v2 — class-balanced LR on the same CLIP features — lifts LOOCV F1 to 0.615. v1 LoRA (25 user-PASS images) returned an ITERATE verdict against a pre-registered +0.05 ship threshold; we publish the verdict + the intermediate failures alongside the methodology. v2 LoRA on the expanded corpus (41 PASS images) is in training; v6 photo-init Kontext-img2img addresses the prior-collision failures (snow-leopard-as-cheetah, cobra-with-two-tongues) that prompt engineering alone couldn't fix. Full accounting: [QC_AGREEMENT_STUDY](docs/QC_AGREEMENT_STUDY.md) · [PAPER_OUTLINE](docs/PAPER_OUTLINE.md).</sub>
 

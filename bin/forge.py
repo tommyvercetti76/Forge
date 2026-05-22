@@ -396,19 +396,17 @@ PROFILES = {
     # produces a print-quality Madhubani render in ~22s — 10× faster than
     # FLUX.1-dev quality at 4 min. mflux dispatches to mflux-generate-flux2
     # automatically via mflux_cli_for(model).
-    # 2026-05-22 reset: default to z-image-turbo + 9 steps.
-    # FLUX.2-klein-4b at 25 steps was producing the same visual ceiling at
-    # ~3× the wallclock. z-image-turbo at 9 steps gives comparable quality
-    # in ~5-7s per render (vs ~15s). Apache-2.0 license is also
-    # commercial-compatible (FLUX is BFL non-commercial). Set
-    # `--profile madhubani-flux` to opt back into the FLUX path.
+    # 2026-05-22 verified rollback: FLUX.2-klein-4b @ 25 steps remains the
+    # Madhubani default. Brief z-image-turbo experiment showed the 5-7s/render
+    # speed claim was over-extrapolated from 1024px eval timing; at the
+    # production 1280px the two models are roughly comparable in wallclock
+    # (~22s FLUX vs ~25-42s z-image including cold-load). FLUX.2 stays the
+    # default for visual quality + parity with the existing batch artifacts.
+    # License caveat: FLUX.2 ships under BFL non-commercial — fine for our
+    # methodology research and personal use; commercial product use would
+    # require either a BFL license or switching to z-image-turbo at
+    # render time via `--model z-image-turbo --steps 9`.
     "madhubani": {
-        "flux_model": "z-image-turbo", "flux_steps": 9, "flux_guidance": None,
-        "cooldown": 0.0, "quantize": 4,
-    },
-    # Opt-in fallback profile for the legacy FLUX.2 path. Preserve for
-    # comparison runs + commercial-license-doesn't-matter use cases.
-    "madhubani-flux": {
         "flux_model": "flux2-klein-4b", "flux_steps": 25, "flux_guidance": None,
         "cooldown": 0.0, "quantize": 4,
     },
