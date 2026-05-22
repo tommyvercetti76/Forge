@@ -1,0 +1,124 @@
+{
+  "$schema": "../_schema/style.schema.json",
+  "schema_version": "forge.style.v1",
+  "tradition_slug": "warli",
+  "display_name": "Warli",
+  "version": "0.1.0",
+  "established_in_forge": "2026-05-22",
+  "_status": "scaffold — LoRA not yet trained; rubric not yet authored at full rigor. Production-ready target: week 2-3 of catalog buildout.",
+
+  "origin": {
+    "region": "Warli/Varli Adivasi community, North Sahyadri Range, Maharashtra (also Gujarat, Daman & Diu)",
+    "antiquity": "Documented since ~10th century CE; ritual wall-painting tradition tied to harvest, marriage, and Tarpa dance ceremonies",
+    "primary_practitioners": "Adivasi (tribal) men and women of the Warli community; modern recognition includes Jivya Soma Mashe (Padma Shri 2011), Madhukar Vadu, and the Warli Adivasi Mahasabha",
+    "languages_of_origin": ["Warli (Indo-Aryan)", "Marathi"],
+    "geocultural_landscape": "Originated as wall paintings on mud-plaster (terracotta-red ground), drawn in rice-paste white. Sacred origin in Palghat-region ritual practice."
+  },
+
+  "visual_signature": {
+    "line_discipline": "Single-thickness geometric primitive lines; circles for heads and torsos, triangles for bodies, straight lines for limbs",
+    "color_strategy": "Traditionally TWO COLORS ONLY — white rice-paste on terracotta/mud-red ground. Contemporary Warli on paper uses similar restraint: white-on-brown OR brown-on-white.",
+    "composition": "Crowded scenes — many small figures arranged in scenes (harvest, dance, hunting); minimal hierarchy; trees and animals integrated with humans",
+    "ornament_density": "Minimal — the geometric primitives ARE the aesthetic; no interior decoration of figures",
+    "background_strategy": "Filled with secondary motifs (sun, moon, animals, smaller figures, trees); never empty",
+    "negative_space_treatment": "Composition tightly populated; minimal blank space but no obligation to fill every pixel like Madhubani",
+    "ground_line": "Implied by scene composition (humans on ground line); no decorative ground-mark required"
+  },
+
+  "iconographic_motifs": {
+    "core_motifs": ["tarpa-dancer-circle", "human-stick-figure", "tree-of-life", "sun", "moon", "fish", "deer", "tiger", "peacock-stylized", "harvest-scene", "marriage-mandapa"],
+    "decorative_motifs": ["small-dot-clusters", "concentric-circles", "wavy-water-line"],
+    "border_grammars": ["minimal — borders are uncommon in Warli; framing is by composition, not by decorative border"]
+  },
+
+  "canonical_palette": [
+    { "name": "rice-paste-white", "hex": "#F5F0E0", "role": "primary line + figure" },
+    { "name": "terracotta-mud", "hex": "#A65A3D", "role": "ground / background" },
+    { "name": "off-white-paper", "hex": "#FAF6E8", "role": "contemporary paper ground (when reversed)" }
+  ],
+
+  "prompt_scaffold": {
+    "positive_prefix": "Warli folk-art painting of {subject}, single-thickness white lines on terracotta-mud background, geometric primitives — circles for heads, triangles for bodies, straight lines for limbs, minimalist tribal Adivasi aesthetic from North Sahyadri Maharashtra, no interior decoration of figures, traditional two-color Warli grammar",
+    "negative_prefix": "photorealistic, 3D render, photographic shading, perspective depth, anatomically accurate proportions, multi-color, ornate decoration, Madhubani-style interior fill, vector clean lines, Disney style, anime style, watercolor, oil paint",
+    "hard_negatives_v0_1": [
+      "no multi-color body fill — Warli is strictly two-color (white + terracotta)",
+      "no interior body decoration — bodies are SOLID line geometry, never filled with ornament",
+      "no anatomically realistic proportions — figures are GEOMETRIC PRIMITIVES (triangle bodies, circle heads)",
+      "no vector-perfect lines — single-thickness but hand-drawn quality",
+      "no Madhubani-style ornate borders",
+      "no perspective depth",
+      "no realistic animal anatomy — animals are stylized to geometric primitives too",
+      "no Western flat-design illustration"
+    ]
+  },
+
+  "engine": {
+    "primary_engine": "minimalist-tshirt",
+    "base_model": "flux.1-dev",
+    "preferred_quantization": "q8",
+    "native_canvas": [1024, 1024],
+    "preferred_steps": 16,
+    "preferred_guidance": 3.0,
+    "scheduler": "euler",
+    "lora_stack_default": [
+      { "name": "warli-style-v1", "scale": 1.0, "purpose": "tradition grammar", "_status": "to_be_trained" }
+    ]
+  },
+
+  "lora_training": {
+    "status": "not_yet_trained",
+    "production_recipe": {
+      "training_time_m5_max_estimated": "~12-15 hours overnight",
+      "reference_count_target": 50,
+      "rank": 32,
+      "steps": 1200,
+      "resolution": 1024,
+      "caption_template": "a warli folk-art painting depicting [SUBJECT], traditional adivasi tribal style from north sahyadri maharashtra, white lines on terracotta mud, geometric primitives",
+      "recipe_doc": "../../BRAND-LORA.md"
+    },
+    "reference_corpus_status": "TO COLLECT: ~50 attributable Warli paintings from Wikimedia, Jivya Soma Mashe archive, Warli Adivasi Mahasabha public collection, V&A Museum",
+    "scheduled_for": "Week 1-2 of catalog buildout"
+  },
+
+  "qc_rubric": {
+    "rubric_version": "warli.v0",
+    "rubric_file": "TBD",
+    "_status": "to_be_authored — Madhubani.v9 rubric NOT directly applicable. Warli requires its own checks because the grammar (geometric primitives, two-color, no interior decoration) is the OPPOSITE of Madhubani's ornament-rich style.",
+    "planned_checks": [
+      "two-color-conformance (white-on-terracotta OR terracotta-on-white only)",
+      "geometric-primitive-discipline (figures composed of circles/triangles/lines, not curves)",
+      "single-line-thickness (no double-contour Madhubani-style outlines)",
+      "no-interior-fill (bodies are line geometry, not color-filled)",
+      "composition-density (multiple figures or scene context, not single isolated subject)",
+      "anatomy-as-stylization (recognizable species via geometric abstraction, not realism)"
+    ],
+    "publishable_threshold": 0.7
+  },
+
+  "size_matrix_support": {
+    "icon_64": { "supported": true, "notes": "Warli's geometric primitives survive 64×64 better than any other tradition — the icon king" },
+    "icon_128": { "supported": true, "notes": "Excellent" },
+    "sticker_256": { "supported": true, "notes": "Excellent — Warli is naturally sticker-grade" },
+    "sticker_512": { "supported": true, "notes": "Excellent" },
+    "social_1080": { "supported": true, "notes": "Strong" },
+    "print_a4": { "supported": true, "notes": "Strong" },
+    "print_a3": { "supported": true, "notes": "Direct upscale — vector-friendly via potrace" },
+    "gallery_a1": { "supported": true, "notes": "Vectorize first, then rasterize at A1 — pristine at any size" },
+    "vector_svg": { "supported": true, "notes": "Warli is the most vector-friendly tradition; SVG export via potrace is a first-class output" }
+  },
+
+  "cultural_attribution": {
+    "tradition_owners": "Warli (Varli) Adivasi community, North Sahyadri Range, Maharashtra, India",
+    "mandatory_attribution_text": "This Warli-tradition artifact draws on the folk-art lineage of the Warli Adivasi community of Maharashtra, India. Originated and sustained by Adivasi artists; brought to international recognition through Jivya Soma Mashe (Padma Shri, 2011) and the Warli Adivasi Mahasabha.",
+    "commercial_use_note": "Commercial use should support Warli artist cooperatives, the Warli Adivasi Mahasabha, and Adivasi cultural-preservation organizations. The tradition is community-owned, not individually owned — attribution to the community is mandatory; attribution to any single artist requires their direct consent.",
+    "reference_corpus_path": "../../references/warli/",
+    "reference_corpus_count": 0,
+    "_reference_corpus_status": "TO COLLECT — scheduled week 1",
+    "protocol_doc": "./protocol.md"
+  },
+
+  "novelty_handling": {
+    "policy": "Same as Madhubani — subjects newly introduced to Warli (snow leopards, dugongs, animals from non-Maharashtrian regions) are explicitly disclosed as contemporary interpolations in receipts.",
+    "additional_warli_specific_note": "Warli has historically depicted local fauna (tiger, deer, peacock, fish, bullock). Extending it to global fauna or to non-Maharashtrian Indian species (snow leopard, hoolock gibbon, etc.) requires explicit novelty disclosure."
+  }
+}

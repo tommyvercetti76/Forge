@@ -1,0 +1,152 @@
+{
+  "$schema": "../_schema/style.schema.json",
+  "schema_version": "forge.style.v1",
+  "tradition_slug": "madhubani",
+  "display_name": "Madhubani / Mithila",
+  "version": "1.0.0",
+  "established_in_forge": "2026-05-22",
+  "_first_class_status": "Reference implementation — the tradition Forge ships with the deepest QC rigor. New traditions inherit this file's shape but tune the specifics.",
+
+  "origin": {
+    "region": "Mithila region, Bihar (Madhubani district), India",
+    "antiquity": "Documented since the Ramayana era; modern commercial form since 1934 Bihar earthquake exposed home wall paintings to outside attention",
+    "primary_practitioners": "Women artists of Mithila — historically anonymous; contemporary recognition includes Sita Devi, Ganga Devi, Mahasundari Devi, Bharti Dayal, and the Kohbar Ghar tradition",
+    "languages_of_origin": ["Maithili", "Hindi"],
+    "geocultural_landscape": "Brahmin (kachni line-work), Kayastha (bharni color-fill), and Dusadh (godna tattoo-like) sub-styles each carry distinct grammars"
+  },
+
+  "visual_signature": {
+    "line_discipline": "Bold double-contour hand-drawn keylines with weight variation; never airbrushed or vector-perfect",
+    "color_strategy": "Flat folk color zones; saturated indigo, vermillion, saffron, leaf-green, ochre; NO photographic gradients",
+    "composition": "Flat silhouette; no perspective; figures fill the frame; dense interior decoration with 5-9 distinct zones per subject",
+    "ornament_density": "Ornate — every interior surface decorated with motifs (lotus, fish, peacock-eye, paisley, dots, leaf veins)",
+    "background_strategy": "Filled with secondary motifs (vine, dots, geometric borders); NEVER blank white space",
+    "negative_space_treatment": "8-12 small ornamental flourishes in any negative areas; the canvas is never empty",
+    "ground_line": "Dotted Mithila ground line beneath the subject (lotus, peepal leaf, fish, or dotted earth)"
+  },
+
+  "iconographic_motifs": {
+    "core_motifs": ["lotus", "fish", "peacock", "tree-of-life", "sun-moon", "krishna-flute", "elephant-procession", "tortoise-cosmos", "naga-serpent"],
+    "decorative_motifs": ["paisley", "peacock-eye dot", "leaf-vein", "diamond-lattice", "rosette", "vine-scroll", "double-fish-yin-yang"],
+    "border_grammars": ["dotted-double-line", "leaf-and-flower-chain", "fish-scale", "geometric-zigzag"]
+  },
+
+  "canonical_palette": [
+    { "name": "indigo", "hex": "#1B3A6B", "role": "primary fill" },
+    { "name": "vermillion", "hex": "#C8102E", "role": "accent + sacred" },
+    { "name": "saffron", "hex": "#F39C12", "role": "warm accent" },
+    { "name": "leaf-green", "hex": "#2A6B3D", "role": "vegetal motifs" },
+    { "name": "walnut-brown", "hex": "#5A3A1F", "role": "earth + animal fill" },
+    { "name": "ochre-yellow", "hex": "#D4A017", "role": "border + ground" },
+    { "name": "off-white", "hex": "#F5F0E0", "role": "negative space + paper ground" }
+  ],
+
+  "prompt_scaffold": {
+    "positive_prefix": "Madhubani folk-art icon of {subject}, flat silhouette, bold double-contour hand-drawn keylines, saturated folk-color body fill, dense interior decoration with 5-9 distinct ornament zones, dotted Mithila ground line, ornate borders with leaf-and-flower chain, traditional Mithila palette of indigo + vermillion + saffron + leaf-green",
+    "negative_prefix": "photorealistic, 3D render, fur texture, photographic shading, perspective depth, blank white background, cartoonish big eyes, airbrushed gradients, watercolor wash, oil-paint texture, modern flat-design illustration, vector minimalism, naturalistic animal photography, sketch outline only",
+    "hard_negatives_v3": [
+      "no photorealistic fur",
+      "no 3D depth or shading",
+      "no perspective drawing",
+      "no airbrushed gradients",
+      "no anatomically uncanny faces (almond eyes only — never round cartoon eyes)",
+      "no empty white background",
+      "no Western flat-design vector style",
+      "no Disney-style stylization",
+      "no anime / manga influence",
+      "no AI-art typical face distortions",
+      "the body interior MUST be decorated — never plain color",
+      "stripes must read as stripes (vertical bands), not floral medallions",
+      "subject must remain anatomically identifiable as its species",
+      "double-contour outlines must be hand-drawn-style, not vector-clean",
+      "ornament zones must be COUNTED (5-9 distinct), not infinite",
+      "color must be flat folk-color, not photo-real",
+      "ground line must be present (dotted, lotus, peepal, or fish ground)",
+      "if a serpent is depicted, hood proportional and no exaggerated forked tongue"
+    ]
+  },
+
+  "engine": {
+    "primary_engine": "minimalist-tshirt",
+    "base_model": "flux.1-dev",
+    "preferred_quantization": "q8",
+    "native_canvas": [1024, 1024],
+    "preferred_steps": 18,
+    "preferred_guidance": 3.5,
+    "scheduler": "euler",
+    "lora_stack_default": [
+      { "name": "madhubani-style-v1", "scale": 1.0, "purpose": "tradition grammar" }
+    ]
+  },
+
+  "lora_training": {
+    "status": "pilot_complete",
+    "pilot_results": {
+      "training_time_m5_max": "9 min 31 s",
+      "reference_count": 50,
+      "rank": 16,
+      "steps": 500,
+      "outcome": "Visible style transfer from photoreal to ink-line folk-art between step 0 and step 50; gallery at docs/gallery/lora_pilot/"
+    },
+    "production_recipe": {
+      "training_time_m5_max_estimated": "~15 hours overnight",
+      "reference_count_target": 100,
+      "rank": 32,
+      "steps": 1500,
+      "resolution": 1024,
+      "caption_template": "a madhubani folk-art painting of [SUBJECT], [POSE], traditional mithila tradition, flat folk colors, ornate decoration zones",
+      "recipe_doc": "../../BRAND-LORA.md"
+    }
+  },
+
+  "qc_rubric": {
+    "rubric_version": "madhubani.v9",
+    "rubric_file": "../../madhubani/learning/rubric_v9.json",
+    "checks": [
+      "flat-silhouette",
+      "stripe-rhythm-or-equivalent-species-pattern",
+      "anatomy-count-legs",
+      "anatomy-count-eyes",
+      "anatomy-count-ears",
+      "decoration-zones-present-count",
+      "palette-conformance",
+      "ground-line-present",
+      "border-grammar-present"
+    ],
+    "publishable_threshold": 0.7,
+    "gold_corpus_path": "../../madhubani/labels_v1.json",
+    "gold_corpus_size": 16,
+    "agreement_study_path": "../../../docs/QC_AGREEMENT_STUDY.md",
+    "current_metrics": {
+      "heuristic_rubric_f1_loocv": 0.53,
+      "clip_probe_class_balanced_lr_f1_loocv": 0.615,
+      "composite_picker_ceiling_rhino": 0.82
+    }
+  },
+
+  "size_matrix_support": {
+    "icon_64": { "supported": false, "reason": "Ornate motif density loses legibility under 256px" },
+    "icon_128": { "supported": false, "reason": "Same — recommend Warli or minimal-animal for app-icon needs" },
+    "sticker_256": { "supported": "partial", "notes": "Bold subjects (tiger, peacock) read; small-feature subjects (mongoose, kingfisher) lose detail" },
+    "sticker_512": { "supported": true, "notes": "Recommended floor for Madhubani" },
+    "social_1080": { "supported": true, "notes": "Primary social-share format" },
+    "print_a4": { "supported": true, "notes": "Direct from 1024² render" },
+    "print_a3": { "supported": true, "notes": "Via RealESRGAN 3x upscale" },
+    "gallery_a1": { "supported": true, "notes": "Via RealESRGAN 8x with tile blending" }
+  },
+
+  "cultural_attribution": {
+    "tradition_owners": "Women artists of the Mithila region, Bihar, India",
+    "mandatory_attribution_text": "This Madhubani-tradition artifact draws on the folk-art lineage of the Mithila region, Bihar, India. Originated and sustained by women artists of the Mithila tradition.",
+    "commercial_use_note": "Commercial use should support cultural-preservation organizations such as the Mithila Art Institute (Madhubani), Crafts Council of India, or direct Mithila-artist cooperatives.",
+    "reference_corpus_path": "../../references/madhubani/",
+    "reference_corpus_count": 50,
+    "reference_corpus_license_summary": "All references CC-BY-SA or public domain via Wikimedia Commons; per-asset attribution.json receipts in references/",
+    "protocol_doc": "./protocol.md"
+  },
+
+  "novelty_handling": {
+    "policy": "Subjects newly introduced to the Madhubani tradition (e.g., snow leopards, dugongs, hoolock gibbons — animals not historically depicted in Mithila paintings) are explicitly disclosed as contemporary interpolations in the receipt's `cultural_attribution.novelty_disclosure` field.",
+    "default_disclosure_template": "{subject} is not traditionally depicted in Madhubani; this rendering is a contemporary interpolation honoring the tradition's grammar (flat silhouette, dense interior decoration, traditional palette) while extending its subject vocabulary to include species native to {region}."
+  }
+}
