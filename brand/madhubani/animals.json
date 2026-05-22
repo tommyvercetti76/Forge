@@ -1,8 +1,9 @@
 {
   "$schema": "./_schema/animals.schema.json",
   "name": "madhubani-tee-catalog",
-  "description": "The 40-animal Indian-wildlife catalog for Madhubani-inspired t-shirt designs, organized across 20 Indian national parks (two flagship species per park). Each entry carries the metadata needed for the engine to dispatch correct body-type and palette anchoring rules. This v2 catalog replaces the original 60-animal split (Indian/African/Bird) with a focused India-only set built for LoRA fine-tuning and a unified national-park collection.",
-  "version": "2.0.0",
+  "description": "The 100-entry Indian-wildlife catalog for Madhubani-inspired t-shirt designs, organized across 25 Indian national parks (2 mammals + 2 birds per park). v3.0.0 expands v2 from 40 entries / 20 parks to 100 entries / 25 parks: bird representation grows from ~6 to ~50, four new parks added (nagarhole, great-himalayan, khangchendzonga, bhitarkanika). The parks block is removed from this file — canonical park metadata lives at brand/parks/_index.json. Each animal entry's `park` field is the join key.",
+  "version": "3.0.0",
+  "_parks_canonical_source": "../parks/_index.json",
   "established": "2026-05-20",
 
   "body_types": {
@@ -60,9 +61,12 @@
     "indian": {
       "display_name": "Indian Wildlife (National Parks)",
       "color_anchor_preference": "indigo-or-walnut",
-      "seed_block": [8200, 12200],
-      "parks_covered": 20,
-      "species_per_park": 2
+      "seed_block": [8200, 18400],
+      "_seed_block_v2_range": [8200, 12300],
+      "_seed_block_v3_range": [12500, 18400],
+      "parks_covered": 25,
+      "species_per_park": 4,
+      "species_per_park_split": "2 mammals + 2 birds (with 3 documented exceptions: chilika lagoon, marine-kutch coastal, keoladeo bird-sanctuary — see brand/parks/_index.json _2_2_rule_breakers)"
     }
   },
 
@@ -80,29 +84,7 @@
     }
   },
 
-  "parks": {
-    "jim-corbett": {"state": "Uttarakhand", "ordinal": 1},
-    "kaziranga": {"state": "Assam", "ordinal": 2},
-    "sundarbans": {"state": "West Bengal", "ordinal": 3},
-    "bandhavgarh": {"state": "Madhya Pradesh", "ordinal": 4},
-    "periyar": {"state": "Kerala", "ordinal": 5},
-    "bandipur": {"state": "Karnataka", "ordinal": 6},
-    "kanha": {"state": "Madhya Pradesh", "ordinal": 7},
-    "ranthambore": {"state": "Rajasthan", "ordinal": 8},
-    "gir": {"state": "Gujarat", "ordinal": 9},
-    "manas": {"state": "Assam", "ordinal": 10},
-    "hemis": {"state": "Ladakh", "ordinal": 11},
-    "keoladeo": {"state": "Rajasthan", "ordinal": 12},
-    "tadoba-andhari": {"state": "Maharashtra", "ordinal": 13},
-    "anamalai": {"state": "Tamil Nadu", "ordinal": 14},
-    "sariska": {"state": "Rajasthan", "ordinal": 15},
-    "pench": {"state": "Madhya Pradesh", "ordinal": 16},
-    "namdapha": {"state": "Arunachal Pradesh", "ordinal": 17},
-    "chilika": {"state": "Odisha", "ordinal": 18},
-    "silent-valley": {"state": "Kerala", "ordinal": 19},
-    "marine-kutch": {"state": "Gujarat", "ordinal": 20},
-    "velavadar": {"state": "Gujarat", "ordinal": 21}
-  },
+  "_parks_block_removed_in_v3": "Park metadata previously embedded here has been moved to brand/parks/_index.json (canonical source). Per-animal `park` field below is the join key. Audit (2026-05-22) confirmed no code reads the old parks block — only individual animals' `park` slug field. See `_parks_canonical_source` above.",
 
   "animals": [
     {
