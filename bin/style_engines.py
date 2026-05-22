@@ -1236,6 +1236,31 @@ _IC_TRADITION = EnumBank("tradition", [
         "shading, NO color beyond the white pigment.",
         masters=("traditional Warli wall painting (Maharashtra)", "Jivya Soma Mashe (Padma Shri 2011)"),
     ),
+    EnumValue(
+        "gond",
+        "Gond / Jangarh Kalam tradition (Pardhan Gond, Patangarh village, Mandla "
+        "district, Madhya Pradesh; contemporary paper-and-canvas form inaugurated "
+        "by Jangarh Singh Shyam in the 1980s): SINGLE BOLD BLACK OUTLINE around "
+        "every form (NOT the double-contour of Madhubani), VIBRANT MULTI-COLOR "
+        "flat-color regions (electric blue, vermillion, emerald, magenta, "
+        "saffron-yellow, orange — saturated and unmodulated), and the defining "
+        "feature: every interior surface filled with a RHYTHMIC PATTERN "
+        "VOCABULARY of repeated small marks — dot-clusters, dashed-line rhythms, "
+        "fishscale arcs, crescent curves, wave-lines, leaf-vein motifs, dotted "
+        "spirals. The interior pattern IS the aesthetic — a Gond figure without "
+        "rhythmic interior fill is not Gond. Single subject typically dominant "
+        "in the frame against a contrasting flat-color ground OR a populated "
+        "story-context background. Animals and trees are the canonical subject "
+        "vocabulary. Borderless framing (no Madhubani-style ornate borders). "
+        "NO shading, NO photographic gradient, NO perspective.",
+        masters=(
+            "Jangarh Singh Shyam (1962-2001) — founder of the contemporary Jangarh Kalam form",
+            "Bhajju Shyam (Padma Shri 2018) — 'The London Jungle Book' subject-extension precedent",
+            "Nankusia Shyam — bharni-color rhythm and animal motif vocabulary",
+            "Durgabai Vyam & Subhash Vyam — narrative composition in 'Bhimayana'",
+            "Venkat Raman Singh Shyam — pattern density and color discipline",
+        ),
+    ),
 ])
 
 _IC_MUDRA = EnumBank("mudra", [

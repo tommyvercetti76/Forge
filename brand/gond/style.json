@@ -1,5 +1,5 @@
 {
-  "$schema": "../_schema/style.schema.json",
+  "$schema": "./_schema/style.schema.json",
   "schema_version": "forge.style.v1",
   "tradition_slug": "gond",
   "display_name": "Gond",
@@ -81,7 +81,8 @@
       "steps": 1500,
       "resolution": 1024,
       "caption_template": "a gond folk-art painting of [SUBJECT], jangarh kalam style, pardhan gond tradition from patangarh madhya pradesh, bold outline, rhythmic interior pattern fill with [PATTERN VOCABULARY], vibrant multi-color",
-      "recipe_doc": "../../BRAND-LORA.md"
+      "recipe_doc": "../../BRAND-LORA.md",
+      "_path_note": "BRAND-LORA.md is at repo root; this style.json lives at brand/gond/"
     },
     "reference_corpus_status": "TO COLLECT: ~50 attributable Gond paintings — primary sources include Bhajju Shyam's published catalogues (Tara Books), MAP Bengaluru collection, Tribal Museum Bhopal, Jangarh Singh Shyam estate publications",
     "scheduled_for": "Week 2 of catalog buildout"
@@ -120,10 +121,10 @@
     "named_lineage_acknowledgment": "Jangarh Singh Shyam (1962-2001) — founder of the contemporary form (Jangarh Kalam); his lineage continues through Nankusia Shyam, Bhajju Shyam, Durgabai Vyam, Subhash Vyam, Venkat Raman Singh Shyam, and the broader Patangarh artistic lineage.",
     "mandatory_attribution_text": "This Gond-tradition artifact draws on the Jangarh Kalam contemporary form of Pardhan Gond folk-art, originating in Patangarh village, Mandla district, Madhya Pradesh, India. The form was inaugurated by Jangarh Singh Shyam (1962-2001) and is sustained today by his family and the broader Patangarh artistic lineage.",
     "commercial_use_note": "Commercial use should support Pardhan Gond artist cooperatives, the Jangarh Singh Shyam family lineage at Patangarh, and Adivasi cultural-preservation organizations. The tradition is community-rooted but has specific named lineage holders — both community AND lineage attribution apply.",
-    "reference_corpus_path": "../../references/gond/",
+    "reference_corpus_path": "../references/gond/",
     "reference_corpus_count": 0,
     "_reference_corpus_status": "TO COLLECT — scheduled week 2",
-    "protocol_doc": "./protocol.md"
+    "protocol_doc": "../../docs/CULTURAL_HERITAGE_ATTRIBUTION_GOND.md"
   },
 
   "novelty_handling": {
