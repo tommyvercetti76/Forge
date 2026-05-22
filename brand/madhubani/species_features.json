@@ -1,0 +1,289 @@
+{
+  "schema": "forge.species_features.v1",
+  "version": "1.0.0",
+  "established": "2026-05-20",
+  "description": "Per-species signature features for part-level grading and prompt-injection. Each feature carries (a) a human-readable label for the grading checklist, (b) a prompt clause that can be injected into the SUBJECT block to lock the feature in at render time, and (c) optional anti_negative clauses that go into the DO NOT block. When a feature shows up as 'missing' in N user grades, the boost composer can promote its severity weight + add its prompt_clause to the next retry.",
+  "generic_features_by_body_type": {
+    "default": [
+      {"id": "body_proportions",  "label": "Body proportions"},
+      {"id": "head_shape",        "label": "Head / face shape"},
+      {"id": "limbs",             "label": "Legs / feet count"},
+      {"id": "tail",              "label": "Tail (present + correct)"}
+    ],
+    "bird": [
+      {"id": "beak_shape",        "label": "Beak shape + size"},
+      {"id": "wing_visibility",   "label": "Wings (present + correct)"},
+      {"id": "feathers",          "label": "Feather pattern"},
+      {"id": "leg_count_two",     "label": "Two legs (not four)"}
+    ],
+    "serpent": [
+      {"id": "head_shape",        "label": "Head shape (no ears)"},
+      {"id": "single_tongue",     "label": "Tongue (single, forked)"},
+      {"id": "scale_pattern",     "label": "Scale pattern"},
+      {"id": "no_limbs",          "label": "No limbs"}
+    ]
+  },
+  "species": {
+    "tiger": [
+      {"id": "stripes",           "label": "Stripe pattern present",
+       "prompt_clause": "with bold black tiger-stripe pattern across the body and tail rendered as folk-painted stripes, not as photographic fur"},
+      {"id": "white_face",        "label": "White face markings (cheeks/chin)"},
+      {"id": "ear_spots",         "label": "Black ear spots (back of ears)"},
+      {"id": "almond_eye",        "label": "Almond folk-eye (not round)"}
+    ],
+    "sundarbans-tiger": [
+      {"id": "stripes",           "label": "Stripe pattern present"},
+      {"id": "white_face",        "label": "White face markings"},
+      {"id": "lean_body",         "label": "Lean swimming-tiger build (not bulky)"}
+    ],
+    "elephant": [
+      {"id": "trunk",             "label": "Trunk shape + curl",
+       "prompt_clause": "with a long curled trunk clearly visible and rendered as a folk-painted curve, not a stub"},
+      {"id": "tusks_visible",     "label": "Tusks visible (if male) OR clean tuskless face"},
+      {"id": "large_ears",        "label": "Large fan-shaped ears"},
+      {"id": "thick_legs",        "label": "Thick pillar legs (not twig legs)"}
+    ],
+    "rhino": [
+      {"id": "single_horn",       "label": "Single horn on nose",
+       "prompt_clause": "with one prominent horn on the nose (Greater One-horned Rhinoceros — NEVER two horns)"},
+      {"id": "armor_folds",       "label": "Armor-plate skin folds at shoulders + hips"},
+      {"id": "small_ears",        "label": "Small alert ears (not large)"},
+      {"id": "thick_body",        "label": "Thick tank-like body"}
+    ],
+    "wild-water-buffalo": [
+      {"id": "curved_horns",      "label": "Wide curved horns (crescent)"},
+      {"id": "dark_body",         "label": "Dark grey-black body"},
+      {"id": "shoulder_hump",     "label": "Strong shoulder mass"}
+    ],
+    "saltwater-crocodile": [
+      {"id": "long_snout",        "label": "Long snout with visible teeth"},
+      {"id": "scaly_back",        "label": "Scaly armored back"},
+      {"id": "tail_powerful",     "label": "Long powerful tail"},
+      {"id": "four_legs_visible", "label": "All four legs visible (low stance)"}
+    ],
+    "sloth-bear": [
+      {"id": "white_v_chest_blaze","label": "White V chest blaze",
+       "prompt_clause": "with the distinctive WHITE V-shaped or U-shaped chest blaze prominently visible on the chest fur as a clean folk-white panel contrasting against the surrounding fur — this is the species-identifying feature and MUST be preserved",
+       "anti_negative": "no missing chest blaze, no all-black chest, no all-brown chest"},
+      {"id": "black_body",        "label": "BLACK body fur (not brown)",
+       "prompt_clause": "with shaggy BLACK fur (sloth bear is NOT a brown bear, NOT a grizzly)",
+       "anti_negative": "no brown bear coloring, no grizzly coloring, no honey/tan body"},
+      {"id": "long_curved_claws", "label": "Long curved digging claws"},
+      {"id": "protruding_snout",  "label": "Protruding mobile snout/lip"}
+    ],
+    "sambar-deer": [
+      {"id": "branched_antlers",  "label": "Three-tined branched antlers (male)",
+       "prompt_clause": "with large three-tined branched antlers if male, OR a clean antlerless head if female — never stubs or single spikes"},
+      {"id": "shaggy_neck_mane",  "label": "Shaggy neck mane"},
+      {"id": "uniform_brown",     "label": "Uniform dark brown (no spots)"}
+    ],
+    "nilgiri-tahr": [
+      {"id": "curved_horns",      "label": "Backward-curved horns"},
+      {"id": "grizzled_fur",      "label": "Grizzled dark fur with silver saddle"},
+      {"id": "compact_body",      "label": "Compact mountain-goat build"}
+    ],
+    "macaque": [
+      {"id": "pink_face",         "label": "Pink/bare face"},
+      {"id": "long_tail",         "label": "Long tail"},
+      {"id": "four_limbs_visible","label": "All four limbs + opposable thumbs"}
+    ],
+    "gaur": [
+      {"id": "boss_horns",        "label": "Heavy boss horns",
+       "prompt_clause": "with massive curved boss horns (heavy curved horns meeting in a bony shield/boss across the forehead) — the gaur's defining feature, not deer antlers and not cattle stubs"},
+      {"id": "white_socks",       "label": "White socks on lower legs",
+       "prompt_clause": "with distinctive WHITE STOCKINGS on the lower legs from knee to hoof — clean cream-white panels visibly contrasting against the dark body"},
+      {"id": "muscle_hump",       "label": "Prominent shoulder hump",
+       "prompt_clause": "with a prominent powerful muscle hump over the shoulders rising clearly above the back-line — the gaur's iconic bull silhouette"},
+      {"id": "dark_body",         "label": "Dark coffee-black body",
+       "prompt_clause": "with a deeply dark coffee-black body fill above the white stockings — this contrast between dark body and white legs is non-negotiable"}
+    ],
+    "indian-leopard": [
+      {"id": "rosette_spots",     "label": "Rosette spot pattern",
+       "prompt_clause": "with the iconic leopard rosette spots covering body and tail — clusters of small dark folk-medallions on the golden-tawny base, the species' signature"},
+      {"id": "long_tail",         "label": "Long thick tail",
+       "prompt_clause": "with a long thick tail (nearly the body's length) curving distinctively"},
+      {"id": "muscular_build",    "label": "Muscular lean build"}
+    ],
+    "barasingha": [
+      {"id": "multi_tined_antlers","label": "Multi-tined antlers (12+ points)"},
+      {"id": "long_legs",         "label": "Long legs (wetland deer)"}
+    ],
+    "dhole": [
+      {"id": "russet_color",      "label": "Russet/rust-red color"},
+      {"id": "white_belly",       "label": "White belly + throat"},
+      {"id": "bushy_tail",        "label": "Bushy black-tipped tail"}
+    ],
+    "peacock": [
+      {"id": "full_plumage_fan",  "label": "Full massive fanned plumage (not stubby)",
+       "prompt_clause": "with a MASSIVE FULLY-FANNED tail plumage spread wide behind the bird — the train must be the dominant visual element of the composition, occupying at least 60% of the frame width, never stubby or partial or folded-down — this is THE iconic peacock display and the rendered image is incomplete if the train is small, partial, or absent",
+       "anti_negative": "no stubby tail, no folded plumage, no small train, no missing fan"},
+      {"id": "iridescent_full_palette", "label": "Full peacock color palette (not monochrome)",
+       "prompt_clause": "with the FULL multi-color iridescent peacock palette across the plumage — vivid emerald-green + sapphire-blue + gold + vermillion + bronze all visible as distinct folk-color zones in the train feathers — NEVER monochrome, NEVER a single dominant body color, the train must read as a riot of saturated folk colors",
+       "anti_negative": "no monochrome plumage, no faded colors, no single-color train, no missing colors"},
+      {"id": "tail_eye_spots",    "label": "Tail-eye-spots (ocelli) in plumage",
+       "prompt_clause": "with the iconic peacock tail-eye-spots (ocelli) clearly painted as concentric folk-medallions distributed across the fanned train"},
+      {"id": "crown_crest",       "label": "Crown crest (small fan)"},
+      {"id": "long_neck",         "label": "Long elegant neck"},
+      {"id": "two_legs",          "label": "Two legs (not four)"}
+    ],
+    "striped-hyena": [
+      {"id": "vertical_stripes",  "label": "Vertical body stripes",
+       "prompt_clause": "with bold VERTICAL black stripes across the body (NOT spots, NOT horizontal stripes) — the striped hyena's signature pattern rendered as folk-painted bands"},
+      {"id": "mane",              "label": "Erectile back mane",
+       "prompt_clause": "with a prominent erectile back mane/crest of stiff hair running from neck to mid-back"},
+      {"id": "sloped_back",       "label": "Sloped back (front taller than rear)",
+       "prompt_clause": "with the distinctive hyena silhouette — front shoulders noticeably taller than the rear haunches, creating a sloped back"}
+    ],
+    "asiatic-lion": [
+      {"id": "mane",              "label": "Mane (male) OR clean female"},
+      {"id": "belly_fold",        "label": "Belly fold (distinct from African lion)"},
+      {"id": "tail_tuft",         "label": "Tail tuft"}
+    ],
+    "chinkara": [
+      {"id": "ringed_horns",      "label": "Slender ringed horns"},
+      {"id": "white_eye_ring",    "label": "White eye ring"},
+      {"id": "slender_build",     "label": "Slender gazelle build"}
+    ],
+    "golden-langur": [
+      {"id": "golden_fur",        "label": "Golden cream fur",
+       "prompt_clause": "with golden-cream colored fur as the species' defining feature — NOT grey or black langur coloring"},
+      {"id": "dark_face",         "label": "Dark face contrasting with fur"},
+      {"id": "long_tail",         "label": "Long tail"}
+    ],
+    "pygmy-hog": [
+      {"id": "small_size",        "label": "Small compact size"},
+      {"id": "no_tusks",          "label": "No prominent tusks (vs wild boar)"},
+      {"id": "short_legs",        "label": "Very short legs"}
+    ],
+    "snow-leopard": [
+      {"id": "rosette_spots",     "label": "Rosette spot pattern",
+       "prompt_clause": "with prominent dark rosette spots scattered across the body and tail rendered as folk-painted dark medallions on the smoky-grey-white base — these rosettes are the species' identifying mark and MUST be visible"},
+      {"id": "thick_tail",        "label": "Extremely thick long tail",
+       "prompt_clause": "with an extraordinarily thick and long tail (nearly as long as the body) — defining trait of the snow leopard, never a thin or short tail"},
+      {"id": "smoky_grey_white",  "label": "Smoky grey + white fur",
+       "prompt_clause": "with smoky-grey-and-white body coloring (NOT yellow leopard tan, NOT orange tiger fur) — this is the snow leopard's defining palette"},
+      {"id": "wide_paws",         "label": "Large wide paws (snowshoe)"}
+    ],
+    "bharal": [
+      {"id": "curved_horns",      "label": "Outward-curving horns"},
+      {"id": "bluish_grey",       "label": "Bluish-grey body"},
+      {"id": "stocky_build",      "label": "Stocky mountain build"}
+    ],
+    "sarus-crane": [
+      {"id": "red_head_neck",     "label": "Red head + upper neck",
+       "prompt_clause": "with bright red bare head and upper neck — the species-defining feature"},
+      {"id": "very_long_legs",    "label": "Extremely long stilt legs"},
+      {"id": "grey_body",         "label": "Grey body plumage"},
+      {"id": "two_legs",          "label": "Two legs (not four)"}
+    ],
+    "painted-stork": [
+      {"id": "yellow_beak",       "label": "Long yellow downcurved beak"},
+      {"id": "pink_tertials",     "label": "Pink wing tertials"},
+      {"id": "white_body",        "label": "White body plumage"},
+      {"id": "two_legs",          "label": "Two legs (not four)"}
+    ],
+    "indian-wild-boar": [
+      {"id": "both_tusks",        "label": "Both curved tusks visible",
+       "prompt_clause": "with BOTH prominent upward-curving lower tusks clearly visible on either side of the mouth — the species' identifying feature for adult males",
+       "anti_negative": "no missing tusks, no tuskless face, no juvenile-looking face"},
+      {"id": "bristly_ridge",     "label": "Bristly back ridge / mane"},
+      {"id": "elongated_snout",   "label": "Elongated snout"},
+      {"id": "compact_muscular",  "label": "Compact muscular body"}
+    ],
+    "indian-pangolin": [
+      {"id": "scale_pattern",     "label": "Visible scale pattern over body"},
+      {"id": "long_tail",         "label": "Long scaly tail"},
+      {"id": "small_head",        "label": "Small pointed head"}
+    ],
+    "indian-giant-squirrel": [
+      {"id": "very_long_bushy_tail","label": "Very long bushy tail (= body length)"},
+      {"id": "multi_color_fur",   "label": "Maroon + cream + rust multi-color"},
+      {"id": "tufted_ears",       "label": "Tufted ears"}
+    ],
+    "nilgiri-langur": [
+      {"id": "black_body",        "label": "Black body (not grey/golden)"},
+      {"id": "golden_head_ruff",  "label": "Golden head ruff"},
+      {"id": "long_tail",         "label": "Long tail"}
+    ],
+    "nilgai": [
+      {"id": "blue_grey_body",    "label": "Blue-grey body (male) or tawny (female)",
+       "prompt_clause": "with the distinctive BLUE-GREY body color for a male nilgai (literally 'blue bull' — slate-grey hue, NOT brown deer color)"},
+      {"id": "throat_tassel",     "label": "Throat tassel (male)",
+       "prompt_clause": "with the male's distinctive black throat tassel/beard tuft hanging from the lower neck — a key species marker"},
+      {"id": "white_socks",       "label": "White socks on lower legs",
+       "prompt_clause": "with visible white socks/stockings on the lower legs, contrasting against the blue-grey body"},
+      {"id": "horse_like_build",  "label": "Horse-like long-legged build",
+       "prompt_clause": "with the species' tall horse-like long-legged build — taller and leggier than common deer, with sloped back"}
+    ],
+    "indian-grey-mongoose": [
+      {"id": "grizzled_grey",     "label": "Grizzled grey fur"},
+      {"id": "long_body_tail",    "label": "Long body + long tail"},
+      {"id": "small_head",        "label": "Small pointed head"}
+    ],
+    "chital": [
+      {"id": "white_spots",       "label": "White spots on rust body"},
+      {"id": "branched_antlers",  "label": "Three-tined branched antlers (male)"},
+      {"id": "graceful_build",    "label": "Graceful slender build"}
+    ],
+    "indian-fox": [
+      {"id": "small_size",        "label": "Small slender size (NOT red fox bulk)"},
+      {"id": "pointed_ears",      "label": "Pointed alert ears"},
+      {"id": "bushy_tail",        "label": "Bushy tail with black tip"},
+      {"id": "tawny_grey",        "label": "Tawny-grey color (not red)"}
+    ],
+    "red-panda": [
+      {"id": "russet_red_fur",    "label": "Russet red fur"},
+      {"id": "ringed_tail",       "label": "Ringed/banded tail"},
+      {"id": "white_face_mask",   "label": "White face markings"},
+      {"id": "small_size",        "label": "Cat-sized (not bear-sized)"}
+    ],
+    "hoolock-gibbon": [
+      {"id": "long_arms",         "label": "Very long arms (arm-swinger)"},
+      {"id": "white_brows",       "label": "White eye-brow stripes"},
+      {"id": "no_tail",           "label": "No tail (ape, not monkey)"}
+    ],
+    "irrawaddy-dolphin": [
+      {"id": "rounded_head",      "label": "Rounded blunt head (no beak)"},
+      {"id": "small_dorsal_fin",  "label": "Small dorsal fin"},
+      {"id": "grey_body",         "label": "Grey body"}
+    ],
+    "greater-flamingo": [
+      {"id": "pink_plumage",      "label": "Pink plumage"},
+      {"id": "long_curved_neck",  "label": "Long S-curved neck"},
+      {"id": "long_legs",         "label": "Long stilt legs (one-leg pose common)"},
+      {"id": "downcurved_beak",   "label": "Downcurved black-tipped beak"}
+    ],
+    "great-indian-hornbill": [
+      {"id": "yellow_casque",     "label": "Yellow curved casque on top of beak",
+       "prompt_clause": "with the iconic yellow curved casque sitting on top of the large beak — the species' defining feature"},
+      {"id": "large_beak",        "label": "Large heavy beak"},
+      {"id": "black_white_body",  "label": "Black + white body plumage"}
+    ],
+    "cobra": [
+      {"id": "single_tongue",     "label": "EXACTLY ONE forked tongue (not two)",
+       "prompt_clause": "with EXACTLY ONE single forked tongue extending from the mouth — there is ONE tongue, not two; the tongue is a single Y-shape (forked at the tip), NEVER two parallel tongues, NEVER duplicated tongues, NEVER any hallucinated extra tongue. The cobra has ONE mouth and ONE tongue. This is non-negotiable — the rendered image must show exactly one tongue.",
+       "anti_negative": "no two tongues, no double tongue, no parallel tongues, no hallucinated extra tongue, no tongue duplicates"},
+      {"id": "extended_hood",     "label": "Extended hood (spread)",
+       "prompt_clause": "with the iconic spread hood extended behind the head — the species' defining display posture"},
+      {"id": "spectacle_marking", "label": "Hood spectacle / V marking"},
+      {"id": "no_limbs",          "label": "No limbs (serpent)"}
+    ],
+    "whale-shark": [
+      {"id": "spot_pattern",      "label": "White spots + stripes on dark blue"},
+      {"id": "wide_flat_head",    "label": "Wide flat head"},
+      {"id": "large_mouth",       "label": "Large filter-feeding mouth"}
+    ],
+    "indian-skimmer": [
+      {"id": "orange_beak",       "label": "Orange beak (lower mandible longer)"},
+      {"id": "black_white_body",  "label": "Black above + white below"},
+      {"id": "long_wings",        "label": "Long pointed wings"},
+      {"id": "two_legs",          "label": "Two legs (not four)"}
+    ],
+    "blackbuck": [
+      {"id": "spiral_horns",      "label": "Spiral twisted horns (male)"},
+      {"id": "two_tone_body",     "label": "Dark upper + white lower (male)"},
+      {"id": "white_eye_ring",    "label": "White eye ring"},
+      {"id": "slender_build",     "label": "Slender antelope build"}
+    ]
+  }
+}

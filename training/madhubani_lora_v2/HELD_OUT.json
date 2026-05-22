@@ -1,0 +1,49 @@
+{
+  "schema": "forge.lora_holdout.v1",
+  "version": "1.0.0",
+  "established": "2026-05-20",
+  "purpose": "Species held out of LoRA training data so we can measure true style-transfer generalization. The LoRA never sees PASS images for these species during training; held-out renders are scored against the same prompts on (a) base z-image-turbo and (b) z-image-turbo + LoRA to produce a paired-delta report.",
+  "rationale": "Spread of expected difficulty: 3 user-documented-gold species (rhino, peacock, elephant) + 1 user-documented-difficult species (snow-leopard). If LoRA helps the easy ones AND doesn't tank the hard one, we have real signal. If LoRA only helps species it directly memorized in training, this catches it.",
+  "held_out_species": [
+    {
+      "slug": "rhino",
+      "user_verdict": "v3 PASS — 'good that we picked'",
+      "expected_difficulty": "easy",
+      "eval_seeds": [42, 1337]
+    },
+    {
+      "slug": "peacock",
+      "user_verdict": "v1 plumage ideal, v2 colors ideal (gold standard)",
+      "expected_difficulty": "easy",
+      "eval_seeds": [42, 1337]
+    },
+    {
+      "slug": "elephant",
+      "user_verdict": "v2 gold standard",
+      "expected_difficulty": "easy",
+      "eval_seeds": [42, 1337]
+    },
+    {
+      "slug": "snow-leopard",
+      "user_verdict": "all v1/v2/v3 FAIL — 'all snow leopards mid in Madhubani art'",
+      "expected_difficulty": "hard — acts as canary for LoRA hurting difficult species",
+      "eval_seeds": [42, 1337]
+    }
+  ],
+  "eval_protocol": {
+    "renders_per_species": 2,
+    "base_model": "z-image-turbo",
+    "scoring": "composite = 0.6 * rubric_pass_fraction + 0.4 * clip_likeness_probability_v2",
+    "primary_metric": "delta_composite_paired (LoRA - base, averaged per species, then averaged across species)",
+    "secondary_metrics": [
+      "delta_rubric_pass_fraction",
+      "delta_clip_likeness_probability",
+      "per_species_breakdown"
+    ],
+    "decision_thresholds": {
+      "ship_lora_if_delta_composite_gte": 0.05,
+      "iterate_if_delta_composite_in_range": [-0.02, 0.05],
+      "shelve_lora_if_delta_composite_lt": -0.02
+    }
+  }
+}

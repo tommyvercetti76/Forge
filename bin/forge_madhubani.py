@@ -311,6 +311,13 @@ def build_subject_string(animal: dict, pose: dict, register: str) -> str:
         anatomy_guard_clause,
         _body_anatomy_clause(body_type, animal),
         animal.get("signature_features", "").strip().rstrip("."),
+        # v5 (2026-05-21) — emphatic species-identity clause built from
+        # brand/madhubani/species_features.json. Uses "MUST be preserved /
+        # NON-NEGOTIABLE" framing to defeat FLUX/Z-Image priors that drop
+        # species marks (sloth bear white V chest blaze, boar tusks, snow
+        # leopard rosettes). Surfaced AFTER the descriptive signature so
+        # the model reads it as escalation, not duplication.
+        _signature_features_emphatic_clause(animal),
         _eye_character_clause(pose_slug, pose.get("eye_character_intent", "calm folk-icon presence")),
         "mouth closed",
         # A1.5 — pre-trained species color OVERRIDE.
@@ -382,6 +389,46 @@ def _anatomical_counts_clause(animal: dict) -> str:
     return (
         f"ANATOMICAL COUNTS (strict — these specific feature-count rules MUST be satisfied for the species identity to read correctly): "
         f"{items}"
+    )
+
+
+# Cached registry of species-specific signature features. Loaded once per
+# process; safe to call from build_subject_string in tight loops.
+_SPECIES_FEATURES_CACHE: dict | None = None
+_SPECIES_FEATURES_PATH = ROOT / "brand" / "madhubani" / "species_features.json"
+
+
+def _load_species_features() -> dict:
+    global _SPECIES_FEATURES_CACHE
+    if _SPECIES_FEATURES_CACHE is None:
+        if _SPECIES_FEATURES_PATH.exists():
+            try:
+                _SPECIES_FEATURES_CACHE = json.loads(_SPECIES_FEATURES_PATH.read_text())
+            except Exception:
+                _SPECIES_FEATURES_CACHE = {"species": {}}
+        else:
+            _SPECIES_FEATURES_CACHE = {"species": {}}
+    return _SPECIES_FEATURES_CACHE
+
+
+def _signature_features_emphatic_clause(animal: dict) -> str:
+    """v5 (2026-05-21) — surface the emphatic prompt_clause language from
+    brand/madhubani/species_features.json. This is stricter than the
+    descriptive `signature_features` paragraph in animals.json — uses
+    "MUST be preserved" / "NON-NEGOTIABLE" framing to push back on
+    FLUX/Z-Image priors that erase species marks (e.g., sloth bear chest
+    blaze, boar tusks, snow leopard rosettes)."""
+    slug = animal.get("slug", "")
+    registry = _load_species_features()
+    features = registry.get("species", {}).get(slug, [])
+    clauses = [f.get("prompt_clause", "").strip()
+               for f in features if f.get("prompt_clause")]
+    if not clauses:
+        return ""
+    joined = " ; ".join(clauses)
+    return (
+        f"SPECIES IDENTITY (these features are NON-NEGOTIABLE — they identify the species and the rendered image is incomplete without ALL of them): "
+        f"{joined}"
     )
 
 

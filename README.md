@@ -13,9 +13,9 @@
 [![Models](https://img.shields.io/badge/models-FLUX_•_Z--Image_•_mflux-orange.svg)](NOTICE)
 [![Code of Conduct](https://img.shields.io/badge/code_of_conduct-respectful-blueviolet.svg)](CODE_OF_CONDUCT.md)
 
-**`-60.8%`** wall-clock vs. naïve mflux loop &nbsp;·&nbsp; **`128`** passing tests &nbsp;·&nbsp; **`41`**-species curated Madhubani catalog &nbsp;·&nbsp; **`N=16`** maintainer-labeled gold corpus &nbsp;·&nbsp; **`F1 0.62`** CLIP-probe v2 LOOCV (was 0.00 on v1)
+**`-60.8%`** mflux speedup &nbsp;·&nbsp; **`128`** passing tests &nbsp;·&nbsp; **`41`**-species Madhubani catalog &nbsp;·&nbsp; **`F1 0.62`** CLIP probe (LOOCV N=16) &nbsp;·&nbsp; **v1 LoRA = ITERATE** (+0.0357 ΔComp on held-out; below +0.05 ship)
 
-<sub>v1 of the CLIP+sklearn probe collapsed to F1 0.00 on N=16 LOOCV (small-sample artifact, predicted majority class). v2 — class-balanced LR on the same CLIP features — lifts LOOCV F1 to 0.615 by fixing the imbalance, but composite ceiling on rhino stays ~0.82 because CLIP's dynamic range on Madhubani-vs-not is narrow at this N. Full honest accounting: [QC_AGREEMENT_STUDY § Expanded-N correction](docs/QC_AGREEMENT_STUDY.md#expanded-n-correction-2026-05-20-pm).</sub>
+<sub>v1 of the CLIP+sklearn probe collapsed to F1 0.00 on N=16 LOOCV (small-sample artifact, majority-class prediction). v2 — class-balanced LR on the same CLIP features — lifts LOOCV F1 to 0.615. v1 LoRA (25 user-PASS images) returned an ITERATE verdict against a pre-registered +0.05 ship threshold; we publish the verdict + the intermediate failures alongside the methodology. v2 LoRA on the expanded corpus (41 PASS images) is in training; v6 photo-init Kontext-img2img addresses the prior-collision failures (snow-leopard-as-cheetah, cobra-with-two-tongues) that prompt engineering alone couldn't fix. Full accounting: [QC_AGREEMENT_STUDY](docs/QC_AGREEMENT_STUDY.md) · [PAPER_OUTLINE](docs/PAPER_OUTLINE.md).</sub>
 
 [**Install**](#install) &nbsp;·&nbsp; [**Try the gallery**](#specialist-engines) &nbsp;·&nbsp; [**Architecture**](docs/ARCHITECTURE.md) &nbsp;·&nbsp; [**Hard problems**](#hard-problems-forge-solves)
 
@@ -129,6 +129,31 @@ runtime smoke checks only.</sub>
   [docs/BOOK_LOCALIZATION_AUDIT_HANDOFF.md](docs/BOOK_LOCALIZATION_AUDIT_HANDOFF.md).
 
 </details>
+
+---
+
+## The ML contribution
+
+A closed feedback loop where **human grading drives LoRA training**, with the verdict
+(`SHIP` / `ITERATE` / `SHELVE`) measured against held-out species via paired ΔComposite
+scoring. We **pre-register thresholds**, **publish intermediate failures**, and **ship
+the negative-result data alongside the working pipeline**.
+
+| Iteration | Verdict | What landed |
+|---|---|---|
+| **v1 LoRA** | `ITERATE` | +0.0357 mean ΔComposite on held-out species (rhino · peacock · elephant · snow-leopard) at scale 0.75. **Below** our pre-registered +0.05 ship threshold. Documented as a negative result. |
+| **v5 batch** (signature-features) | mixed | +41% PASS rate vs v4 (29 → 41 PASS) but anatomy_broken regressions UP by 7. Six priority species moved 0→1 PASS; cobra · snow-leopard · tiger remained 0/N PASS. |
+| **v2 LoRA** | training now | 41 user-PASS images (v1 was 25). Class-balanced corpus, rank-16 cross-attention LoRA on z-image-turbo (Apache-2.0, commercially licensable). |
+| **v6 photo-init** | pipeline ready | Kontext-img2img with per-species reference photos as anatomy anchors. Addresses prior-collision failures (snow-leopard-as-cheetah, cobra-with-two-tongues) that prompt engineering alone couldn't resolve. |
+
+### Receipts you can verify
+
+Every rendered artifact ships with a **SHA-256 chain**: model weights → LoRA adapter →
+prompt hash → init image → license attribution. Every training image is open-license
+(strict CC-BY/SA/CC0/PD; **0 CC-BY-NC**). Every fact in the species knowledge base
+cites an open-access paper (76+ citations across IUCN, PLOS, BMC, PMC).
+
+[ML methodology](docs/ART_REASONING_ENGINE.md) · [QC agreement study](docs/QC_AGREEMENT_STUDY.md) · [Receipt schema](docs/SCHEMA.md) · [Paper outline](docs/PAPER_OUTLINE.md) · [Knowledge base](brand/madhubani/kb/INDEX.md)
 
 ---
 

@@ -68,6 +68,7 @@ def fetch_one(url: str, dest: Path, *, timeout: float = 90) -> tuple[bool, str]:
     try:
         req = urllib.request.Request(url, headers={"User-Agent": USER_AGENT})
         with urllib.request.urlopen(req, timeout=timeout) as r:
+            content_type = r.headers.get("Content-Type", "").lower()
             blob = r.read()
     except urllib.error.HTTPError as e:
         return False, f"HTTP {e.code}"
@@ -75,6 +76,11 @@ def fetch_one(url: str, dest: Path, *, timeout: float = 90) -> tuple[bool, str]:
         return False, str(e)
     if len(blob) < 1024:
         return False, f"response too small ({len(blob)} bytes)"
+    # Reject HTML responses — common when we get redirected to a description
+    # page instead of the binary itself. Either Content-Type says text/html
+    # OR the magic bytes start with `<` (covers servers that lie about MIME).
+    if content_type.startswith(("text/", "application/xhtml")) or blob[:1] == b"<":
+        return False, f"got HTML/text not binary (Content-Type: {content_type})"
     tmp = dest.with_suffix(dest.suffix + ".part")
     tmp.write_bytes(blob)
     tmp.replace(dest)
@@ -107,13 +113,23 @@ def rehydrate(
             counts["present"] += 1
             continue
 
-        # Prefer the recorded image_url (which is what we actually downloaded
-        # — typically a Wikimedia thumbnail URL at width=1280). Fall back to
-        # source_url (the Wikimedia file description page) only if image_url
-        # is missing, since description URLs aren't direct media.
-        url = (data.get("image_url") or data.get("source_url") or "").strip()
+        # Prefer image_url (Madhubani-style legacy field) → binary_url (species-
+        # photo schema field) → source_url (fallback; this is the Wikimedia
+        # description page, which is HTML — only valid when image_url/binary_url
+        # was a thumbnail-API URL that gets redirected).
+        url = (
+            data.get("image_url")
+            or data.get("binary_url")
+            or data.get("source_url")
+            or ""
+        ).strip()
+        # Reject obvious HTML description URLs masquerading as binary
+        if "commons.wikimedia.org/wiki/" in url and not url.endswith((".jpg", ".jpeg", ".png", ".webp")):
+            print(f"  [{i}/{len(manifests)}] ✗ {manifest.name}: source_url is HTML page (no image_url/binary_url in manifest)")
+            counts["failed"] += 1
+            continue
         if not url:
-            print(f"  [{i}/{len(manifests)}] ✗ {manifest.name}: no image_url/source_url in manifest")
+            print(f"  [{i}/{len(manifests)}] ✗ {manifest.name}: no image_url/binary_url/source_url in manifest")
             counts["failed"] += 1
             continue
 

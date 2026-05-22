@@ -85,10 +85,18 @@ def make_render_fn(
     profile: str = "madhubani",
     steps: int = 25,
     dry_run: bool = False,
+    init_image_path: Path | None = None,
+    init_image_strength: float = 0.4,
 ):
     """Returns render_fn(prompt, seeds) -> list[Path] that wraps the
     real `forge engine render` subprocess. One subprocess per attempt;
-    each invocation renders len(seeds) variants in one mflux batch."""
+    each invocation renders len(seeds) variants in one mflux batch.
+
+    `init_image_path` (v6): explicit Kontext img2img anchor — when set,
+    overrides any animals.json `style_reference_path`. Used by v6 batch
+    to pass a species PHOTO as the diffusion init image (anatomy anchor)
+    while the Madhubani prompt provides the style anchor.
+    """
     attempt_counter = {"n": 0}
 
     def render_fn(prompt: str, seeds: Sequence[int]) -> list[Path]:
@@ -111,15 +119,23 @@ def make_render_fn(
             "--seeds", str(seeds_n),
             "--out", str(out_path),
         ]
-        # Style-reference pass-through (Lane 1 wiring)
-        ref_rel = animal.get("style_reference_path")
-        if ref_rel:
-            ref_abs = ROOT / ref_rel
-            if ref_abs.exists():
-                cmd.extend(["--style-reference", str(ref_abs)])
-                strength = animal.get("style_reference_strength")
-                if strength is not None:
-                    cmd.extend(["--style-reference-strength", str(strength)])
+        # Image-conditioning: v6 init-image (species photo) OVERRIDES the
+        # animals.json style_reference_path (Mithila painting). They use the
+        # same mflux --image-path flag but carry different semantic intent —
+        # v6 prefers anatomy-anchor (species photo) over style-anchor.
+        if init_image_path is not None and init_image_path.exists():
+            cmd.extend(["--style-reference", str(init_image_path),
+                        "--style-reference-strength", str(init_image_strength)])
+        else:
+            # Fall back to Lane-1 wiring (Mithila painting from animals.json)
+            ref_rel = animal.get("style_reference_path")
+            if ref_rel:
+                ref_abs = ROOT / ref_rel
+                if ref_abs.exists():
+                    cmd.extend(["--style-reference", str(ref_abs)])
+                    strength = animal.get("style_reference_strength")
+                    if strength is not None:
+                        cmd.extend(["--style-reference-strength", str(strength)])
         print(f"\n── Attempt #{attempt_counter['n']}: rendering {seeds_n} seeds "
               f"[{', '.join(str(s) for s in seeds_list)}] via {profile} ──")
         if dry_run:
@@ -158,6 +174,13 @@ def main() -> int:
     parser.add_argument("--profile", default="madhubani")
     parser.add_argument("--dry-run", action="store_true",
                         help="Don't call mflux; just exercise the prompt + boost logic")
+    parser.add_argument("--init-image", type=Path, default=None,
+                        help="v6: species photo path for Kontext img2img anatomy anchor. "
+                             "Overrides any style_reference_path in animals.json.")
+    parser.add_argument("--init-image-strength", type=float, default=0.4,
+                        help="v6: how strongly the init image conditions the render (0-1, default: 0.4). "
+                             "Lower = more model creative freedom for Madhubani style; "
+                             "higher = stronger species anatomy anchor.")
     args = parser.parse_args()
 
     animal = load_animal(args.slug)
@@ -182,6 +205,8 @@ def main() -> int:
         animal, base_run_dir,
         profile=args.profile, steps=args.steps,
         dry_run=args.dry_run,
+        init_image_path=args.init_image,
+        init_image_strength=args.init_image_strength,
     )
 
     result = render_with_reasoning(
